@@ -9,6 +9,12 @@
     <groupId>org.onebusaway</groupId>
     <artifactId>onebusaway-siri</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
     <name>onebusaway-siri</name>
     <description>Support for the SIRI api for real-time transit data</description>
+
+    <modules>
+        <module>onebusaway-siri-api</module>
+    </modules>
 </project>
