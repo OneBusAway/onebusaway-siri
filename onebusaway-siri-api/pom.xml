@@ -7,7 +7,7 @@
         <version>1.0.6</version>
     </parent>
     <groupId>org.onebusaway</groupId>
-    <artifactId>onebusaway-siri</artifactId>
+    <artifactId>onebusaway-siri-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
