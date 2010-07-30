@@ -2,17 +2,16 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>onebusaway</artifactId>
+        <artifactId>onebusaway-siri</artifactId>
         <groupId>org.onebusaway</groupId>
-        <version>1.0.6</version>
+        <version>0.0.1-SNAPSHOT</version>
     </parent>
     <groupId>org.onebusaway</groupId>
     <artifactId>onebusaway-siri-api</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <packaging>pom</packaging>
 
     <name>onebusaway-siri</name>
     <description>Support for the SIRI api for real-time transit data</description>
+    
     <dependencies>
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
