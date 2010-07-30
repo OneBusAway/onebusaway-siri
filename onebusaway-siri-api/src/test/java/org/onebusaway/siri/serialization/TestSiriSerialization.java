@@ -26,6 +26,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 public class TestSiriSerialization extends XMLTestCase {
   @Test
@@ -33,6 +34,10 @@ public class TestSiriSerialization extends XMLTestCase {
     VehicleMonitoringRequest request = new VehicleMonitoringRequest();
     Calendar calendar = Calendar.getInstance();
     calendar.set(2010, 6, 3, 1, 59, 26);
+    int offset = TimeZone.getDefault().getOffset(calendar.getTimeInMillis()) / 1000;
+    int offsethours = offset / 3600;
+    int offsetminutes = (offset / 60) % 60;
+    String tzoffset = String.format("%+03d:%02d", offsethours, offsetminutes);
     request.RequestTimestamp = calendar;
     request.VehicleMonitoringDetailLevel = VehicleMonitoringDetailLevel.normal;
     request.DirectionRef = "N";
@@ -40,7 +45,7 @@ public class TestSiriSerialization extends XMLTestCase {
     SiriSerializer serializer = new SiriSerializer();
     String output = serializer.serialize(request);
     String expected = "<VehicleMonitoringRequest version=\"1.0\">"
-        + "<RequestTimestamp>2010-07-03T01:59:26-04:00</RequestTimestamp>"
+        + "<RequestTimestamp>2010-07-03T01:59:26" + tzoffset + "</RequestTimestamp>"
         + "<DirectionRef>N</DirectionRef>"
         + "<VehicleMonitoringDetailLevel>normal</VehicleMonitoringDetailLevel>"
         + "</VehicleMonitoringRequest>";
@@ -49,8 +54,9 @@ public class TestSiriSerialization extends XMLTestCase {
     assertXMLEqual(expected, output);
 
     VehicleMonitoringRequest deserialized = (VehicleMonitoringRequest) serializer.deserialize(expected);
+    assertEquals(calendar.getTimeZone(), deserialized.RequestTimestamp.getTimeZone()); 
     String reserialized = serializer.serialize(deserialized);
     
-    assertXMLEqual(expected, reserialized);
+    assertXMLEqual("deserialization/reserialization test failed", expected, reserialized);
   }
 }
