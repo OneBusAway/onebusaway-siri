@@ -9,7 +9,7 @@
     <groupId>org.onebusaway</groupId>
     <artifactId>onebusaway-siri-api</artifactId>
 
-    <name>onebusaway-siri</name>
+    <name>onebusaway-siri-api</name>
     <description>Support for the SIRI api for real-time transit data</description>
     
     <dependencies>

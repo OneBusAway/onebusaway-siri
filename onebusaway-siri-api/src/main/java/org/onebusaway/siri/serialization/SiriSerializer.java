@@ -11,7 +11,6 @@ public class SiriSerializer {
   private XStream stream;
 
   SiriSerializer() {
-    broken!
     stream = new XStream();
     stream.processAnnotations(VehicleMonitoringRequest.class);
     stream.processAnnotations(VehicleMonitoringDetailLevel.class);
