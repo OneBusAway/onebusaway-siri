@@ -7,13 +7,14 @@ import java.util.Calendar;
 public class ServiceDelivery {
   
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
-  Calendar ResponseTimestamp;
+  public Calendar ResponseTimestamp;
   
-  String ProducerRef;
+  public String ProducerRef;
   
-  boolean Status;
+  public boolean Status = true;
   
-  boolean MoreData;
-  
-  VehicleMonitoringDelivery VehicleMonitoringDelivery;
+  public boolean MoreData = false;
+
+  public VehicleMonitoringDelivery VehicleMonitoringDelivery;
+
 }

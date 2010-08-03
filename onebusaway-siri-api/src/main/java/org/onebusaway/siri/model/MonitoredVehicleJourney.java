@@ -23,41 +23,43 @@ import java.util.List;
 import javax.xml.datatype.Duration;
 
 public class MonitoredVehicleJourney {
-  String LineRef;
-  String DirectionRef;
-  FramedVehicleJourneyRef FramedVehicleJourneyRef;
+  public String LineRef;
+  public String DirectionRef;
+  public FramedVehicleJourneyRef FramedVehicleJourneyRef;
 
-  String PublishedLineName;
-  String OperatorRef;
-  String ProductCategoryRef;
-  String ServiceFeatureRef;
-  String OriginName;
+  public String PublishedLineName;
+  public String OperatorRef;
+  public String ProductCategoryRef;
+  public String ServiceFeatureRef;
+  public String OriginName;
   
   @XStreamImplicit
-  List<Via> Via;
+  public List<Via> Via;
   
-  String DestinationRef;
-  String DestinationName;
-  String JourneyNote;
+  /* next two not used */
+  public String DestinationRef;
+  public String DestinationName;
   
-  boolean Monitored;
-  boolean InCongestion;
+  public String JourneyNote;
   
-  VehicleLocation VehicleLocation;
+  public boolean Monitored = true;
+  public boolean InCongestion = false;
   
-  double Bearing;
-  String ProgressRate; //fixme: enum?
+  public VehicleLocation VehicleLocation;
   
-  Duration Delay;
+  public double Bearing;
+  public String ProgressRate; //fixme: enum?
   
-  String ProgressStatus; //fixme: enum?
+  public Duration Delay;
   
-  String BlockRef;
+  public String ProgressStatus; //fixme: enum?
   
-  String CourseOfJourneyRef;
-  String VehicleRef;
+  public String BlockRef;
   
-  List <PreviousCall> PreviousCalls;
+  public String CourseOfJourneyRef;
+  public String VehicleRef;
   
-  List <OnwardCall> OnwardCalls;
+  public List <PreviousCall> PreviousCalls;
+  
+  public List <OnwardCall> OnwardCalls;
 }

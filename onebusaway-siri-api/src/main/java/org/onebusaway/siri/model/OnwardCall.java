@@ -22,21 +22,21 @@ import java.util.Calendar;
 
 public class OnwardCall {
 
-  String StopPointRef;
-  int VisitNumber;
-  String StopPointName;
-  boolean VehicleAtStop;
+  public String StopPointRef;
+  public int VisitNumber;
+  public String StopPointName;
+  public boolean VehicleAtStop;
 
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
-  Calendar AimedArrivalTime;
+  public Calendar AimedArrivalTime;
   
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
-  Calendar ExpectedArrivalTime;
+  public Calendar ExpectedArrivalTime;
   
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
-  Calendar AimedDepartureTime;
+  public Calendar AimedDepartureTime;
   
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
-  Calendar ExpectedDepartureTime;
+  public Calendar ExpectedDepartureTime;
 
 }

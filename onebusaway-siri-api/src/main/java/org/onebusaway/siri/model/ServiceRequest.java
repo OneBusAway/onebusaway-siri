@@ -16,21 +16,18 @@
 
 package org.onebusaway.siri.model;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamConverter;
 
 import java.util.Calendar;
 
 public class ServiceRequest {
-  ServiceRequestContext context;
+  public ServiceRequestContext context;
   
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
-  @XStreamAlias("RequestTimestamp")
-  Calendar requestTimestamp;
+  public Calendar RequestTimestamp;
+ 
+  public String RequestorRef;
   
-  @XStreamAlias("RequestorRef")
-  String requestorRef;
-  
-  @XStreamAlias("VehicleMonitoringRequest")
-  VehicleMonitoringRequest request;
+  public VehicleMonitoringRequest VehicleMonitoringRequest;
+
 }

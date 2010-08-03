@@ -22,15 +22,15 @@ import java.util.Calendar;
 
 public class PreviousCall {
 
-  String StopPointRef;
-  int VisitNumber;
-  String StopPointName;
-  boolean VehicleAtStop;
+  public String StopPointRef;
+  public int VisitNumber;
+  public String StopPointName;
+  public boolean VehicleAtStop;
   
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
-  Calendar AimedDepartureTime;
+  public Calendar AimedDepartureTime;
   
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
-  Calendar ActualDepartureTime;
+  public Calendar ActualDepartureTime;
 
 }

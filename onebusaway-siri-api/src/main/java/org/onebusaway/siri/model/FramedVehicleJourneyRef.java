@@ -19,7 +19,7 @@ package org.onebusaway.siri.model;
 
 public class FramedVehicleJourneyRef {
   
-  String DataFrameRef;
-  String DatedVehicleJourneyRef;
+  public String DataFrameRef;
+  public String DatedVehicleJourneyRef;
   
 }

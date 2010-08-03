@@ -16,23 +16,39 @@
 
 package org.onebusaway.siri.model;
 
+import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamConverter;
 
 import java.util.Calendar;
 
+@XStreamAlias("VehicleActivity")
 public class VehicleActivity {
 
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
-  Calendar RecordedAtTime;
+  public Calendar RecordedAtTime;
   
-  String ItemIdentifier;
-  Calendar ValidUntilTime;
-  String VehicleMonitoringRef;
+  /**
+   * This is required but not explained by the SIRI spec.
+   * So we'll give it a random value.
+   */
+  public String ItemIdentifier = "ITEMID";
   
-  ProgressBetweenStops ProgressBetweenStops;
+  @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
+  public Calendar ValidUntilTime;
   
-  MonitoredVehicleJourney MonitoredVehicleJourney;
+  /** 
+   * This refers to a vehicle monitoring area (whatever that is).
+   * We'll assume that all vehicles share the same area
+   */
+  public String VehicleMonitoringRef = "AREA";
   
-  String VehicleActivityNote;
+  public ProgressBetweenStops ProgressBetweenStops;
+  
+  public MonitoredVehicleJourney MonitoredVehicleJourney;
+  
+  public String VehicleActivityNote;
 
+  /* mta extensions */
+  public Extensions Extensions;
+  
 }

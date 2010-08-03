@@ -27,18 +27,18 @@ import javax.xml.datatype.Duration;
 public class VehicleMonitoringDelivery {
   
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
-  Calendar ResponseTimestamp;
+  public Calendar ResponseTimestamp;
   
-  String SubscriberRef;
+  public String SubscriberRef;
 
-  String SubscriptionRef;
+  public String SubscriptionRef;
   
-  boolean Status;
+  public boolean Status = true;
   
-  Calendar ValidUntil;
+  public Calendar ValidUntil;
  
-  Duration ShortestPossibleCycle;
+  public Duration ShortestPossibleCycle;
   
   @XStreamImplicit
-  List<VehicleActivity> deliveries;
+  public List<VehicleActivity> deliveries;
 }
