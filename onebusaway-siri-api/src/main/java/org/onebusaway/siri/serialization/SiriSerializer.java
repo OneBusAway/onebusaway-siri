@@ -1,6 +1,8 @@
 package org.onebusaway.siri.serialization;
 
+import org.onebusaway.siri.model.ErrorMessage;
 import org.onebusaway.siri.model.ServiceRequestContext;
+import org.onebusaway.siri.model.Siri;
 import org.onebusaway.siri.model.VehicleMonitoringDetailLevel;
 import org.onebusaway.siri.model.VehicleMonitoringRequest;
 
@@ -15,6 +17,8 @@ public class SiriSerializer {
     stream.processAnnotations(VehicleMonitoringRequest.class);
     stream.processAnnotations(VehicleMonitoringDetailLevel.class);
     stream.processAnnotations(ServiceRequestContext.class);
+    stream.processAnnotations(Siri.class);
+    stream.processAnnotations(ErrorMessage.class);
   }
 
   String serialize(Object o) {
