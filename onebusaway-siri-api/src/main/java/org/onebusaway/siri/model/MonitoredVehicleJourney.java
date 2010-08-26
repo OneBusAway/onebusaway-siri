@@ -36,13 +36,15 @@ public class MonitoredVehicleJourney {
   @XStreamImplicit
   public List<Via> Via;
   
-  /* next two not used */
   public String DestinationRef;
+
+  /* unused */
   public String DestinationName;
   
   public String JourneyNote;
   
   public boolean Monitored = true;
+  /* unused */
   public boolean InCongestion = false;
   
   public VehicleLocation VehicleLocation;
@@ -62,4 +64,10 @@ public class MonitoredVehicleJourney {
   public List <PreviousCall> PreviousCalls;
   
   public List <OnwardCall> OnwardCalls;
+
+  public String OriginRef;
+  /* extensions */
+  public double DistanceAlongRoute;
+  public double DistanceFromCall;
+  public int StopsFromCall;
 }

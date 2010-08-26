@@ -42,6 +42,6 @@ public class StopMonitoringDelivery {
   public Duration ShortestPossibleCycle;
 
   @XStreamImplicit
-  public List<MonitoredStopVisit> vists;
-  public List<MonitoredVehicleJourney> journeys;
+  public List<MonitoredStopVisit> visits;
+
 }

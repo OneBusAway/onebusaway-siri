@@ -1,23 +1,25 @@
 package org.onebusaway.siri.model;
 
+import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamConverter;
 
 import java.util.Calendar;
 
+@XStreamAlias("MonitoredStopVisit")
 public class MonitoredStopVisit {
 
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
-  Calendar RecordedAtTime;
+  public Calendar RecordedAtTime;
 
   /* unused */
-  String ItemIdentifier;
-  String MonitoringRef;
+  public String ItemIdentifier;
+  public String MonitoringRef;
 
   /* unused */
-  String ClearDownRef;
+  public String ClearDownRef;
 
-  MonitoredVehicleJourney MonitoredVehicleJourney;
+  public MonitoredVehicleJourney MonitoredVehicleJourney;
 
   /* unused */
-  String StopVisitNode;
+  public String StopVisitNode;
 }
