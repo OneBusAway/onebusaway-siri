@@ -49,7 +49,7 @@ public class MonitoredVehicleJourney {
   
   public VehicleLocation VehicleLocation;
   
-  public double Bearing;
+  public Double Bearing;
   public String ProgressRate; //fixme: enum?
   
   public Duration Delay;
@@ -66,8 +66,6 @@ public class MonitoredVehicleJourney {
   public List <OnwardCall> OnwardCalls;
 
   public String OriginRef;
-  /* extensions */
-  public double DistanceAlongRoute;
-  public double DistanceFromCall;
-  public int StopsFromCall;
+
+  public DistanceExtensions Extensions;
 }
