@@ -20,5 +20,5 @@ public class ServiceDelivery {
   public VehicleMonitoringDelivery VehicleMonitoringDelivery;
 
   @XStreamImplicit
-  public List<StopMonitoringDelivery> deliveries;
+  public List<StopMonitoringDelivery> stopMonitoringDeliveries;
 }
