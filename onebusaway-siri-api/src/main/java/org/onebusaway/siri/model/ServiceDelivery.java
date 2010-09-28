@@ -13,9 +13,9 @@ public class ServiceDelivery {
   
   public String ProducerRef;
   
-  public boolean Status = true;
+  public Boolean Status;
   
-  public boolean MoreData = false;
+  public Boolean MoreData;
 
   public VehicleMonitoringDelivery VehicleMonitoringDelivery;
 

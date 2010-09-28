@@ -27,7 +27,7 @@ public class OnwardCall {
   public String StopPointRef;
   public int VisitNumber;
   public String StopPointName;
-  public boolean VehicleAtStop = false;
+  public Boolean VehicleAtStop;
 
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
   public Calendar AimedArrivalTime;
@@ -40,5 +40,7 @@ public class OnwardCall {
   
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
   public Calendar ExpectedDepartureTime;
+
+  public DistanceExtensions Extensions;
 
 }

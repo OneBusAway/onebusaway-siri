@@ -33,7 +33,7 @@ public class VehicleMonitoringDelivery {
 
   public String SubscriptionRef;
   
-  public boolean Status = true;
+  public Boolean Status;
   
   public Calendar ValidUntil;
  

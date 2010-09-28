@@ -46,7 +46,7 @@ public class MonitoredVehicleJourney {
   public boolean Monitored = true;
 
   /* unused */
-  public Boolean InCongestion = false;
+  public Boolean InCongestion;
   
   public VehicleLocation VehicleLocation;
   
@@ -62,11 +62,11 @@ public class MonitoredVehicleJourney {
   public String CourseOfJourneyRef;
   public String VehicleRef;
   
+  public MonitoredCall MonitoredCall;
+
   public List <PreviousCall> PreviousCalls;
   
   public List <OnwardCall> OnwardCalls;
 
   public String OriginRef;
-
-  public DistanceExtensions Extensions;
 }
