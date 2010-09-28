@@ -16,16 +16,18 @@
 
 package org.onebusaway.siri.model;
 
+import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamConverter;
 
 import java.util.Calendar;
 
+@XStreamAlias("OnwardCall")
 public class OnwardCall {
 
   public String StopPointRef;
   public int VisitNumber;
   public String StopPointName;
-  public boolean VehicleAtStop;
+  public boolean VehicleAtStop = false;
 
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
   public Calendar AimedArrivalTime;

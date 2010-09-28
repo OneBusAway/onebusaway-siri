@@ -44,8 +44,9 @@ public class MonitoredVehicleJourney {
   public String JourneyNote;
   
   public boolean Monitored = true;
+
   /* unused */
-  public boolean InCongestion = false;
+  public Boolean InCongestion = false;
   
   public VehicleLocation VehicleLocation;
   
