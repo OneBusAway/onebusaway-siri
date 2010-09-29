@@ -17,6 +17,7 @@
 package org.onebusaway.siri.model;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
 import com.thoughtworks.xstream.annotations.XStreamConverter;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
 
@@ -28,16 +29,19 @@ import javax.xml.datatype.Duration;
 @XStreamAlias("StopMonitoringDelivery")
 public class StopMonitoringDelivery {
 
+  @XStreamAsAttribute
+  public String version = "1.3";
+
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
   public Calendar ResponseTimestamp;
+
+  public Calendar ValidUntil;
 
   public String SubscriberRef;
 
   public String SubscriptionRef;
 
   public Boolean Status;
-
-  public Calendar ValidUntil;
  
   public Duration ShortestPossibleCycle;
 
