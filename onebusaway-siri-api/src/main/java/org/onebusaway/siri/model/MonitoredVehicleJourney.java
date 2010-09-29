@@ -35,7 +35,8 @@ public class MonitoredVehicleJourney {
   
   @XStreamImplicit
   public List<Via> Via;
-  
+
+  public String OriginRef;
   public String DestinationRef;
 
   /* unused */
@@ -68,5 +69,4 @@ public class MonitoredVehicleJourney {
   
   public List <OnwardCall> OnwardCalls;
 
-  public String OriginRef;
 }

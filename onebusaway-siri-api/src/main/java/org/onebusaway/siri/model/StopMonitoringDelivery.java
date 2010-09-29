@@ -35,6 +35,7 @@ public class StopMonitoringDelivery {
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
   public Calendar ResponseTimestamp;
 
+  @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
   public Calendar ValidUntil;
 
   public String SubscriberRef;
