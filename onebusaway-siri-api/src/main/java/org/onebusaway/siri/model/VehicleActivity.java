@@ -27,20 +27,18 @@ public class VehicleActivity {
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
   public Calendar RecordedAtTime;
   
-  /**
-   * This is required but not explained by the SIRI spec.
-   * So we'll give it a random value.
+  /*
+   * unused
    */
-  public String ItemIdentifier = "ITEMID";
+  public String ItemIdentifier;
   
   @XStreamConverter(ISO8601GregorianCalendarConverterNoMillis.class)
   public Calendar ValidUntilTime;
   
-  /** 
-   * This refers to a vehicle monitoring area (whatever that is).
-   * We'll assume that all vehicles share the same area
+  /*
+   * unused
    */
-  public String VehicleMonitoringRef = "AREA";
+  public String VehicleMonitoringRef;
   
   public ProgressBetweenStops ProgressBetweenStops;
   
