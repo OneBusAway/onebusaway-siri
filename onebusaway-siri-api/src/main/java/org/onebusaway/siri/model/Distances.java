@@ -1,7 +1,7 @@
 package org.onebusaway.siri.model;
 
 public class Distances {
-  public Double DistanceAlongRoute;
+  public Double StopDistanceAlongRoute;
   public Double DistanceFromCall;
   public int StopsFromCall;
 }
