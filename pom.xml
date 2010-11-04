@@ -16,5 +16,6 @@
 
     <modules>
         <module>onebusaway-siri-api</module>
+        <module>onebusaway-siri-api-v13</module>
     </modules>
 </project>
