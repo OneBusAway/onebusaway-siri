@@ -212,8 +212,8 @@ public class ObjectFactory {
      * Create an instance of {@link eu.datex2.schema._1_0._1_0.Comment.Comment.Value }
      * 
      */
-    public eu.datex2.schema._1_0._1_0.Comment.Comment.Value createCommentCommentValue() {
-        return new eu.datex2.schema._1_0._1_0.Comment.Comment.Value();
+    public eu.datex2.schema._1_0._1_0.CommentStructure.Comment.Value createCommentCommentValue() {
+        return new eu.datex2.schema._1_0._1_0.CommentStructure.Comment.Value();
     }
 
     /**
@@ -772,8 +772,8 @@ public class ObjectFactory {
      * Create an instance of {@link eu.datex2.schema._1_0._1_0.Comment }
      * 
      */
-    public eu.datex2.schema._1_0._1_0.Comment createComment() {
-        return new eu.datex2.schema._1_0._1_0.Comment();
+    public eu.datex2.schema._1_0._1_0.CommentStructure createComment() {
+        return new eu.datex2.schema._1_0._1_0.CommentStructure();
     }
 
     /**
@@ -1300,8 +1300,8 @@ public class ObjectFactory {
      * Create an instance of {@link eu.datex2.schema._1_0._1_0.Comment.Comment }
      * 
      */
-    public eu.datex2.schema._1_0._1_0.Comment.Comment createCommentComment() {
-        return new eu.datex2.schema._1_0._1_0.Comment.Comment();
+    public eu.datex2.schema._1_0._1_0.CommentStructure.Comment createCommentComment() {
+        return new eu.datex2.schema._1_0._1_0.CommentStructure.Comment();
     }
 
     /**
