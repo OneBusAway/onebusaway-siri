@@ -117,7 +117,7 @@ public enum PollutantTypeEnum {
     OZONE("ozone"),
 
     /**
-     * Particulate matter which passes through a size-selective inlet with a 50% cut-off efficiency at an aerodynamic diameter of 10 µm (micrometres).
+     * Particulate matter which passes through a size-selective inlet with a 50% cut-off efficiency at an aerodynamic diameter of 10 um (micrometres).
      * 
      */
     @XmlEnumValue("particulates10")
