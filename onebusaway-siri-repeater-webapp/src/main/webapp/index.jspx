@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns:jsp="http://java.sun.com/JSP/Page"
+    xmlns:c="http://java.sun.com/jsp/jstl/core">
+<jsp:directive.page contentType="text/html" />
+<head>
+<title>onebusaway-siri-repeater-webapp</title>
+</head>
+<body>
+<p>onebusaway-siri-repeater-webapp</p>
+</body>
+</html>

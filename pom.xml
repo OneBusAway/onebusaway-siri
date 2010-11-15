@@ -17,5 +17,6 @@
     <modules>
         <module>onebusaway-siri-api</module>
         <module>onebusaway-siri-api-v13</module>
+        <module>onebusaway-siri-repeater-webapp</module>
     </modules>
 </project>
