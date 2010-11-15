@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 import eu.datex2.schema._1_0._1_0.Advice;
 import eu.datex2.schema._1_0._1_0.Cause;
-import eu.datex2.schema._1_0._1_0.Comment;
+import eu.datex2.schema._1_0._1_0.CommentStructure;
 import eu.datex2.schema._1_0._1_0.DateTime;
 import eu.datex2.schema._1_0._1_0.ExtensionType;
 import eu.datex2.schema._1_0._1_0.GroupOfLocations;
@@ -92,8 +92,8 @@ public abstract class OptionalTrafficElementStructure {
     protected Impact impact;
     protected Cause cause;
     protected List<Advice> advice;
-    protected List<Comment> generalPublicComment;
-    protected List<Comment> nonGeneralPublicComment;
+    protected List<CommentStructure> generalPublicComment;
+    protected List<CommentStructure> nonGeneralPublicComment;
     protected GroupOfLocations groupOfLocations;
     protected Management management;
     protected ExtensionType situationRecordExtension;
@@ -438,9 +438,9 @@ public abstract class OptionalTrafficElementStructure {
      * 
      * 
      */
-    public List<Comment> getGeneralPublicComment() {
+    public List<CommentStructure> getGeneralPublicComment() {
         if (generalPublicComment == null) {
-            generalPublicComment = new ArrayList<Comment>();
+            generalPublicComment = new ArrayList<CommentStructure>();
         }
         return this.generalPublicComment;
     }
@@ -467,9 +467,9 @@ public abstract class OptionalTrafficElementStructure {
      * 
      * 
      */
-    public List<Comment> getNonGeneralPublicComment() {
+    public List<CommentStructure> getNonGeneralPublicComment() {
         if (nonGeneralPublicComment == null) {
-            nonGeneralPublicComment = new ArrayList<Comment>();
+            nonGeneralPublicComment = new ArrayList<CommentStructure>();
         }
         return this.nonGeneralPublicComment;
     }

@@ -109,8 +109,8 @@ public abstract class SituationRecord {
     protected Impact impact;
     protected Cause cause;
     protected List<Advice> advice;
-    protected List<Comment> generalPublicComment;
-    protected List<Comment> nonGeneralPublicComment;
+    protected List<CommentStructure> generalPublicComment;
+    protected List<CommentStructure> nonGeneralPublicComment;
     @XmlElement(required = true)
     protected GroupOfLocations groupOfLocations;
     protected Management management;
@@ -460,9 +460,9 @@ public abstract class SituationRecord {
      * 
      * 
      */
-    public List<Comment> getGeneralPublicComment() {
+    public List<CommentStructure> getGeneralPublicComment() {
         if (generalPublicComment == null) {
-            generalPublicComment = new ArrayList<Comment>();
+            generalPublicComment = new ArrayList<CommentStructure>();
         }
         return this.generalPublicComment;
     }
@@ -489,9 +489,9 @@ public abstract class SituationRecord {
      * 
      * 
      */
-    public List<Comment> getNonGeneralPublicComment() {
+    public List<CommentStructure> getNonGeneralPublicComment() {
         if (nonGeneralPublicComment == null) {
-            nonGeneralPublicComment = new ArrayList<Comment>();
+            nonGeneralPublicComment = new ArrayList<CommentStructure>();
         }
         return this.nonGeneralPublicComment;
     }
