@@ -21,6 +21,7 @@
         <module>onebusaway-siri-client</module>
         <module>onebusaway-siri-server</module>
         <module>onebusaway-siri-client-cli</module>
+        <module>onebusaway-siri-core</module>
     </modules>
 
 
