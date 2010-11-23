@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -52,17 +52,17 @@ public abstract class AbstractRequestStructure {
 
     @XmlElement(name = "RequestTimestamp", required = true)
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar requestTimestamp;
+    protected Date requestTimestamp;
 
     /**
      * Gets the value of the requestTimestamp property.
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getRequestTimestamp() {
+    public Date getRequestTimestamp() {
         return requestTimestamp;
     }
 
@@ -71,10 +71,10 @@ public abstract class AbstractRequestStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setRequestTimestamp(XMLGregorianCalendar value) {
+    public void setRequestTimestamp(Date value) {
         this.requestTimestamp = value;
     }
 

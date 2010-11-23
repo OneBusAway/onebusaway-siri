@@ -18,7 +18,7 @@ import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.datatype.Duration;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -153,10 +153,10 @@ public class MonitoredVehicleJourneyStructure {
     protected Boolean headwayService;
     @XmlElement(name = "OriginAimedDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar originAimedDepartureTime;
+    protected Date originAimedDepartureTime;
     @XmlElement(name = "DestinationAimedArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar destinationAimedArrivalTime;
+    protected Date destinationAimedArrivalTime;
     @XmlElement(name = "FacilityConditionElement")
     protected List<FacilityConditionStructure> facilityConditionElement;
     @XmlElement(name = "FacilityChangeElement")
@@ -790,10 +790,10 @@ public class MonitoredVehicleJourneyStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getOriginAimedDepartureTime() {
+    public Date getOriginAimedDepartureTime() {
         return originAimedDepartureTime;
     }
 
@@ -802,10 +802,10 @@ public class MonitoredVehicleJourneyStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setOriginAimedDepartureTime(XMLGregorianCalendar value) {
+    public void setOriginAimedDepartureTime(Date value) {
         this.originAimedDepartureTime = value;
     }
 
@@ -814,10 +814,10 @@ public class MonitoredVehicleJourneyStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getDestinationAimedArrivalTime() {
+    public Date getDestinationAimedArrivalTime() {
         return destinationAimedArrivalTime;
     }
 
@@ -826,10 +826,10 @@ public class MonitoredVehicleJourneyStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setDestinationAimedArrivalTime(XMLGregorianCalendar value) {
+    public void setDestinationAimedArrivalTime(Date value) {
         this.destinationAimedArrivalTime = value;
     }
 

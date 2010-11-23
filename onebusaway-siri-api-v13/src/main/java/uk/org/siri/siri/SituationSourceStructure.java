@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 import eu.datex2.schema._1_0._1_0.SourceTypeEnum;
 
 
@@ -95,7 +95,7 @@ public class SituationSourceStructure {
     protected String sourceRole;
     @XmlElement(name = "TimeOfCommunication")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar timeOfCommunication;
+    protected Date timeOfCommunication;
     @XmlElement(name = "ExternalCode")
     protected String externalCode;
     @XmlElement(name = "SourceFile")
@@ -371,10 +371,10 @@ public class SituationSourceStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getTimeOfCommunication() {
+    public Date getTimeOfCommunication() {
         return timeOfCommunication;
     }
 
@@ -383,10 +383,10 @@ public class SituationSourceStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setTimeOfCommunication(XMLGregorianCalendar value) {
+    public void setTimeOfCommunication(Date value) {
         this.timeOfCommunication = value;
     }
 

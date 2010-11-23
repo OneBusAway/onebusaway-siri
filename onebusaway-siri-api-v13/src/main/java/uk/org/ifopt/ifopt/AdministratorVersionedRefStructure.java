@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -50,10 +50,10 @@ public class AdministratorVersionedRefStructure {
     protected String value;
     @XmlAttribute
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar created;
+    protected Date created;
     @XmlAttribute
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar lastUpdated;
+    protected Date lastUpdated;
     @XmlAttribute
     protected ModificationEnumeration modification;
     @XmlAttribute
@@ -90,10 +90,10 @@ public class AdministratorVersionedRefStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getCreated() {
+    public Date getCreated() {
         return created;
     }
 
@@ -102,10 +102,10 @@ public class AdministratorVersionedRefStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setCreated(XMLGregorianCalendar value) {
+    public void setCreated(Date value) {
         this.created = value;
     }
 
@@ -114,10 +114,10 @@ public class AdministratorVersionedRefStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getLastUpdated() {
+    public Date getLastUpdated() {
         return lastUpdated;
     }
 
@@ -126,10 +126,10 @@ public class AdministratorVersionedRefStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setLastUpdated(XMLGregorianCalendar value) {
+    public void setLastUpdated(Date value) {
         this.lastUpdated = value;
     }
 

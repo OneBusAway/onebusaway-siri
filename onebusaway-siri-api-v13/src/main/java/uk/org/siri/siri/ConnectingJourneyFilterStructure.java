@@ -16,7 +16,7 @@ import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -57,7 +57,7 @@ public class ConnectingJourneyFilterStructure {
     protected BigInteger visitNumber;
     @XmlElement(name = "TimetabledArrivalTime", required = true)
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar timetabledArrivalTime;
+    protected Date timetabledArrivalTime;
 
     /**
      * Gets the value of the datedVehicleJourneyRef property.
@@ -112,10 +112,10 @@ public class ConnectingJourneyFilterStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getTimetabledArrivalTime() {
+    public Date getTimetabledArrivalTime() {
         return timetabledArrivalTime;
     }
 
@@ -124,10 +124,10 @@ public class ConnectingJourneyFilterStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setTimetabledArrivalTime(XMLGregorianCalendar value) {
+    public void setTimetabledArrivalTime(Date value) {
         this.timetabledArrivalTime = value;
     }
 

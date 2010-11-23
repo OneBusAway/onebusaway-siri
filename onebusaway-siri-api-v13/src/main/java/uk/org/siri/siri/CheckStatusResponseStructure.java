@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.datatype.Duration;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -71,12 +71,12 @@ public class CheckStatusResponseStructure
     protected uk.org.siri.siri.CheckStatusResponseBodyStructure.ErrorCondition errorCondition;
     @XmlElement(name = "ValidUntil")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar validUntil;
+    protected Date validUntil;
     @XmlElement(name = "ShortestPossibleCycle")
     protected Duration shortestPossibleCycle;
     @XmlElement(name = "ServiceStartedTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar serviceStartedTime;
+    protected Date serviceStartedTime;
     @XmlElement(name = "Extensions")
     protected ExtensionsStructure extensions;
 
@@ -229,10 +229,10 @@ public class CheckStatusResponseStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getValidUntil() {
+    public Date getValidUntil() {
         return validUntil;
     }
 
@@ -241,10 +241,10 @@ public class CheckStatusResponseStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setValidUntil(XMLGregorianCalendar value) {
+    public void setValidUntil(Date value) {
         this.validUntil = value;
     }
 
@@ -277,10 +277,10 @@ public class CheckStatusResponseStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getServiceStartedTime() {
+    public Date getServiceStartedTime() {
         return serviceStartedTime;
     }
 
@@ -289,10 +289,10 @@ public class CheckStatusResponseStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setServiceStartedTime(XMLGregorianCalendar value) {
+    public void setServiceStartedTime(Date value) {
         this.serviceStartedTime = value;
     }
 

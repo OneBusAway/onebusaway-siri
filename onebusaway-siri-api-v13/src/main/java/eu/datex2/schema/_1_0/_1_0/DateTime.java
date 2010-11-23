@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -40,17 +40,17 @@ public class DateTime {
 
     @XmlValue
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar value;
+    protected Date value;
 
     /**
      * Gets the value of the value property.
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getValue() {
+    public Date getValue() {
         return value;
     }
 
@@ -59,10 +59,10 @@ public class DateTime {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setValue(XMLGregorianCalendar value) {
+    public void setValue(Date value) {
         this.value = value;
     }
 

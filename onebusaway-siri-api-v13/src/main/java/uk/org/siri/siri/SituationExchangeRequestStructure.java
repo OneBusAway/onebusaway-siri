@@ -21,7 +21,7 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.datatype.Duration;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 import eu.datex2.schema._1_0._1_0.InformationStatusEnum;
 import uk.org.ifopt.acsb.PassengerAccessibilityNeedsStructure;
 import uk.org.ifopt.ifopt.AccessModesEnumeration;
@@ -101,7 +101,7 @@ public class SituationExchangeRequestStructure
     protected Duration previewInterval;
     @XmlElement(name = "StartTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar startTime;
+    protected Date startTime;
     @XmlElement(name = "VehicleMode", defaultValue = "unknown")
     protected VehicleModesOfTransportEnumeration vehicleMode;
     @XmlElement(name = "AirSubmode", defaultValue = "unknown")
@@ -212,10 +212,10 @@ public class SituationExchangeRequestStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getStartTime() {
+    public Date getStartTime() {
         return startTime;
     }
 
@@ -224,10 +224,10 @@ public class SituationExchangeRequestStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setStartTime(XMLGregorianCalendar value) {
+    public void setStartTime(Date value) {
         this.startTime = value;
     }
 

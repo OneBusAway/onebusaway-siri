@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -57,7 +57,7 @@ public class ContextualisedRequestStructure {
     protected ServiceRequestContextStructure serviceRequestContext;
     @XmlElement(name = "RequestTimestamp", required = true)
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar requestTimestamp;
+    protected Date requestTimestamp;
     @XmlElement(name = "Address")
     protected String address;
     @XmlElement(name = "RequestorRef", required = true)
@@ -94,10 +94,10 @@ public class ContextualisedRequestStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getRequestTimestamp() {
+    public Date getRequestTimestamp() {
         return requestTimestamp;
     }
 
@@ -106,10 +106,10 @@ public class ContextualisedRequestStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setRequestTimestamp(XMLGregorianCalendar value) {
+    public void setRequestTimestamp(Date value) {
         this.requestTimestamp = value;
     }
 

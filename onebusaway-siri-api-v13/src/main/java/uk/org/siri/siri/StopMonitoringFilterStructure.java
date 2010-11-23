@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.datatype.Duration;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -67,7 +67,7 @@ public class StopMonitoringFilterStructure {
     protected Duration previewInterval;
     @XmlElement(name = "StartTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar startTime;
+    protected Date startTime;
     @XmlElement(name = "MonitoringRef", required = true)
     protected MonitoringRefStructure monitoringRef;
     @XmlElement(name = "OperatorRef")
@@ -129,10 +129,10 @@ public class StopMonitoringFilterStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getStartTime() {
+    public Date getStartTime() {
         return startTime;
     }
 
@@ -141,10 +141,10 @@ public class StopMonitoringFilterStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setStartTime(XMLGregorianCalendar value) {
+    public void setStartTime(Date value) {
         this.startTime = value;
     }
 

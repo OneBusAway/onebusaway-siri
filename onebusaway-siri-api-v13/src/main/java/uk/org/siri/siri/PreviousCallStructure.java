@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -59,22 +59,22 @@ public class PreviousCallStructure
     protected Boolean vehicleAtStop;
     @XmlElement(name = "AimedArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar aimedArrivalTime;
+    protected Date aimedArrivalTime;
     @XmlElement(name = "ActualArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar actualArrivalTime;
+    protected Date actualArrivalTime;
     @XmlElement(name = "ExpectedArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar expectedArrivalTime;
+    protected Date expectedArrivalTime;
     @XmlElement(name = "AimedDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar aimedDepartureTime;
+    protected Date aimedDepartureTime;
     @XmlElement(name = "ActualDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar actualDepartureTime;
+    protected Date actualDepartureTime;
     @XmlElement(name = "ExpectedDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar expectedDepartureTime;
+    protected Date expectedDepartureTime;
     @XmlElement(name = "Extensions")
     protected ExtensionsStructure extensions;
 
@@ -107,10 +107,10 @@ public class PreviousCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getAimedArrivalTime() {
+    public Date getAimedArrivalTime() {
         return aimedArrivalTime;
     }
 
@@ -119,10 +119,10 @@ public class PreviousCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setAimedArrivalTime(XMLGregorianCalendar value) {
+    public void setAimedArrivalTime(Date value) {
         this.aimedArrivalTime = value;
     }
 
@@ -131,10 +131,10 @@ public class PreviousCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getActualArrivalTime() {
+    public Date getActualArrivalTime() {
         return actualArrivalTime;
     }
 
@@ -143,10 +143,10 @@ public class PreviousCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setActualArrivalTime(XMLGregorianCalendar value) {
+    public void setActualArrivalTime(Date value) {
         this.actualArrivalTime = value;
     }
 
@@ -155,10 +155,10 @@ public class PreviousCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getExpectedArrivalTime() {
+    public Date getExpectedArrivalTime() {
         return expectedArrivalTime;
     }
 
@@ -167,10 +167,10 @@ public class PreviousCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setExpectedArrivalTime(XMLGregorianCalendar value) {
+    public void setExpectedArrivalTime(Date value) {
         this.expectedArrivalTime = value;
     }
 
@@ -179,10 +179,10 @@ public class PreviousCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getAimedDepartureTime() {
+    public Date getAimedDepartureTime() {
         return aimedDepartureTime;
     }
 
@@ -191,10 +191,10 @@ public class PreviousCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setAimedDepartureTime(XMLGregorianCalendar value) {
+    public void setAimedDepartureTime(Date value) {
         this.aimedDepartureTime = value;
     }
 
@@ -203,10 +203,10 @@ public class PreviousCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getActualDepartureTime() {
+    public Date getActualDepartureTime() {
         return actualDepartureTime;
     }
 
@@ -215,10 +215,10 @@ public class PreviousCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setActualDepartureTime(XMLGregorianCalendar value) {
+    public void setActualDepartureTime(Date value) {
         this.actualDepartureTime = value;
     }
 
@@ -227,10 +227,10 @@ public class PreviousCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getExpectedDepartureTime() {
+    public Date getExpectedDepartureTime() {
         return expectedDepartureTime;
     }
 
@@ -239,10 +239,10 @@ public class PreviousCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setExpectedDepartureTime(XMLGregorianCalendar value) {
+    public void setExpectedDepartureTime(Date value) {
         this.expectedDepartureTime = value;
     }
 

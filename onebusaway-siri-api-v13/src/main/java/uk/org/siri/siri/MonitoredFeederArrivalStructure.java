@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -67,7 +67,7 @@ public class MonitoredFeederArrivalStructure
     protected BigInteger numberOfTransferPassengers;
     @XmlElement(name = "ExpectedArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar expectedArrivalTime;
+    protected Date expectedArrivalTime;
     @XmlElement(name = "Extensions")
     protected ExtensionsStructure extensions;
 
@@ -172,10 +172,10 @@ public class MonitoredFeederArrivalStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getExpectedArrivalTime() {
+    public Date getExpectedArrivalTime() {
         return expectedArrivalTime;
     }
 
@@ -184,10 +184,10 @@ public class MonitoredFeederArrivalStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setExpectedArrivalTime(XMLGregorianCalendar value) {
+    public void setExpectedArrivalTime(Date value) {
         this.expectedArrivalTime = value;
     }
 

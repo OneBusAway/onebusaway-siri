@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -133,7 +133,7 @@ public class TerminateSubscriptionResponseStructure
 
         @XmlElement(name = "ResponseTimestamp")
         @XmlSchemaType(name = "dateTime")
-        protected XMLGregorianCalendar responseTimestamp;
+        protected Date responseTimestamp;
         @XmlElement(name = "RequestMessageRef")
         protected MessageQualifierStructure requestMessageRef;
         @XmlElement(name = "SubscriberRef")
@@ -152,10 +152,10 @@ public class TerminateSubscriptionResponseStructure
          * 
          * @return
          *     possible object is
-         *     {@link XMLGregorianCalendar }
+         *     {@link Date }
          *     
          */
-        public XMLGregorianCalendar getResponseTimestamp() {
+        public Date getResponseTimestamp() {
             return responseTimestamp;
         }
 
@@ -164,10 +164,10 @@ public class TerminateSubscriptionResponseStructure
          * 
          * @param value
          *     allowed object is
-         *     {@link XMLGregorianCalendar }
+         *     {@link Date }
          *     
          */
-        public void setResponseTimestamp(XMLGregorianCalendar value) {
+        public void setResponseTimestamp(Date value) {
             this.responseTimestamp = value;
         }
 

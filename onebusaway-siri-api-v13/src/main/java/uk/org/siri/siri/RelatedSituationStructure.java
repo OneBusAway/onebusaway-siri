@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 import uk.org.ifopt.ifopt.CountryRefStructure;
 
 
@@ -59,7 +59,7 @@ public class RelatedSituationStructure {
 
     @XmlElement(name = "CreationTime", required = true)
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar creationTime;
+    protected Date creationTime;
     @XmlElement(name = "CountryRef")
     protected CountryRefStructure countryRef;
     @XmlElement(name = "ParticipantRef")
@@ -84,10 +84,10 @@ public class RelatedSituationStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getCreationTime() {
+    public Date getCreationTime() {
         return creationTime;
     }
 
@@ -96,10 +96,10 @@ public class RelatedSituationStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setCreationTime(XMLGregorianCalendar value) {
+    public void setCreationTime(Date value) {
         this.creationTime = value;
     }
 

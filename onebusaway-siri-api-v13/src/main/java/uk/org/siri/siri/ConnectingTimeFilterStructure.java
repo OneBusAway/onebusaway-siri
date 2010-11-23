@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -55,10 +55,10 @@ public class ConnectingTimeFilterStructure {
     protected DirectionRefStructure directionRef;
     @XmlElement(name = "EarliestArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar earliestArrivalTime;
+    protected Date earliestArrivalTime;
     @XmlElement(name = "LatestArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar latestArrivalTime;
+    protected Date latestArrivalTime;
 
     /**
      * Gets the value of the lineRef property.
@@ -113,10 +113,10 @@ public class ConnectingTimeFilterStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getEarliestArrivalTime() {
+    public Date getEarliestArrivalTime() {
         return earliestArrivalTime;
     }
 
@@ -125,10 +125,10 @@ public class ConnectingTimeFilterStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setEarliestArrivalTime(XMLGregorianCalendar value) {
+    public void setEarliestArrivalTime(Date value) {
         this.earliestArrivalTime = value;
     }
 
@@ -137,10 +137,10 @@ public class ConnectingTimeFilterStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getLatestArrivalTime() {
+    public Date getLatestArrivalTime() {
         return latestArrivalTime;
     }
 
@@ -149,10 +149,10 @@ public class ConnectingTimeFilterStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setLatestArrivalTime(XMLGregorianCalendar value) {
+    public void setLatestArrivalTime(Date value) {
         this.latestArrivalTime = value;
     }
 

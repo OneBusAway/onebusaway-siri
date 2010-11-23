@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -57,17 +57,17 @@ public abstract class ResponseStructure {
 
     @XmlElement(name = "ResponseTimestamp", required = true)
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar responseTimestamp;
+    protected Date responseTimestamp;
 
     /**
      * Gets the value of the responseTimestamp property.
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getResponseTimestamp() {
+    public Date getResponseTimestamp() {
         return responseTimestamp;
     }
 
@@ -76,10 +76,10 @@ public abstract class ResponseStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setResponseTimestamp(XMLGregorianCalendar value) {
+    public void setResponseTimestamp(Date value) {
         this.responseTimestamp = value;
     }
 

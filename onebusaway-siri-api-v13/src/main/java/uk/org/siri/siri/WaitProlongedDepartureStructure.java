@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -49,7 +49,7 @@ public class WaitProlongedDepartureStructure
 
     @XmlElement(name = "ExpectedDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar expectedDepartureTime;
+    protected Date expectedDepartureTime;
     @XmlElement(name = "Extensions")
     protected ExtensionsStructure extensions;
 
@@ -58,10 +58,10 @@ public class WaitProlongedDepartureStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getExpectedDepartureTime() {
+    public Date getExpectedDepartureTime() {
         return expectedDepartureTime;
     }
 
@@ -70,10 +70,10 @@ public class WaitProlongedDepartureStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setExpectedDepartureTime(XMLGregorianCalendar value) {
+    public void setExpectedDepartureTime(Date value) {
         this.expectedDepartureTime = value;
     }
 

@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -47,20 +47,20 @@ public class HalfOpenTimeRangeStructure {
 
     @XmlElement(name = "StartTime", required = true)
     @XmlSchemaType(name = "time")
-    protected XMLGregorianCalendar startTime;
+    protected Date startTime;
     @XmlElement(name = "EndTime")
     @XmlSchemaType(name = "time")
-    protected XMLGregorianCalendar endTime;
+    protected Date endTime;
 
     /**
      * Gets the value of the startTime property.
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getStartTime() {
+    public Date getStartTime() {
         return startTime;
     }
 
@@ -69,10 +69,10 @@ public class HalfOpenTimeRangeStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setStartTime(XMLGregorianCalendar value) {
+    public void setStartTime(Date value) {
         this.startTime = value;
     }
 
@@ -81,10 +81,10 @@ public class HalfOpenTimeRangeStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getEndTime() {
+    public Date getEndTime() {
         return endTime;
     }
 
@@ -93,10 +93,10 @@ public class HalfOpenTimeRangeStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setEndTime(XMLGregorianCalendar value) {
+    public void setEndTime(Date value) {
         this.endTime = value;
     }
 

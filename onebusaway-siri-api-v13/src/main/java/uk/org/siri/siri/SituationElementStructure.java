@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -59,7 +59,7 @@ public class SituationElementStructure
     protected SituationSourceStructure source;
     @XmlElement(name = "VersionedAtTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar versionedAtTime;
+    protected Date versionedAtTime;
 
     /**
      * Gets the value of the references property.
@@ -114,10 +114,10 @@ public class SituationElementStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getVersionedAtTime() {
+    public Date getVersionedAtTime() {
         return versionedAtTime;
     }
 
@@ -126,10 +126,10 @@ public class SituationElementStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setVersionedAtTime(XMLGregorianCalendar value) {
+    public void setVersionedAtTime(Date value) {
         this.versionedAtTime = value;
     }
 

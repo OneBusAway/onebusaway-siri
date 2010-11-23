@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -65,10 +65,10 @@ public class ValidityConditionStructure {
 
     @XmlElement(name = "FromDateTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar fromDateTime;
+    protected Date fromDateTime;
     @XmlElement(name = "ToDateTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar toDateTime;
+    protected Date toDateTime;
     @XmlElement(name = "DayType")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     @XmlSchemaType(name = "NMTOKEN")
@@ -81,10 +81,10 @@ public class ValidityConditionStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getFromDateTime() {
+    public Date getFromDateTime() {
         return fromDateTime;
     }
 
@@ -93,10 +93,10 @@ public class ValidityConditionStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setFromDateTime(XMLGregorianCalendar value) {
+    public void setFromDateTime(Date value) {
         this.fromDateTime = value;
     }
 
@@ -105,10 +105,10 @@ public class ValidityConditionStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getToDateTime() {
+    public Date getToDateTime() {
         return toDateTime;
     }
 
@@ -117,10 +117,10 @@ public class ValidityConditionStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setToDateTime(XMLGregorianCalendar value) {
+    public void setToDateTime(Date value) {
         this.toDateTime = value;
     }
 

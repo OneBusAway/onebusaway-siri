@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -66,7 +66,7 @@ public class VehicleActivityStructure
 
     @XmlElement(name = "ValidUntilTime", required = true)
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar validUntilTime;
+    protected Date validUntilTime;
     @XmlElement(name = "VehicleMonitoringRef")
     protected VehicleMonitoringRefStructure vehicleMonitoringRef;
     @XmlElement(name = "ProgressBetweenStops")
@@ -83,10 +83,10 @@ public class VehicleActivityStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getValidUntilTime() {
+    public Date getValidUntilTime() {
         return validUntilTime;
     }
 
@@ -95,10 +95,10 @@ public class VehicleActivityStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setValidUntilTime(XMLGregorianCalendar value) {
+    public void setValidUntilTime(Date value) {
         this.validUntilTime = value;
     }
 

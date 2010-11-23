@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlRegistry;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.datatype.Duration;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 import javax.xml.namespace.QName;
 
 
@@ -3938,12 +3938,12 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link XMLGregorianCalendar }{@code >}}
+     * Create an instance of {@link JAXBElement }{@code <}{@link Date }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://www.siri.org.uk/siri", name = "ActualDepartureTime")
-    public JAXBElement<XMLGregorianCalendar> createActualDepartureTime(XMLGregorianCalendar value) {
-        return new JAXBElement<XMLGregorianCalendar>(_ActualDepartureTime_QNAME, XMLGregorianCalendar.class, null, value);
+    public JAXBElement<Date> createActualDepartureTime(Date value) {
+        return new JAXBElement<Date>(_ActualDepartureTime_QNAME, Date.class, null, value);
     }
 
     /**
@@ -4353,12 +4353,12 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link XMLGregorianCalendar }{@code >}}
+     * Create an instance of {@link JAXBElement }{@code <}{@link Date }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://www.siri.org.uk/siri", name = "ActualArrivalTime")
-    public JAXBElement<XMLGregorianCalendar> createActualArrivalTime(XMLGregorianCalendar value) {
-        return new JAXBElement<XMLGregorianCalendar>(_ActualArrivalTime_QNAME, XMLGregorianCalendar.class, null, value);
+    public JAXBElement<Date> createActualArrivalTime(Date value) {
+        return new JAXBElement<Date>(_ActualArrivalTime_QNAME, Date.class, null, value);
     }
 
     /**
@@ -4587,21 +4587,21 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link XMLGregorianCalendar }{@code >}}
+     * Create an instance of {@link JAXBElement }{@code <}{@link Date }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://www.siri.org.uk/siri", name = "ExpectedDepartureTime")
-    public JAXBElement<XMLGregorianCalendar> createExpectedDepartureTime(XMLGregorianCalendar value) {
-        return new JAXBElement<XMLGregorianCalendar>(_ExpectedDepartureTime_QNAME, XMLGregorianCalendar.class, null, value);
+    public JAXBElement<Date> createExpectedDepartureTime(Date value) {
+        return new JAXBElement<Date>(_ExpectedDepartureTime_QNAME, Date.class, null, value);
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link XMLGregorianCalendar }{@code >}}
+     * Create an instance of {@link JAXBElement }{@code <}{@link Date }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://www.siri.org.uk/siri", name = "AimedDepartureTime")
-    public JAXBElement<XMLGregorianCalendar> createAimedDepartureTime(XMLGregorianCalendar value) {
-        return new JAXBElement<XMLGregorianCalendar>(_AimedDepartureTime_QNAME, XMLGregorianCalendar.class, null, value);
+    public JAXBElement<Date> createAimedDepartureTime(Date value) {
+        return new JAXBElement<Date>(_AimedDepartureTime_QNAME, Date.class, null, value);
     }
 
     /**
@@ -5416,12 +5416,12 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link XMLGregorianCalendar }{@code >}}
+     * Create an instance of {@link JAXBElement }{@code <}{@link Date }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://www.siri.org.uk/siri", name = "ExpectedArrivalTime")
-    public JAXBElement<XMLGregorianCalendar> createExpectedArrivalTime(XMLGregorianCalendar value) {
-        return new JAXBElement<XMLGregorianCalendar>(_ExpectedArrivalTime_QNAME, XMLGregorianCalendar.class, null, value);
+    public JAXBElement<Date> createExpectedArrivalTime(Date value) {
+        return new JAXBElement<Date>(_ExpectedArrivalTime_QNAME, Date.class, null, value);
     }
 
     /**
@@ -5722,12 +5722,12 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link XMLGregorianCalendar }{@code >}}
+     * Create an instance of {@link JAXBElement }{@code <}{@link Date }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://www.siri.org.uk/siri", name = "AimedArrivalTime")
-    public JAXBElement<XMLGregorianCalendar> createAimedArrivalTime(XMLGregorianCalendar value) {
-        return new JAXBElement<XMLGregorianCalendar>(_AimedArrivalTime_QNAME, XMLGregorianCalendar.class, null, value);
+    public JAXBElement<Date> createAimedArrivalTime(Date value) {
+        return new JAXBElement<Date>(_AimedArrivalTime_QNAME, Date.class, null, value);
     }
 
     /**
@@ -5947,12 +5947,12 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link XMLGregorianCalendar }{@code >}}
+     * Create an instance of {@link JAXBElement }{@code <}{@link Date }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://www.siri.org.uk/siri", name = "RequestTimestamp")
-    public JAXBElement<XMLGregorianCalendar> createRequestTimestamp(XMLGregorianCalendar value) {
-        return new JAXBElement<XMLGregorianCalendar>(_RequestTimestamp_QNAME, XMLGregorianCalendar.class, null, value);
+    public JAXBElement<Date> createRequestTimestamp(Date value) {
+        return new JAXBElement<Date>(_RequestTimestamp_QNAME, Date.class, null, value);
     }
 
     /**
@@ -6118,12 +6118,12 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link XMLGregorianCalendar }{@code >}}
+     * Create an instance of {@link JAXBElement }{@code <}{@link Date }{@code >}}
      * 
      */
     @XmlElementDecl(namespace = "http://www.siri.org.uk/siri", name = "ResponseTimestamp")
-    public JAXBElement<XMLGregorianCalendar> createResponseTimestamp(XMLGregorianCalendar value) {
-        return new JAXBElement<XMLGregorianCalendar>(_ResponseTimestamp_QNAME, XMLGregorianCalendar.class, null, value);
+    public JAXBElement<Date> createResponseTimestamp(Date value) {
+        return new JAXBElement<Date>(_ResponseTimestamp_QNAME, Date.class, null, value);
     }
 
     /**

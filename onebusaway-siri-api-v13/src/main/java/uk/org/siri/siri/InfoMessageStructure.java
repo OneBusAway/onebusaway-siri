@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -65,7 +65,7 @@ public class InfoMessageStructure
     protected InfoChannelRefStructure infoChannelRef;
     @XmlElement(name = "ValidUntilTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar validUntilTime;
+    protected Date validUntilTime;
     @XmlElement(name = "SituationRef")
     protected SituationRefStructure situationRef;
     @XmlElement(name = "Content", required = true)
@@ -151,10 +151,10 @@ public class InfoMessageStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getValidUntilTime() {
+    public Date getValidUntilTime() {
         return validUntilTime;
     }
 
@@ -163,10 +163,10 @@ public class InfoMessageStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setValidUntilTime(XMLGregorianCalendar value) {
+    public void setValidUntilTime(Date value) {
         this.validUntilTime = value;
     }
 

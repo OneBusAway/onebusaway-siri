@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -56,7 +56,7 @@ public class SubscriptionResponseStructure
     protected String subscriptionManagerAddress;
     @XmlElement(name = "ServiceStartedTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar serviceStartedTime;
+    protected Date serviceStartedTime;
     @XmlElement(name = "Extensions")
     protected ExtensionsStructure extensions;
 
@@ -118,10 +118,10 @@ public class SubscriptionResponseStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getServiceStartedTime() {
+    public Date getServiceStartedTime() {
         return serviceStartedTime;
     }
 
@@ -130,10 +130,10 @@ public class SubscriptionResponseStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setServiceStartedTime(XMLGregorianCalendar value) {
+    public void setServiceStartedTime(Date value) {
         this.serviceStartedTime = value;
     }
 

@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.datatype.Duration;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -89,7 +89,7 @@ public class AbstractServiceDeliveryStructure
     protected ServiceDeliveryErrorConditionStructure errorCondition;
     @XmlElement(name = "ValidUntil")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar validUntil;
+    protected Date validUntil;
     @XmlElement(name = "ShortestPossibleCycle")
     protected Duration shortestPossibleCycle;
     @XmlElement(name = "DefaultLanguage")
@@ -246,10 +246,10 @@ public class AbstractServiceDeliveryStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getValidUntil() {
+    public Date getValidUntil() {
         return validUntil;
     }
 
@@ -258,10 +258,10 @@ public class AbstractServiceDeliveryStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setValidUntil(XMLGregorianCalendar value) {
+    public void setValidUntil(Date value) {
         this.validUntil = value;
     }
 

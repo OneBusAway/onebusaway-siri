@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -53,17 +53,17 @@ public class AbstractItemStructure {
 
     @XmlElement(name = "RecordedAtTime", required = true)
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar recordedAtTime;
+    protected Date recordedAtTime;
 
     /**
      * Gets the value of the recordedAtTime property.
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getRecordedAtTime() {
+    public Date getRecordedAtTime() {
         return recordedAtTime;
     }
 
@@ -72,10 +72,10 @@ public class AbstractItemStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setRecordedAtTime(XMLGregorianCalendar value) {
+    public void setRecordedAtTime(Date value) {
         this.recordedAtTime = value;
     }
 

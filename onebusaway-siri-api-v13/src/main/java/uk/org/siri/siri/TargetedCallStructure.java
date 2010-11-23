@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.datatype.Duration;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -80,14 +80,14 @@ public class TargetedCallStructure {
     protected List<VehicleFeatureRefStructure> vehicleFeatureRef;
     @XmlElement(name = "AimedArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar aimedArrivalTime;
+    protected Date aimedArrivalTime;
     @XmlElement(name = "ArrivalPlatformName")
     protected NaturalLanguageStringStructure arrivalPlatformName;
     @XmlElement(name = "ArrivalBoardingActivity", defaultValue = "alighting")
     protected ArrivalBoardingActivityEnumeration arrivalBoardingActivity;
     @XmlElement(name = "AimedDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar aimedDepartureTime;
+    protected Date aimedDepartureTime;
     @XmlElement(name = "DeparturePlatformName")
     protected NaturalLanguageStringStructure departurePlatformName;
     @XmlElement(name = "DepartureBoardingActivity", defaultValue = "boarding")
@@ -302,10 +302,10 @@ public class TargetedCallStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getAimedArrivalTime() {
+    public Date getAimedArrivalTime() {
         return aimedArrivalTime;
     }
 
@@ -314,10 +314,10 @@ public class TargetedCallStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setAimedArrivalTime(XMLGregorianCalendar value) {
+    public void setAimedArrivalTime(Date value) {
         this.aimedArrivalTime = value;
     }
 
@@ -374,10 +374,10 @@ public class TargetedCallStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getAimedDepartureTime() {
+    public Date getAimedDepartureTime() {
         return aimedDepartureTime;
     }
 
@@ -386,10 +386,10 @@ public class TargetedCallStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setAimedDepartureTime(XMLGregorianCalendar value) {
+    public void setAimedDepartureTime(Date value) {
         this.aimedDepartureTime = value;
     }
 

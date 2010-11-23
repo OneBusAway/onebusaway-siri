@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -65,7 +65,7 @@ public abstract class AbstractSubscriptionStructure {
     protected SubscriptionQualifierStructure subscriptionIdentifier;
     @XmlElement(name = "InitialTerminationTime", required = true)
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar initialTerminationTime;
+    protected Date initialTerminationTime;
 
     /**
      * Gets the value of the subscriberRef property.
@@ -120,10 +120,10 @@ public abstract class AbstractSubscriptionStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getInitialTerminationTime() {
+    public Date getInitialTerminationTime() {
         return initialTerminationTime;
     }
 
@@ -132,10 +132,10 @@ public abstract class AbstractSubscriptionStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setInitialTerminationTime(XMLGregorianCalendar value) {
+    public void setInitialTerminationTime(Date value) {
         this.initialTerminationTime = value;
     }
 

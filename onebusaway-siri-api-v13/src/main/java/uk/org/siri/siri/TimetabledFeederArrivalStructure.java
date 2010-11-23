@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -122,10 +122,10 @@ public class TimetabledFeederArrivalStructure
     protected Boolean headwayService;
     @XmlElement(name = "OriginAimedDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar originAimedDepartureTime;
+    protected Date originAimedDepartureTime;
     @XmlElement(name = "DestinationAimedArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar destinationAimedArrivalTime;
+    protected Date destinationAimedArrivalTime;
     @XmlElement(name = "BlockRef")
     protected BlockRefStructure blockRef;
     @XmlElement(name = "CourseOfJourneyRef")
@@ -136,10 +136,10 @@ public class TimetabledFeederArrivalStructure
     protected Boolean monitored;
     @XmlElement(name = "AimedDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar aimedDepartureTime;
+    protected Date aimedDepartureTime;
     @XmlElement(name = "AimedArrivalTime", required = true)
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar aimedArrivalTime;
+    protected Date aimedArrivalTime;
     @XmlElement(name = "Extensions")
     protected ExtensionsStructure extensions;
 
@@ -648,10 +648,10 @@ public class TimetabledFeederArrivalStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getOriginAimedDepartureTime() {
+    public Date getOriginAimedDepartureTime() {
         return originAimedDepartureTime;
     }
 
@@ -660,10 +660,10 @@ public class TimetabledFeederArrivalStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setOriginAimedDepartureTime(XMLGregorianCalendar value) {
+    public void setOriginAimedDepartureTime(Date value) {
         this.originAimedDepartureTime = value;
     }
 
@@ -672,10 +672,10 @@ public class TimetabledFeederArrivalStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getDestinationAimedArrivalTime() {
+    public Date getDestinationAimedArrivalTime() {
         return destinationAimedArrivalTime;
     }
 
@@ -684,10 +684,10 @@ public class TimetabledFeederArrivalStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setDestinationAimedArrivalTime(XMLGregorianCalendar value) {
+    public void setDestinationAimedArrivalTime(Date value) {
         this.destinationAimedArrivalTime = value;
     }
 
@@ -792,10 +792,10 @@ public class TimetabledFeederArrivalStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getAimedDepartureTime() {
+    public Date getAimedDepartureTime() {
         return aimedDepartureTime;
     }
 
@@ -804,10 +804,10 @@ public class TimetabledFeederArrivalStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setAimedDepartureTime(XMLGregorianCalendar value) {
+    public void setAimedDepartureTime(Date value) {
         this.aimedDepartureTime = value;
     }
 
@@ -816,10 +816,10 @@ public class TimetabledFeederArrivalStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getAimedArrivalTime() {
+    public Date getAimedArrivalTime() {
         return aimedArrivalTime;
     }
 
@@ -828,10 +828,10 @@ public class TimetabledFeederArrivalStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setAimedArrivalTime(XMLGregorianCalendar value) {
+    public void setAimedArrivalTime(Date value) {
         this.aimedArrivalTime = value;
     }
 

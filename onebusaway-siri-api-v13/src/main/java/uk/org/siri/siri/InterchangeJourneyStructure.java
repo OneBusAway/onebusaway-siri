@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -133,10 +133,10 @@ public class InterchangeJourneyStructure {
     protected Boolean headwayService;
     @XmlElement(name = "OriginAimedDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar originAimedDepartureTime;
+    protected Date originAimedDepartureTime;
     @XmlElement(name = "DestinationAimedArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar destinationAimedArrivalTime;
+    protected Date destinationAimedArrivalTime;
     @XmlElement(name = "FacilityConditionElement")
     protected List<FacilityConditionStructure> facilityConditionElement;
     @XmlElement(name = "FacilityChangeElement")
@@ -153,7 +153,7 @@ public class InterchangeJourneyStructure {
     protected Boolean monitored;
     @XmlElement(name = "AimedDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar aimedDepartureTime;
+    protected Date aimedDepartureTime;
     @XmlElement(name = "Extensions")
     protected ExtensionsStructure extensions;
 
@@ -739,10 +739,10 @@ public class InterchangeJourneyStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getOriginAimedDepartureTime() {
+    public Date getOriginAimedDepartureTime() {
         return originAimedDepartureTime;
     }
 
@@ -751,10 +751,10 @@ public class InterchangeJourneyStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setOriginAimedDepartureTime(XMLGregorianCalendar value) {
+    public void setOriginAimedDepartureTime(Date value) {
         this.originAimedDepartureTime = value;
     }
 
@@ -763,10 +763,10 @@ public class InterchangeJourneyStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getDestinationAimedArrivalTime() {
+    public Date getDestinationAimedArrivalTime() {
         return destinationAimedArrivalTime;
     }
 
@@ -775,10 +775,10 @@ public class InterchangeJourneyStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setDestinationAimedArrivalTime(XMLGregorianCalendar value) {
+    public void setDestinationAimedArrivalTime(Date value) {
         this.destinationAimedArrivalTime = value;
     }
 
@@ -965,10 +965,10 @@ public class InterchangeJourneyStructure {
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getAimedDepartureTime() {
+    public Date getAimedDepartureTime() {
         return aimedDepartureTime;
     }
 
@@ -977,10 +977,10 @@ public class InterchangeJourneyStructure {
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setAimedDepartureTime(XMLGregorianCalendar value) {
+    public void setAimedDepartureTime(Date value) {
         this.aimedDepartureTime = value;
     }
 

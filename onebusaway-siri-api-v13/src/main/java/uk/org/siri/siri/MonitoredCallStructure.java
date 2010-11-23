@@ -18,7 +18,7 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.datatype.Duration;
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 
 /**
@@ -108,13 +108,13 @@ public class MonitoredCallStructure
     protected List<SituationRefStructure> situationRef;
     @XmlElement(name = "AimedArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar aimedArrivalTime;
+    protected Date aimedArrivalTime;
     @XmlElement(name = "ActualArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar actualArrivalTime;
+    protected Date actualArrivalTime;
     @XmlElement(name = "ExpectedArrivalTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar expectedArrivalTime;
+    protected Date expectedArrivalTime;
     @XmlElement(name = "ArrivalStatus")
     protected ProgressStatusEnumeration arrivalStatus;
     @XmlElement(name = "ArrivalPlatformName")
@@ -123,13 +123,13 @@ public class MonitoredCallStructure
     protected ArrivalBoardingActivityEnumeration arrivalBoardingActivity;
     @XmlElement(name = "AimedDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar aimedDepartureTime;
+    protected Date aimedDepartureTime;
     @XmlElement(name = "ActualDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar actualDepartureTime;
+    protected Date actualDepartureTime;
     @XmlElement(name = "ExpectedDepartureTime")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar expectedDepartureTime;
+    protected Date expectedDepartureTime;
     @XmlElement(name = "DepartureStatus")
     protected ProgressStatusEnumeration departureStatus;
     @XmlElement(name = "DeparturePlatformName")
@@ -475,10 +475,10 @@ public class MonitoredCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getAimedArrivalTime() {
+    public Date getAimedArrivalTime() {
         return aimedArrivalTime;
     }
 
@@ -487,10 +487,10 @@ public class MonitoredCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setAimedArrivalTime(XMLGregorianCalendar value) {
+    public void setAimedArrivalTime(Date value) {
         this.aimedArrivalTime = value;
     }
 
@@ -499,10 +499,10 @@ public class MonitoredCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getActualArrivalTime() {
+    public Date getActualArrivalTime() {
         return actualArrivalTime;
     }
 
@@ -511,10 +511,10 @@ public class MonitoredCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setActualArrivalTime(XMLGregorianCalendar value) {
+    public void setActualArrivalTime(Date value) {
         this.actualArrivalTime = value;
     }
 
@@ -523,10 +523,10 @@ public class MonitoredCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getExpectedArrivalTime() {
+    public Date getExpectedArrivalTime() {
         return expectedArrivalTime;
     }
 
@@ -535,10 +535,10 @@ public class MonitoredCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setExpectedArrivalTime(XMLGregorianCalendar value) {
+    public void setExpectedArrivalTime(Date value) {
         this.expectedArrivalTime = value;
     }
 
@@ -619,10 +619,10 @@ public class MonitoredCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getAimedDepartureTime() {
+    public Date getAimedDepartureTime() {
         return aimedDepartureTime;
     }
 
@@ -631,10 +631,10 @@ public class MonitoredCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setAimedDepartureTime(XMLGregorianCalendar value) {
+    public void setAimedDepartureTime(Date value) {
         this.aimedDepartureTime = value;
     }
 
@@ -643,10 +643,10 @@ public class MonitoredCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getActualDepartureTime() {
+    public Date getActualDepartureTime() {
         return actualDepartureTime;
     }
 
@@ -655,10 +655,10 @@ public class MonitoredCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setActualDepartureTime(XMLGregorianCalendar value) {
+    public void setActualDepartureTime(Date value) {
         this.actualDepartureTime = value;
     }
 
@@ -667,10 +667,10 @@ public class MonitoredCallStructure
      * 
      * @return
      *     possible object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public XMLGregorianCalendar getExpectedDepartureTime() {
+    public Date getExpectedDepartureTime() {
         return expectedDepartureTime;
     }
 
@@ -679,10 +679,10 @@ public class MonitoredCallStructure
      * 
      * @param value
      *     allowed object is
-     *     {@link XMLGregorianCalendar }
+     *     {@link Date }
      *     
      */
-    public void setExpectedDepartureTime(XMLGregorianCalendar value) {
+    public void setExpectedDepartureTime(Date value) {
         this.expectedDepartureTime = value;
     }
 
