@@ -1,8 +1,7 @@
 package org.onebusaway.siri.repeater.model;
 
 import java.net.URI;
-
-import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Date;
 
 import org.onebusaway.siri.repeater.services.ServiceDeliveryTransformation;
 
@@ -15,16 +14,15 @@ public class SubscriptionTarget {
 
   private final SubscriptionQualifierStructure _subscriptionRef;
 
-  private final XMLGregorianCalendar _validUntil;
+  private final Date _validUntil;
 
   private final URI _consumerAddress;
 
   private final ServiceDeliveryTransformation _filter;
 
   public SubscriptionTarget(ParticipantRefStructure subscriberRef,
-      SubscriptionQualifierStructure subscriptionRef,
-      XMLGregorianCalendar validUntil, URI consumerAddress,
-      ServiceDeliveryTransformation filter) {
+      SubscriptionQualifierStructure subscriptionRef, Date validUntil,
+      URI consumerAddress, ServiceDeliveryTransformation filter) {
     _subscriberRef = subscriberRef;
     _subscriptionRef = subscriptionRef;
     _validUntil = validUntil;
@@ -40,7 +38,7 @@ public class SubscriptionTarget {
     return _subscriptionRef;
   }
 
-  public XMLGregorianCalendar getValidUntil() {
+  public Date getValidUntil() {
     return _validUntil;
   }
 

@@ -2,13 +2,13 @@ package org.onebusaway.siri.repeater.impl;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.onebusaway.siri.repeater.model.SubscriptionTarget;
 import org.onebusaway.siri.repeater.model.exceptions.NoSubscriptionAddressSiriException;
@@ -147,7 +147,7 @@ public class SiriRepeaterServiceImpl implements SiriRepeaterService {
       ParticipantRefStructure subscriberRef = subStruct.getSubscriberRef() != null
           ? subStruct.getSubscriberRef() : request.getRequestorRef();
       SubscriptionQualifierStructure subscriptionRef = subStruct.getSubscriptionIdentifier();
-      XMLGregorianCalendar validUntil = subStruct.getInitialTerminationTime();
+      Date validUntil = subStruct.getInitialTerminationTime();
 
       SubscriptionTarget target = new SubscriptionTarget(subscriberRef,
           subscriptionRef, validUntil, consumerAddress, null);
