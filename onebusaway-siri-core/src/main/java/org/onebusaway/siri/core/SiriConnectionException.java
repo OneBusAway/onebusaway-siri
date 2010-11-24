@@ -7,4 +7,8 @@ public class SiriConnectionException extends SiriException {
   public SiriConnectionException(String message) {
     super(message);
   }
+  
+  public SiriConnectionException(String message, Throwable cause) {
+    super(message,cause);
+  }
 }

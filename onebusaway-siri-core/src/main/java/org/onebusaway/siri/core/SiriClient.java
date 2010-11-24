@@ -95,7 +95,7 @@ public class SiriClient extends SiriCommon {
       return client.execute(post);
     } catch (Exception ex) {
       throw new SiriConnectionException("error connecting to url "
-          + post.getURI());
+          + post.getURI(),ex);
     }
   }
 
