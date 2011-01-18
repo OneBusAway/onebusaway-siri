@@ -1,0 +1,33 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>onebusaway-siri</artifactId>
+        <groupId>org.onebusaway</groupId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <groupId>org.onebusaway</groupId>
+    <artifactId>onebusaway-siri-repeater-cli</artifactId>
+
+    <name>onebusaway-siri-repeater-cli</name>
+    <description>A SIRI data repeater that can accept data from a SIRI input source and multi-plex that data to multiple clients.  This provides a command-line interface to the repeapter.</description>
+
+    <dependencies>
+        
+        <dependency>
+            <groupId>org.onebusaway</groupId>
+            <artifactId>onebusaway-siri-repeater</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+        	<groupId>org.slf4j</groupId>
+        	<artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>onebusaway-siri-repeater-cli</finalName>
+    </build>
+
+</project>
