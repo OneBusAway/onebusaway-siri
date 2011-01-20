@@ -44,7 +44,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
   public SiriClient() {
     _identity = UUID.randomUUID().toString();
-    _clientUrl = "http://localhost:8080/";
+    _clientUrl = "http://localhost:8081/";
   }
 
   public void setIdentity(String identity) {

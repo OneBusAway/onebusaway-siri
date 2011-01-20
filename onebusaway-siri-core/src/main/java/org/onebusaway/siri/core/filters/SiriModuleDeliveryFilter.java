@@ -15,17 +15,24 @@ import uk.org.siri.siri.VehicleMonitoringDeliveryStructure;
 public interface SiriModuleDeliveryFilter {
 
   /**
+   * <p>
    * A delivery filter allows you to modify the contents of a
    * {@link AbstractServiceDeliveryStructure}, as contained within a
    * {@link ServiceDelivery} payload, before it is sent to a client.
+   * </p>
    * 
+   * <p>
    * Your filter implementation can return the input delivery object, perhaps
    * modified in some way. It can also return an entirely new delivery object or
    * null to indicate no result should be published to the client.
+   * </p>
    * 
+   * <p>
    * When modifying the delivery object directly, your filter implementation
    * must adhere to the following behavior:
+   * </p>
    * 
+   * <p>
    * The filter is free to modify the delivery object directly, changing field
    * values or modifying first level result lists (for example, adding or
    * removing items from
@@ -33,7 +40,9 @@ public interface SiriModuleDeliveryFilter {
    * if you wish to transform the second-level objects (other than adding or
    * removing them from the parent delivery object list), YOU MUST MAKE COPIES,
    * which you can then modify and include in the filtered delivery result.
+   * </p>
    * 
+   * <p>
    * The idea is that for performance reasons, we make a shallow copy of the
    * incoming delivery object for filter to work with (as opposed to a
    * deep-copy), leaving the second-level objects unaltered. Since most filters
@@ -42,8 +51,11 @@ public interface SiriModuleDeliveryFilter {
    * filter needs to modify or transform the second-level objects, you need to
    * make copies of those objects. Otherwise, your modifications will affect the
    * output of other unrelated filter chains (aka bad).
+   * </p>
    * 
+   * <p>
    * If you want to exclude all output in the filter, simply return null.
+   * </p>
    * 
    * @param delivery the parent ServiceDelivery object, for your reference
    * @param moduleDelivery the module delivery structure to filter

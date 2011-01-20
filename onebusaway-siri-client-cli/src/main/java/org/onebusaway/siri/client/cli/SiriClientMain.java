@@ -8,6 +8,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.onebusaway.siri.core.SiriClient;
+import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.SiriRequestFactory;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
 
@@ -73,7 +74,7 @@ public class SiriClientMain {
       _client.start();
 
       for (String arg : args) {
-        Map<String, String> subArgs = factory.getLineAsMap(arg);
+        Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
         SubscriptionRequest request = factory.createSubscriptionRequest(subArgs);
 
         String url = subArgs.get("Url");
@@ -88,7 +89,7 @@ public class SiriClientMain {
     } else {
 
       for (String arg : args) {
-        Map<String, String> subArgs = factory.getLineAsMap(arg);
+        Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
         ServiceRequest request = factory.createServiceRequest(subArgs);
 
         String url = subArgs.get("Url");

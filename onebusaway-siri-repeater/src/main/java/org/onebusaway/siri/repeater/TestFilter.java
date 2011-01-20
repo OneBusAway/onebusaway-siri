@@ -7,6 +7,7 @@ import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 
 import uk.org.siri.siri.AbstractServiceDeliveryStructure;
+import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.VehicleActivityStructure;
 import uk.org.siri.siri.VehicleActivityStructure.MonitoredVehicleJourney;
 import uk.org.siri.siri.VehicleMonitoringDeliveryStructure;
@@ -21,10 +22,10 @@ public class TestFilter implements SiriModuleDeliveryFilter {
   }
 
   @Override
-  public AbstractServiceDeliveryStructure filter(
-      AbstractServiceDeliveryStructure delivery) {
+  public AbstractServiceDeliveryStructure filter(ServiceDelivery delivery,
+      AbstractServiceDeliveryStructure moduleDelivery) {
 
-    VehicleMonitoringDeliveryStructure vm = (VehicleMonitoringDeliveryStructure) delivery;
+    VehicleMonitoringDeliveryStructure vm = (VehicleMonitoringDeliveryStructure) moduleDelivery;
 
     List<VehicleActivityStructure> vas = vm.getVehicleActivity();
     List<VehicleActivityStructure> vasFiltered = new ArrayList<VehicleActivityStructure>();

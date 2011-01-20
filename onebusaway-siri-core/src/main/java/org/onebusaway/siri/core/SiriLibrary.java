@@ -1,7 +1,9 @@
 package org.onebusaway.siri.core;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.onebusaway.collections.PropertyPathExpression;
@@ -127,4 +129,19 @@ public class SiriLibrary {
     to.addAll(from);
   }
 
+  public static Map<String, String> getLineAsMap(String line) {
+    String[] tokens = line.split(",");
+    Map<String, String> subArgs = new HashMap<String, String>();
+    for (String token : tokens) {
+      int index = token.indexOf('=');
+      if (index != -1) {
+        String key = token.substring(0, index);
+        String value = token.substring(index + 1);
+        subArgs.put(key, value);
+      } else {
+        subArgs.put(token, "");
+      }
+    }
+    return subArgs;
+  }
 }
