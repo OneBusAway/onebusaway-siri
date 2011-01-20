@@ -10,7 +10,7 @@ import uk.org.siri.siri.VehicleMonitoringDeliveryStructure;
  * {@link ServiceDelivery} container.
  * 
  * @author bdferris
- * @see DeliveryFilterFactory
+ * @see SiriModuleDeliveryFilterFactory
  */
 public interface SiriModuleDeliveryFilter {
 
@@ -45,9 +45,11 @@ public interface SiriModuleDeliveryFilter {
    * 
    * If you want to exclude all output in the filter, simply return null.
    * 
-   * @param delivery the delivery structure to filter
+   * @param delivery the parent ServiceDelivery object, for your reference
+   * @param moduleDelivery the module delivery structure to filter
+   * 
    * @return the updated delivery structure or null for empty result
    */
-  public AbstractServiceDeliveryStructure filter(
-      AbstractServiceDeliveryStructure delivery);
+  public AbstractServiceDeliveryStructure filter(ServiceDelivery delivery,
+      AbstractServiceDeliveryStructure moduleDelivery);
 }

@@ -8,17 +8,18 @@ import uk.org.siri.siri.AbstractServiceDeliveryStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.DirectionRefStructure;
 import uk.org.siri.siri.LineRefStructure;
+import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.VehicleMonitoringRefStructure;
 import uk.org.siri.siri.VehicleMonitoringRequestStructure;
 import uk.org.siri.siri.VehicleMonitoringSubscriptionStructure;
 import uk.org.siri.siri.VehicleRefStructure;
 
-public class DeliveryFilterFactory {
+public class SiriModuleDeliveryFilterFactory {
   private static final EmptyFilter _emptyFilter = new EmptyFilter();
 
   public SiriModuleDeliveryFilter createFilter(ESiriModuleType moduleType,
       AbstractSubscriptionStructure request) {
-    
+
     switch (moduleType) {
       case VEHICLE_MONITORING:
         return createVehicleMonitoringFilter((VehicleMonitoringSubscriptionStructure) request);
@@ -68,8 +69,8 @@ public class DeliveryFilterFactory {
   private static class EmptyFilter implements SiriModuleDeliveryFilter {
 
     @Override
-    public AbstractServiceDeliveryStructure filter(
-        AbstractServiceDeliveryStructure delivery) {
+    public AbstractServiceDeliveryStructure filter(ServiceDelivery delivery,
+        AbstractServiceDeliveryStructure moduleDelivery) {
       return null;
     }
   }

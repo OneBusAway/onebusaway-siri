@@ -5,10 +5,12 @@ import java.util.List;
 import org.onebusaway.siri.core.SiriLibrary;
 
 import uk.org.siri.siri.AbstractServiceDeliveryStructure;
+import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.VehicleActivityStructure;
 import uk.org.siri.siri.VehicleMonitoringDeliveryStructure;
 
-public class VehicleMonitoringDeliveryFilter implements SiriModuleDeliveryFilter {
+public class VehicleMonitoringDeliveryFilter implements
+    SiriModuleDeliveryFilter {
 
   private String _directionRef;
 
@@ -52,10 +54,10 @@ public class VehicleMonitoringDeliveryFilter implements SiriModuleDeliveryFilter
    ****/
 
   @Override
-  public AbstractServiceDeliveryStructure filter(
-      AbstractServiceDeliveryStructure delivery) {
-    
-    VehicleMonitoringDeliveryStructure vm = (VehicleMonitoringDeliveryStructure) delivery;
+  public AbstractServiceDeliveryStructure filter(ServiceDelivery delivery,
+      AbstractServiceDeliveryStructure moduleDelivery) {
+
+    VehicleMonitoringDeliveryStructure vm = (VehicleMonitoringDeliveryStructure) moduleDelivery;
 
     List<VehicleActivityStructure> vasFiltered = vm.getVehicleActivity();
 
@@ -78,20 +80,20 @@ public class VehicleMonitoringDeliveryFilter implements SiriModuleDeliveryFilter
       vasFiltered = SiriLibrary.grep(vasFiltered,
           "monitoredVehicleJourney.vehicleRef.value", _vehicleRef);
     }
-    
+
     if (_maximumVehicles > 0 && vasFiltered.size() > _maximumVehicles) {
       while (vasFiltered.size() > _maximumVehicles)
         vasFiltered.remove(vasFiltered.size() - 1);
     }
 
-    if( vasFiltered.isEmpty() )
+    if (vasFiltered.isEmpty())
       return null;
-    
+
     List<VehicleActivityStructure> vasOriginal = vm.getVehicleActivity();
 
     if (vasFiltered.size() < vasOriginal.size())
       SiriLibrary.copyList(vasFiltered, vasOriginal);
-    
+
     return vm;
   }
 }

@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
-import org.onebusaway.siri.core.filters.DeliveryFilterFactory;
+import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterFactory;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,7 @@ public class SiriSubscriptionManager {
 
   private Map<ESiriModuleType, ConcurrentMap<SubscriptionId, SubscriptionDetails>> _subscriptionsByType = new HashMap<ESiriModuleType, ConcurrentMap<SubscriptionId, SubscriptionDetails>>();
 
-  private DeliveryFilterFactory _deliveryFilterFactory = new DeliveryFilterFactory();
+  private SiriModuleDeliveryFilterFactory _deliveryFilterFactory = new SiriModuleDeliveryFilterFactory();
 
   private List<SiriModuleDeliveryFilterSource> _deliveryFilterSources = new ArrayList<SiriModuleDeliveryFilterSource>();
 
@@ -161,13 +161,13 @@ public class SiriSubscriptionManager {
 
     for (SubscriptionDetails details : subscriptionDetailsBySubscriberId.values()) {
 
-      List<T> applicableResponses = getApplicableResponses(moduleType, details,
-          deliveries);
+      ServiceDelivery updatedDelivery = copyDeliveryShallow(delivery);
+
+      List<T> applicableResponses = getApplicableResponses(updatedDelivery,
+          moduleType, details, deliveries);
 
       if (applicableResponses == null || applicableResponses.isEmpty())
         continue;
-
-      ServiceDelivery updatedDelivery = updateDelivery(delivery);
 
       List<T> specifiedDeliveries = SiriLibrary.getServiceDeliveriesForModule(
           updatedDelivery, moduleType);
@@ -180,7 +180,8 @@ public class SiriSubscriptionManager {
 
   @SuppressWarnings("unchecked")
   private <T extends AbstractServiceDeliveryStructure> List<T> getApplicableResponses(
-      ESiriModuleType type, SubscriptionDetails details, List<T> responses) {
+      ServiceDelivery delivery, ESiriModuleType type,
+      SubscriptionDetails details, List<T> responses) {
 
     SubscriptionId subId = details.getId();
     SubscriptionRequest sub = details.getSubscriptionRequest();
@@ -214,12 +215,12 @@ public class SiriSubscriptionManager {
 
       if (element.getResponseTimestamp() == null)
         element.setResponseTimestamp(new Date());
-      
+
       /**
        * Apply any filters
        */
       for (SiriModuleDeliveryFilter filter : filters) {
-        element = (T) filter.filter(element);
+        element = (T) filter.filter(delivery, element);
         if (element == null)
           break;
       }
@@ -232,7 +233,7 @@ public class SiriSubscriptionManager {
     return applicable;
   }
 
-  private ServiceDelivery updateDelivery(ServiceDelivery delivery) {
+  private ServiceDelivery copyDeliveryShallow(ServiceDelivery delivery) {
 
     ServiceDelivery d = new ServiceDelivery();
     d.setAddress(delivery.getAddress());
