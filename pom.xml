@@ -1,56 +1,102 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <artifactId>onebusaway</artifactId>
-        <groupId>org.onebusaway</groupId>
-        <version>1.0.6</version>
-    </parent>
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>onebusaway</artifactId>
     <groupId>org.onebusaway</groupId>
-    <artifactId>onebusaway-siri</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <packaging>pom</packaging>
+    <version>1.0.6</version>
+  </parent>
+  <groupId>org.onebusaway</groupId>
+  <artifactId>onebusaway-siri</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
 
-    <name>onebusaway-siri</name>
-    <description>Support for the SIRI api for real-time transit data</description>
+  <name>onebusaway-siri</name>
+  <description>Support for the SIRI api for real-time transit data</description>
 
-    <modules>
-        <module>onebusaway-siri-api</module>
-        <module>onebusaway-siri-api-v13</module>
-        <module>onebusaway-siri-core</module>
-        <module>onebusaway-siri-client-cli</module>
-        <module>onebusaway-siri-repeater</module>
-        <module>onebusaway-siri-repeater-cli</module>
-        <module>onebusaway-siri-repeater-webapp</module>
-    </modules>
+  <modules>
+    <module>onebusaway-siri-api</module>
+    <module>onebusaway-siri-api-v13</module>
+    <module>onebusaway-siri-core</module>
+    <module>onebusaway-siri-client-cli</module>
+    <module>onebusaway-siri-repeater</module>
+    <module>onebusaway-siri-repeater-cli</module>
+    <module>onebusaway-siri-repeater-webapp</module>
+  </modules>
 
+  <properties>
+    <spring.version>3.0.5.RELEASE</spring.version>
+  </properties>
 
-    <!-- This is where we control the master dependency version used by all modules -->
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>1.5.6</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>1.5.6</version>
-            </dependency>
+  <!-- This is where we control the master dependency version used by all modules -->
+  <dependencyManagement>
+    <dependencies>
 
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>4.8.1</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>1.8.0</version>
-                <scope>test</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+      <dependency>
+        <groupId>org.onebusaway</groupId>
+        <artifactId>onebusaway-collections</artifactId>
+        <version>1.0.4</version>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-cli</groupId>
+        <artifactId>commons-cli</artifactId>
+        <version>1.2</version>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-lang</groupId>
+        <artifactId>commons-lang</artifactId>
+        <version>2.6</version>
+      </dependency>
+
+      <!-- Spring Framework -->
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>${spring.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-webmvc</artifactId>
+        <version>${spring.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.5.6</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>1.5.6</version>
+      </dependency>
+
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.8.1</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>1.8.0</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>1.2.2</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 </project>
