@@ -1,0 +1,33 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>onebusaway-siri</artifactId>
+    <groupId>org.onebusaway</groupId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <groupId>org.onebusaway</groupId>
+  <artifactId>onebusaway-siri-jetty</artifactId>
+
+  <name>onebusaway-siri-jetty</name>
+  <description>Extension of siri core that uses an embedded Jetty instance for all listening HTTP server functionality</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.onebusaway</groupId>
+      <artifactId>onebusaway-siri-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- For incoming connections -->
+    <dependency>
+      <groupId>org.mortbay.jetty</groupId>
+      <artifactId>jetty-embedded</artifactId>
+      <version>6.1.26</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>onebusaway-siri-jetty</finalName>
+  </build>
+</project>

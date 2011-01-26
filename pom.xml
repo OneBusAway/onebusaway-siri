@@ -19,6 +19,7 @@
     <module>onebusaway-siri-api-v13</module>
     <module>onebusaway-siri-core</module>
     <module>onebusaway-siri-client-cli</module>
+    <module>onebusaway-siri-jetty</module>
     <module>onebusaway-siri-repeater</module>
     <module>onebusaway-siri-repeater-cli</module>
     <module>onebusaway-siri-repeater-webapp</module>
