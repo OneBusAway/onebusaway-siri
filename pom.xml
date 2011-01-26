@@ -14,6 +14,12 @@
   <name>onebusaway-siri</name>
   <description>Support for the SIRI api for real-time transit data</description>
 
+  <scm>
+    <connection>scm:svn:http://onebusaway.googlecode.com/svn/onebusaway-siri/trunk</connection>
+    <developerConnection>scm:svn:https://onebusaway.googlecode.com/svn/onebusaway-siri/trunk</developerConnection>
+    <url>http://code.google.com/p/onebusaway/source/browse/#svn/onebusaway-siri/trunk</url>
+  </scm>
+
   <modules>
     <module>onebusaway-siri-api</module>
     <module>onebusaway-siri-api-v13</module>
