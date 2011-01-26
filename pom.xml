@@ -99,5 +99,30 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>1.0</version>
+        <executions>
+          <execution>
+            <id>enforce-plugin-versions</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>1.6</version>
+                </requireJavaVersion>
+                <requireReleaseDeps>
+                  <onlyWhenRelease>true</onlyWhenRelease>
+                </requireReleaseDeps>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 </project>
