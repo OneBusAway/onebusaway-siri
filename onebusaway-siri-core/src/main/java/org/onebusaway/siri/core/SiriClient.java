@@ -2,7 +2,6 @@ package org.onebusaway.siri.core;
 
 import java.io.Reader;
 import java.io.Writer;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -10,15 +9,9 @@ import java.util.UUID;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.servlet.Context;
-import org.mortbay.jetty.servlet.ServletHolder;
-import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.exceptions.SiriSerializationException;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.MessageQualifierStructure;
@@ -30,15 +23,11 @@ import uk.org.siri.siri.SubscriptionRequest;
 
 public class SiriClient extends SiriCommon implements SiriRawHandler {
 
-  private static Logger _log = LoggerFactory.getLogger(SiriClient.class);
-
   private String _identity;
 
-  private String _clientUrl;
+  protected String _clientUrl;
 
-  private String _privateClientUrl;
-
-  private Server _webServer;
+  protected String _privateClientUrl;
 
   private List<SiriServiceDeliveryHandler> _serviceDeliveryHandlers = new ArrayList<SiriServiceDeliveryHandler>();
 
@@ -87,43 +76,17 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
   public void removeServiceDeliveryHandler(SiriServiceDeliveryHandler handler) {
     _serviceDeliveryHandlers.remove(handler);
   }
-  
+
   /****
    * 
    ****/
 
   public void start() {
 
-    SubscriptionServerServlet servlet = new SubscriptionServerServlet();
-    servlet.setSiriListener(this);
-
-    String clientUrl = _clientUrl;
-    if (_privateClientUrl != null)
-      clientUrl = _privateClientUrl;
-
-    URL url = url(clientUrl);
-
-    _webServer = new Server(url.getPort());
-
-    Context root = new Context(_webServer, "/", Context.SESSIONS);
-    root.addServlet(new ServletHolder(servlet), "/*");
-
-    try {
-      _webServer.start();
-    } catch (Exception ex) {
-      throw new SiriException("error starting SiriServer", ex);
-    }
   }
 
   public void stop() {
-    if (_webServer != null) {
-      try {
-        _webServer.stop();
-      } catch (Exception ex) {
-        _log.warn("error stoping SiriServer", ex);
-      }
-      _webServer = null;
-    }
+
   }
 
   /****
@@ -182,7 +145,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     for (ESiriModuleType moduleType : ESiriModuleType.values()) {
       List<AbstractSubscriptionStructure> requests = SiriLibrary.getSubscriptionRequestsForModule(
           request, moduleType);
-      
+
       for (AbstractSubscriptionStructure subRequest : requests) {
 
         SubscriptionQualifierStructure subId = subRequest.getSubscriptionIdentifier();

@@ -3,6 +3,8 @@ package org.onebusaway.siri.repeater;
 import org.onebusaway.siri.core.SiriClient;
 import org.onebusaway.siri.core.SiriServer;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
+import org.onebusaway.siri.jetty.SiriJettyClient;
+import org.onebusaway.siri.jetty.SiriJettyServer;
 
 import uk.org.siri.siri.ServiceDelivery;
 
@@ -11,13 +13,13 @@ public class SiriRepeater {
   /**
    * The client is what connects to an existing SIRI data source
    */
-  private SiriClient _siriClient = new SiriClient();
+  private SiriClient _siriClient = new SiriJettyClient();
 
   /**
    * The server is what repeats the incoming SIRI data from the source client to
    * other listening clients
    */
-  private SiriServer _siriServer = new SiriServer();
+  private SiriServer _siriServer = new SiriJettyServer();
 
   private ClientServiceDeliveryHandler _serviceDeliveryRepeater = new ClientServiceDeliveryHandler();
 

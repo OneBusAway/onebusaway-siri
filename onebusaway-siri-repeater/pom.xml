@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>org.onebusaway</groupId>
-            <artifactId>onebusaway-siri-core</artifactId>
+            <artifactId>onebusaway-siri-jetty</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

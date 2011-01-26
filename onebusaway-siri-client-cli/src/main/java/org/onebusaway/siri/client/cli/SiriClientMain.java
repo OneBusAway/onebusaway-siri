@@ -7,10 +7,10 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.onebusaway.siri.core.SiriClient;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.SiriRequestFactory;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
+import org.onebusaway.siri.jetty.SiriJettyClient;
 
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
@@ -26,7 +26,7 @@ public class SiriClientMain {
 
   private static final String ARG_ID = "id";
 
-  private SiriClient _client;
+  private SiriJettyClient _client;
 
   public static void main(String[] args) {
 
@@ -54,7 +54,7 @@ public class SiriClientMain {
       System.exit(-1);
     }
 
-    _client = new SiriClient();
+    _client = new SiriJettyClient();
 
     if (cli.hasOption(ARG_ID))
       _client.setIdentity(cli.getOptionValue(ARG_ID));

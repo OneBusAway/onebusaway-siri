@@ -2,7 +2,6 @@ package org.onebusaway.siri.core;
 
 import java.io.Reader;
 import java.io.Writer;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -10,9 +9,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.servlet.Context;
-import org.mortbay.jetty.servlet.ServletHolder;
 import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
@@ -32,11 +28,9 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
 
   private String _identity;
 
-  private String _serverUrl;
+  protected String _serverUrl;
 
-  private String _privateServerUrl;
-
-  private Server _webServer;
+  protected String _privateServerUrl;
 
   private SiriSubscriptionManager _subscriptionManager = new SiriSubscriptionManager();
 
@@ -112,40 +106,9 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
   public void start() throws SiriException {
 
     _executor = Executors.newFixedThreadPool(5);
-
-    SubscriptionServerServlet servlet = new SubscriptionServerServlet();
-    servlet.setSiriListener(this);
-
-    String serverUrl = _serverUrl;
-    if (_privateServerUrl != null)
-      serverUrl = _privateServerUrl;
-
-    URL url = url(serverUrl);
-
-    _webServer = new Server(url.getPort());
-    Context root = new Context(_webServer, "/", Context.SESSIONS);
-    root.addServlet(new ServletHolder(servlet), "/*");
-
-    try {
-      _webServer.start();
-    } catch (Exception ex) {
-      throw new SiriException("error starting SiriServer", ex);
-    }
-
-    if (_log.isDebugEnabled())
-      _log.debug("SiriServer started at address " + serverUrl);
   }
 
   public void stop() {
-
-    if (_webServer != null) {
-      try {
-        _webServer.stop();
-      } catch (Exception ex) {
-        _log.warn("error stoping SiriServer", ex);
-      }
-      _webServer = null;
-    }
 
     if (_executor != null) {
       _executor.shutdown();
