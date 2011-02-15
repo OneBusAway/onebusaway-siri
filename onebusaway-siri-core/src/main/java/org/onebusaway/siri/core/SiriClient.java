@@ -12,12 +12,14 @@ import org.apache.http.HttpResponse;
 import org.onebusaway.siri.core.exceptions.SiriSerializationException;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
+import org.onebusaway.siri.core.versioning.SiriVersioning;
 
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.MessageQualifierStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
+import uk.org.siri.siri.Siri;
 import uk.org.siri.siri.SubscriptionQualifierStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 
@@ -95,12 +97,14 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
   /**
    * 
-   * @param taretUrl the target server url to connect to
-   * @param request the service request
+   * @param serviceRequest
    * @return the immediate service delivery received from the server
    */
-  public ServiceDelivery handleServiceRequestWithResponse(String taretUrl,
-      ServiceRequest request) {
+  public ServiceDelivery handleServiceRequestWithResponse(
+      SiriClientServiceRequest serviceRequest) {
+
+    String targetUrl = serviceRequest.getTargetUrl();
+    ServiceRequest request = serviceRequest.getRequest();
 
     ParticipantRefStructure identity = new ParticipantRefStructure();
     identity.setValue(_identity);
@@ -114,7 +118,16 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
     request.setRequestTimestamp(new Date());
 
-    HttpResponse response = sendHttpRequest(taretUrl, request);
+    /**
+     * We potentially need to translate the Siri payload to an older version of
+     * the specification, as requested by the caller
+     */
+    SiriVersioning versioning = SiriVersioning.getInstance();
+
+    Object payload = versioning.getPayloadAsVersion(request,
+        serviceRequest.getTargetVersion());
+
+    HttpResponse response = sendHttpRequest(targetUrl, payload);
 
     HttpEntity entity = response.getEntity();
     try {
@@ -129,8 +142,11 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    * @param targetUrl the target server url to connect to
    * @param request the subscription request
    */
-  public void handleSubscriptionRequest(String targetUrl,
-      SubscriptionRequest request) {
+  public void handleSubscriptionRequest(
+      SiriClientSubscriptionRequest subscriptionRequest) {
+
+    String targetUrl = subscriptionRequest.getTargetUrl();
+    SubscriptionRequest request = subscriptionRequest.getRequest();
 
     ParticipantRefStructure identity = new ParticipantRefStructure();
     identity.setValue(_identity);
@@ -157,7 +173,16 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
       }
     }
 
-    sendHttpRequest(targetUrl, request);
+    /**
+     * We potentially need to translate the Siri payload to an older version of
+     * the specification, as requested by the caller
+     */
+    SiriVersioning versioning = SiriVersioning.getInstance();
+
+    Object payload = versioning.getPayloadAsVersion(request,
+        subscriptionRequest.getTargetVersion());
+
+    sendHttpRequest(targetUrl, payload);
   }
 
   /*****
@@ -168,10 +193,31 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
   public void handleRawRequest(Reader reader, Writer writer) {
     Object data = unmarshall(reader);
 
-    if (data instanceof ServiceDelivery) {
+    /**
+     * We potentially need to translate the Siri payload from an older version
+     * of the specification. We always operate on objects from the newest
+     * version of the spec
+     */
+    SiriVersioning instance = SiriVersioning.getInstance();
+    data = instance.getPayloadAsVersion(data, instance.getDefaultVersion());
+
+    if (data instanceof Siri) {
+      Siri siri = (Siri) data;
+      ServiceDelivery delivery = siri.getServiceDelivery();
+      if (delivery != null) {
+        for (SiriServiceDeliveryHandler handler : _serviceDeliveryHandlers)
+          handler.handleServiceDelivery(delivery);
+      }
+
+    } else if (data instanceof ServiceDelivery) {
       ServiceDelivery delivery = (ServiceDelivery) data;
       for (SiriServiceDeliveryHandler handler : _serviceDeliveryHandlers)
         handler.handleServiceDelivery(delivery);
     }
   }
+
+  /****
+   * Private Methods
+   ****/
+
 }

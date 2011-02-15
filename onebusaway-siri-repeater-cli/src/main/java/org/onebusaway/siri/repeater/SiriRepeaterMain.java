@@ -11,6 +11,7 @@ import org.apache.commons.cli.Parser;
 import org.apache.commons.cli.PosixParser;
 import org.onebusaway.siri.core.ESiriModuleType;
 import org.onebusaway.siri.core.SiriClient;
+import org.onebusaway.siri.core.SiriClientSubscriptionRequest;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.SiriRequestFactory;
 import org.onebusaway.siri.core.SiriServer;
@@ -23,8 +24,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
-
-import uk.org.siri.siri.SubscriptionRequest;
 
 public class SiriRepeaterMain {
 
@@ -104,8 +103,8 @@ public class SiriRepeaterMain {
         continue;
       }
 
-      SubscriptionRequest request = factory.createSubscriptionRequest(subArgs);
-      client.handleSubscriptionRequest(url, request);
+      SiriClientSubscriptionRequest request = factory.createSubscriptionRequest(subArgs);
+      client.handleSubscriptionRequest(request);
     }
   }
 

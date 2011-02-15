@@ -1,5 +1,9 @@
 package org.onebusaway.siri.client.cli;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.util.Map;
 
@@ -7,24 +11,26 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.onebusaway.siri.core.SiriClientServiceRequest;
+import org.onebusaway.siri.core.SiriClientSubscriptionRequest;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.SiriRequestFactory;
+import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
+import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.onebusaway.siri.jetty.SiriJettyClient;
 
 import uk.org.siri.siri.ServiceDelivery;
-import uk.org.siri.siri.ServiceRequest;
-import uk.org.siri.siri.SubscriptionRequest;
 
 public class SiriClientMain {
+
+  private static final String ARG_ID = "id";
 
   private static final String ARG_SUBSCRIBE = "subscribe";
 
   private static final String ARG_CLIENT_URL = "clientUrl";
 
   private static final String ARG_PRIVATE_CLIENT_URL = "privateClientUrl";
-
-  private static final String ARG_ID = "id";
 
   private SiriJettyClient _client;
 
@@ -74,36 +80,61 @@ public class SiriClientMain {
       _client.start();
 
       for (String arg : args) {
-        Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
-        SubscriptionRequest request = factory.createSubscriptionRequest(subArgs);
-
-        String url = subArgs.get("Url");
-        if (url == null) {
-          System.err.println("no Url defined for subscription request: " + arg);
-          continue;
-        }
-
-        _client.handleSubscriptionRequest(url, request);
+        SiriClientSubscriptionRequest request = getLineAsSubscriptionRequest(
+            factory, arg);
+        _client.handleSubscriptionRequest(request);
       }
 
     } else {
 
       for (String arg : args) {
-        Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
-        ServiceRequest request = factory.createServiceRequest(subArgs);
 
-        String url = subArgs.get("Url");
-        if (url == null) {
-          System.err.println("no Url defined for subscription request: " + arg);
-          continue;
-        }
-
-        ServiceDelivery delivery = _client.handleServiceRequestWithResponse(
-            url, request);
+        SiriClientServiceRequest request = getLineAsServiceRequest(factory, arg);
+        ServiceDelivery delivery = _client.handleServiceRequestWithResponse(request);
 
         printAsXml(delivery);
       }
     }
+  }
+
+  /****
+   * Private Methods
+   ****/
+
+  private SiriClientSubscriptionRequest getLineAsSubscriptionRequest(
+      SiriRequestFactory factory, String arg) {
+
+    try {
+      Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
+      return factory.createSubscriptionRequest(subArgs);
+    } catch (SiriUnknownVersionException ex) {
+      handleUnknownSiriVersion(arg, ex);
+    }
+
+    return null;
+  }
+
+  private SiriClientServiceRequest getLineAsServiceRequest(
+      SiriRequestFactory factory, String arg) {
+
+    try {
+      Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
+      return factory.createServiceRequest(subArgs);
+    } catch (SiriUnknownVersionException ex) {
+      handleUnknownSiriVersion(arg, ex);
+    }
+
+    return null;
+  }
+
+  private void handleUnknownSiriVersion(String arg,
+      SiriUnknownVersionException ex) {
+    System.err.println("uknown siri version=\"" + ex.getVersion()
+        + "\" in spec=" + arg);
+    System.err.println("supported versions:");
+    for (ESiriVersion version : ESiriVersion.values())
+      System.err.println("  " + version.getVersionId());
+    System.exit(-1);
   }
 
   private void printAsXml(Object object) {
@@ -114,18 +145,24 @@ public class SiriClientMain {
 
   private void printUsage() {
 
-    System.err.println("usage:");
-    System.err.println("  [-args] request [request ...]");
-    System.err.println();
-    System.err.println("args:");
-    System.err.println("  -" + ARG_ID + "=id                          the client's SIRI participant id");
-    System.err.println("  -" + ARG_SUBSCRIBE + "                      indicates that the client should perform a publish/subscribe (default is request/response)");
-    System.err.println("  -" + ARG_CLIENT_URL + "=url                  the url your client publishes to a server in publish/subscribe");
-    System.err.println("  -" + ARG_PRIVATE_CLIENT_URL + "=url           the internal url your client will actually bind to, if specified (default=clientUrl)");
-    System.err.println();
-    System.err.println("request examples:");
-    System.err.println("  Url=http://host:port/path,ModuleType=VEHICLE_MONITORING");
-    System.err.println("  Url=http://host:port/path,ModuleType=VEHICLE_MONITORING,VehicleRef=1234");
+    InputStream is = getClass().getResourceAsStream("usage.txt");
+    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+    String line = null;
+    try {
+      while ((line = reader.readLine()) != null) {
+        System.err.println(line);
+      }
+    } catch (IOException ex) {
+
+    } finally {
+      if (reader != null) {
+        try {
+          reader.close();
+        } catch (IOException ex) {
+
+        }
+      }
+    }
   }
 
   private void buildOptions(Options options) {

@@ -1,10 +1,13 @@
-package org.onebusaway.siri.core;
+package org.onebusaway.siri.jetty;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
+
+import org.onebusaway.siri.core.ESiriModuleType;
+import org.onebusaway.siri.core.SiriServer;
 
 import uk.org.siri.siri.BlockRefStructure;
 import uk.org.siri.siri.ServiceDelivery;
@@ -22,7 +25,7 @@ public class SourceSimulatorMain {
 
     _dataTypeFactory = DatatypeFactory.newInstance();
 
-    SiriServer server = new SiriServer();
+    SiriJettyServer server = new SiriJettyServer();
 
     List<ESiriModuleType> modules = new ArrayList<ESiriModuleType>();
     for (String arg : args)

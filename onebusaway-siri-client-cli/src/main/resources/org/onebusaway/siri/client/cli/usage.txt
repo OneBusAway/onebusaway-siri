@@ -1,0 +1,12 @@
+usage:
+  [-args] request [request ...]
+
+args:
+  -id=value                       the client's SIRI participant id
+  -subscribe                      indicates that the client should perform a publish/subscribe (default is request/response)
+  -clientUrl=url                  the url your client publishes to a server in publish/subscribe
+  -privateClientUrl=url           the internal url your client will actually bind to, if specified (default=clientUrl)
+
+request examples:
+  Url=http://host:port/path,ModuleType=VEHICLE_MONITORING
+  Url=http://host:port/path,ModuleType=VEHICLE_MONITORING,VehicleRef=1234

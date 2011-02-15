@@ -38,7 +38,7 @@ public class SiriCommon {
   public SiriCommon() {
 
     try {
-      _jaxbContext = JAXBContext.newInstance("uk.org.siri.siri:org.onebusaway.siri");
+      _jaxbContext = JAXBContext.newInstance("uk.org.siri.siri:uk.org.siri:org.onebusaway.siri");
     } catch (JAXBException ex) {
       throw new SiriSerializationException(ex);
     }

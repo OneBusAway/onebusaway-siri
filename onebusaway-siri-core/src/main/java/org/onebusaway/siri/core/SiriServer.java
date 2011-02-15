@@ -14,12 +14,14 @@ import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.handlers.SiriRequestResponseHandler;
 import org.onebusaway.siri.core.handlers.SiriSubscriptionRequestHandler;
+import org.onebusaway.siri.core.versioning.SiriVersioning;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.ParticipantRefStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
+import uk.org.siri.siri.Siri;
 import uk.org.siri.siri.SubscriptionRequest;
 
 public class SiriServer extends SiriCommon implements SiriRawHandler {
@@ -158,47 +160,72 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
 
     _log.debug("handling request");
 
-    Object request = unmarshall(reader);
+    Object data = unmarshall(reader);
 
-    if (request instanceof ServiceRequest) {
+    /**
+     * Make sure the incoming SIRI data
+     */
+    SiriVersioning versioning = SiriVersioning.getInstance();
+    data = versioning.getPayloadAsVersion(data, versioning.getDefaultVersion());
 
-      _log.debug("handling ServiceRequest");
+    if (data instanceof Siri) {
 
-      ServiceRequest serviceRequest = (ServiceRequest) request;
+      Siri siri = (Siri) data;
 
-      ServiceDelivery response = new ServiceDelivery();
+      ServiceRequest serviceRequest = siri.getServiceRequest();
+      if (serviceRequest != null)
+        handleServiceRequest(serviceRequest, writer);
 
-      for (SiriRequestResponseHandler handler : _requestResponseHandlers)
-        handler.handleRequestAndResponse(serviceRequest, response);
+      SubscriptionRequest subscriptionRequest = siri.getSubscriptionRequest();
+      if (subscriptionRequest != null)
+        handleSubscriptionRequest(subscriptionRequest);
 
-      ParticipantRefStructure identity = new ParticipantRefStructure();
-      identity.setValue(_identity);
-      response.setProducerRef(identity);
+    } else if (data instanceof ServiceRequest) {
 
-      if (response.getResponseTimestamp() == null)
-        response.setResponseTimestamp(new Date());
+      ServiceRequest serviceRequest = (ServiceRequest) data;
+      handleServiceRequest(serviceRequest, writer);
 
-      marshall(response, writer);
+    } else if (data instanceof SubscriptionRequest) {
 
-    } else if (request instanceof SubscriptionRequest) {
-
-      _log.debug("handling SubscriptionRequest");
-
-      SubscriptionRequest subscriptionRequest = (SubscriptionRequest) request;
-
-      for (SiriSubscriptionRequestHandler handler : _subscriptionRequestHandlers)
-        handler.handleSubscriptionRequest(subscriptionRequest);
-
-      _subscriptionManager.handleSubscriptionRequest(subscriptionRequest);
+      SubscriptionRequest subscriptionRequest = (SubscriptionRequest) data;
+      handleSubscriptionRequest(subscriptionRequest);
 
     } else {
-      _log.warn("unknown siri request " + request);
+      _log.warn("unknown siri request " + data);
     }
   }
 
   /****
    * Private Methods
    ****/
+
+  private void handleSubscriptionRequest(SubscriptionRequest subscriptionRequest) {
+
+    _log.debug("handling SubscriptionRequest");
+    for (SiriSubscriptionRequestHandler handler : _subscriptionRequestHandlers)
+      handler.handleSubscriptionRequest(subscriptionRequest);
+
+    _subscriptionManager.handleSubscriptionRequest(subscriptionRequest);
+  }
+
+  private void handleServiceRequest(ServiceRequest serviceRequest, Writer writer) {
+
+    _log.debug("handling ServiceRequest");
+
+    ServiceDelivery response = new ServiceDelivery();
+
+    for (SiriRequestResponseHandler handler : _requestResponseHandlers)
+      handler.handleRequestAndResponse(serviceRequest, response);
+
+    ParticipantRefStructure identity = new ParticipantRefStructure();
+    identity.setValue(_identity);
+    response.setProducerRef(identity);
+
+    if (response.getResponseTimestamp() == null)
+      response.setResponseTimestamp(new Date());
+
+    marshall(response, writer);
+  }
 
   private void publishResponse(SubscriptionEvent event) {
 

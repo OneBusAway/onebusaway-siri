@@ -4,6 +4,10 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import org.onebusaway.siri.core.exceptions.SiriMissingArgumentException;
+import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
+import org.onebusaway.siri.core.versioning.ESiriVersion;
+
 import uk.org.siri.siri.AbstractServiceRequestStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.DirectionRefStructure;
@@ -27,6 +31,8 @@ import uk.org.siri.siri.VehicleRefStructure;
 
 public class SiriRequestFactory {
 
+  private static final String ARG_URL = "Url";
+  private static final String ARG_VERSION = "Version";
   private static final String ARG_MODULE_TYPE = "ModuleType";
   private static final String ARG_MESSAGE_IDENTIFIER = "MessageIdentifier";
   private static final String ARG_MAXIMUM_VEHICLES = "MaximumVehicles";
@@ -35,15 +41,20 @@ public class SiriRequestFactory {
   private static final String ARG_DIRECTION_REF = "DirectionRef";
   private static final String ARG_VEHICLE_MONITORING_REF = "VehicleMonitoringRef";
 
-  public ServiceRequest createServiceRequest(Map<String, String> args) {
+  public SiriClientServiceRequest createServiceRequest(Map<String, String> args) {
 
-    ServiceRequest request = new ServiceRequest();
+    SiriClientServiceRequest request = new SiriClientServiceRequest();
+
+    processCommonArgs(args, request);
+
+    ServiceRequest serviceRequest = new ServiceRequest();
+    request.setRequest(serviceRequest);
 
     String messageIdentifierValue = args.get(ARG_MESSAGE_IDENTIFIER);
     if (messageIdentifierValue != null) {
       MessageQualifierStructure messageIdentifier = new MessageQualifierStructure();
       messageIdentifier.setValue(messageIdentifierValue);
-      request.setMessageIdentifier(messageIdentifier);
+      serviceRequest.setMessageIdentifier(messageIdentifier);
     }
 
     String moduleTypeValue = args.get(ARG_MODULE_TYPE);
@@ -57,22 +68,28 @@ public class SiriRequestFactory {
           args);
 
       List<AbstractServiceRequestStructure> moduleRequests = SiriLibrary.getServiceRequestsForModule(
-          request, moduleType);
+          serviceRequest, moduleType);
       moduleRequests.add(moduleRequest);
 
     }
+
     return request;
   }
 
-  public SubscriptionRequest createSubscriptionRequest(Map<String, String> args) {
+  public SiriClientSubscriptionRequest createSubscriptionRequest(
+      Map<String, String> args) {
 
-    SubscriptionRequest request = new SubscriptionRequest();
+    SiriClientSubscriptionRequest request = new SiriClientSubscriptionRequest();
+    processCommonArgs(args, request);
+
+    SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
+    request.setRequest(subscriptionRequest);
 
     String messageIdentifierValue = args.get(ARG_MESSAGE_IDENTIFIER);
     if (messageIdentifierValue != null) {
       MessageQualifierStructure messageIdentifier = new MessageQualifierStructure();
       messageIdentifier.setValue(messageIdentifierValue);
-      request.setMessageIdentifier(messageIdentifier);
+      subscriptionRequest.setMessageIdentifier(messageIdentifier);
     }
 
     String moduleTypeValue = args.get(ARG_MODULE_TYPE);
@@ -93,18 +110,35 @@ public class SiriRequestFactory {
           args);
 
       List<AbstractSubscriptionStructure> moduleSubscriptions = SiriLibrary.getSubscriptionRequestsForModule(
-          request, moduleType);
+          subscriptionRequest, moduleType);
       moduleSubscriptions.add(moduleSubscription);
 
     }
+
     return request;
   }
 
   /****
-   * 
-   * @param moduleType
-   * @return
+   * Private Methods
    ****/
+
+  private void processCommonArgs(Map<String, String> args,
+      AbstractSiriClientRequest request) {
+
+    String url = args.get(ARG_URL);
+    if (url == null)
+      throw new SiriMissingArgumentException(ARG_URL);
+    request.setTargetUrl(url);
+
+    String versionId = args.get(ARG_VERSION);
+    if (versionId != null) {
+      ESiriVersion version = ESiriVersion.getVersionForVersionId(versionId);
+      if (version == null) {
+        throw new SiriUnknownVersionException(versionId);
+      }
+      request.setTargetVersion(version);
+    }
+  }
 
   private AbstractServiceRequestStructure createServiceRequestForModuleType(
       ESiriModuleType moduleType) {
