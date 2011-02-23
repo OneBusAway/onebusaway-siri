@@ -246,6 +246,16 @@ public class SiriSubscriptionManager {
     d.setSrsName(delivery.getSrsName());
     d.setStatus(delivery.isStatus());
 
+    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
+      List<AbstractServiceDeliveryStructure> from = SiriLibrary.getServiceDeliveriesForModule(
+          delivery, moduleType);
+      if (!from.isEmpty()) {
+        List<AbstractServiceDeliveryStructure> to = SiriLibrary.getServiceDeliveriesForModule(
+            d, moduleType);
+        SiriLibrary.copyList(from, to);
+      }
+    }
+
     return d;
   }
 }

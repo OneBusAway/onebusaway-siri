@@ -18,6 +18,8 @@ import uk.org.siri.siri.MessageQualifierStructure;
 import uk.org.siri.siri.ProductionTimetableRequestStructure;
 import uk.org.siri.siri.ProductionTimetableSubscriptionRequest;
 import uk.org.siri.siri.ServiceRequest;
+import uk.org.siri.siri.SituationExchangeRequestStructure;
+import uk.org.siri.siri.SituationExchangeSubscriptionStructure;
 import uk.org.siri.siri.StopMonitoringRequestStructure;
 import uk.org.siri.siri.StopMonitoringSubscriptionStructure;
 import uk.org.siri.siri.StopTimetableRequestStructure;
@@ -34,6 +36,9 @@ public class SiriRequestFactory {
   private static final String ARG_URL = "Url";
   private static final String ARG_VERSION = "Version";
   private static final String ARG_MODULE_TYPE = "ModuleType";
+  private static final String ARG_RECONNECTION_ATTEMPTS = "ReconnectionAttempts";
+  private static final String ARG_RECONNECTION_INTERVAL = "ReconnectionInterval";
+
   private static final String ARG_MESSAGE_IDENTIFIER = "MessageIdentifier";
   private static final String ARG_MAXIMUM_VEHICLES = "MaximumVehicles";
   private static final String ARG_VEHICLE_REF = "VehicleRef";
@@ -138,6 +143,18 @@ public class SiriRequestFactory {
       }
       request.setTargetVersion(version);
     }
+
+    String reconnectionAttempts = args.get(ARG_RECONNECTION_ATTEMPTS);
+    if (reconnectionAttempts != null) {
+      int attempts = Integer.parseInt(reconnectionAttempts);
+      request.setReconnectionAttempts(attempts);
+    }
+
+    String reconnectionInterval = args.get(ARG_RECONNECTION_INTERVAL);
+    if (reconnectionInterval != null) {
+      int interval = Integer.parseInt(reconnectionInterval);
+      request.setReconnectionInterval(interval);
+    }
   }
 
   private AbstractServiceRequestStructure createServiceRequestForModuleType(
@@ -154,6 +171,8 @@ public class SiriRequestFactory {
         return new StopMonitoringRequestStructure();
       case VEHICLE_MONITORING:
         return new VehicleMonitoringRequestStructure();
+      case SITUATION_EXCHANGE:
+        return new SituationExchangeRequestStructure();
       default:
         throw new UnsupportedOperationException();
     }
@@ -173,6 +192,8 @@ public class SiriRequestFactory {
         return new StopMonitoringSubscriptionStructure();
       case VEHICLE_MONITORING:
         return new VehicleMonitoringSubscriptionStructure();
+      case SITUATION_EXCHANGE:
+        return new SituationExchangeSubscriptionStructure();
       default:
         throw new UnsupportedOperationException();
     }
@@ -188,6 +209,10 @@ public class SiriRequestFactory {
         applyArgsToVehicleMonitoringRequest(
             (VehicleMonitoringRequestStructure) moduleServiceRequest, args);
         break;
+      case SITUATION_EXCHANGE:
+        applyArgsToSituationExchangeRequest(
+            (SituationExchangeRequestStructure) moduleServiceRequest, args);
+        break;
     }
   }
 
@@ -199,6 +224,9 @@ public class SiriRequestFactory {
       case VEHICLE_MONITORING:
         handleVehicleMonitoringSubscriptionSpecificArguments(
             (VehicleMonitoringSubscriptionStructure) moduleSubscription, args);
+      case SITUATION_EXCHANGE:
+        handleSituationExchangeSubscriptionSpecificArguments(
+            (SituationExchangeSubscriptionStructure) moduleSubscription, args);
         break;
     }
   }
@@ -215,7 +243,9 @@ public class SiriRequestFactory {
 
   private void applyArgsToVehicleMonitoringRequest(
       VehicleMonitoringRequestStructure vmr, Map<String, String> args) {
+
     String vehicleMonitoringRefValue = args.get(ARG_VEHICLE_MONITORING_REF);
+
     if (vehicleMonitoringRefValue != null) {
       VehicleMonitoringRefStructure vehicleMonitoringRef = new VehicleMonitoringRefStructure();
       vehicleMonitoringRef.setValue(vehicleMonitoringRefValue);
@@ -247,5 +277,20 @@ public class SiriRequestFactory {
     if (maximumVehiclesValue != null) {
       vmr.setMaximumVehicles(new BigInteger(maximumVehiclesValue));
     }
+  }
+
+  private void handleSituationExchangeSubscriptionSpecificArguments(
+      SituationExchangeSubscriptionStructure moduleSubscription,
+      Map<String, String> args) {
+
+    SituationExchangeRequestStructure request = new SituationExchangeRequestStructure();
+    moduleSubscription.setSituationExchangeRequest(request);
+
+    applyArgsToSituationExchangeRequest(request, args);
+  }
+
+  private void applyArgsToSituationExchangeRequest(
+      SituationExchangeRequestStructure request, Map<String, String> args) {
+
   }
 }

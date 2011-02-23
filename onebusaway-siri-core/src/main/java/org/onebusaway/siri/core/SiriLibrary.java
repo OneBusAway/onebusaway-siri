@@ -13,6 +13,8 @@ import uk.org.siri.siri.AbstractServiceRequestStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
+import uk.org.siri.siri.SituationExchangeDeliveryStructure;
+import uk.org.siri.siri.SituationExchangeDeliveryStructure.Situations;
 import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.VehicleMonitoringDeliveryStructure;
 
@@ -30,6 +32,8 @@ public class SiriLibrary {
     switch (moduleType) {
       case VEHICLE_MONITORING:
         return (List<T>) serviceRequest.getVehicleMonitoringRequest();
+      case SITUATION_EXCHANGE:
+        return (List<T>) serviceRequest.getSituationExchangeRequest();
       default:
         return new ArrayList<T>();
     }
@@ -42,6 +46,8 @@ public class SiriLibrary {
     switch (moduleType) {
       case VEHICLE_MONITORING:
         return (List<T>) subscriptionRequest.getVehicleMonitoringSubscriptionRequest();
+      case SITUATION_EXCHANGE:
+        return (List<T>) subscriptionRequest.getSituationExchangeSubscriptionRequest();
       default:
         return new ArrayList<T>();
     }
@@ -54,6 +60,8 @@ public class SiriLibrary {
     switch (moduleType) {
       case VEHICLE_MONITORING:
         return (List<T>) serviceDelivery.getVehicleMonitoringDelivery();
+      case SITUATION_EXCHANGE:
+        return (List<T>) serviceDelivery.getSituationExchangeDelivery();
       default:
         return new ArrayList<T>();
     }
@@ -97,6 +105,26 @@ public class SiriLibrary {
     return to;
   }
 
+  public static SituationExchangeDeliveryStructure copySituationExchange(
+      SituationExchangeDeliveryStructure from,
+      SituationExchangeDeliveryStructure to) {
+
+    copyServiceDelivery(from, to);
+
+    Situations fromSituations = from.getSituations();
+
+    if (fromSituations != null) {
+      Situations toSituations = new Situations();
+      to.setSituations(toSituations);
+      copyList(fromSituations.getPtSituationElement(),
+          toSituations.getPtSituationElement());
+      copyList(fromSituations.getRoadSituationElement(),
+          toSituations.getRoadSituationElement());
+    }
+
+    return to;
+  }
+
   public static AbstractServiceDeliveryStructure copyServiceDelivery(
       ESiriModuleType moduleType, AbstractServiceDeliveryStructure from) {
 
@@ -104,6 +132,9 @@ public class SiriLibrary {
       case VEHICLE_MONITORING:
         return copyVehicleMonitoring((VehicleMonitoringDeliveryStructure) from,
             new VehicleMonitoringDeliveryStructure());
+      case SITUATION_EXCHANGE:
+        return copySituationExchange((SituationExchangeDeliveryStructure) from,
+            new SituationExchangeDeliveryStructure());
       default:
         throw new UnsupportedOperationException();
     }

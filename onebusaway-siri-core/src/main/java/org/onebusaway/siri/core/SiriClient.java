@@ -6,13 +6,19 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriSerializationException;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
 import org.onebusaway.siri.core.versioning.SiriVersioning;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.MessageQualifierStructure;
@@ -25,6 +31,8 @@ import uk.org.siri.siri.SubscriptionRequest;
 
 public class SiriClient extends SiriCommon implements SiriRawHandler {
 
+  private static Logger _log = LoggerFactory.getLogger(SiriClient.class);
+
   private String _identity;
 
   protected String _clientUrl;
@@ -32,6 +40,8 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
   protected String _privateClientUrl;
 
   private List<SiriServiceDeliveryHandler> _serviceDeliveryHandlers = new ArrayList<SiriServiceDeliveryHandler>();
+
+  private ScheduledExecutorService _executor;
 
   public SiriClient() {
     _identity = UUID.randomUUID().toString();
@@ -84,11 +94,12 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    ****/
 
   public void start() {
-
+    _executor = Executors.newSingleThreadScheduledExecutor();
   }
 
   public void stop() {
-
+    if (_executor != null)
+      _executor.shutdownNow();
   }
 
   /****
@@ -182,7 +193,10 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     Object payload = versioning.getPayloadAsVersion(request,
         subscriptionRequest.getTargetVersion());
 
-    sendHttpRequest(targetUrl, payload);
+    ConnectionAttempt attempt = new ConnectionAttempt(targetUrl, payload);
+    attempt.setReconnectionInterval(subscriptionRequest.getReconnectionInterval());
+    attempt.setRemainingReconnectionAttempts(subscriptionRequest.getReconnectionAttempts());
+    _executor.execute(attempt);
   }
 
   /*****
@@ -220,4 +234,48 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    * Private Methods
    ****/
 
+  private class ConnectionAttempt implements Runnable {
+
+    private final String targetUrl;
+    private final Object payload;
+    private int remainingReconnectionAttempts = 0;
+    private int reconnectionInterval = 60;
+
+    public ConnectionAttempt(String targetUrl, Object payload) {
+      this.targetUrl = targetUrl;
+      this.payload = payload;
+    }
+
+    public void setRemainingReconnectionAttempts(
+        int remainingReconnectionAttempts) {
+      this.remainingReconnectionAttempts = remainingReconnectionAttempts;
+    }
+
+    public void setReconnectionInterval(int reconnectionInterval) {
+      this.reconnectionInterval = reconnectionInterval;
+    }
+
+    @Override
+    public void run() {
+      try {
+        sendHttpRequest(targetUrl, payload);
+      } catch (SiriConnectionException ex) {
+        _log.warn("error connecting to " + targetUrl + " ("
+            + this.remainingReconnectionAttempts
+            + " remaining reconnection attempts)", ex);
+
+        if (this.remainingReconnectionAttempts == 0) {
+          return;
+        }
+
+        /**
+         * We have some reconnection attempts remaining, so we schedule another
+         * connection attempt
+         */
+        if( this.remainingReconnectionAttempts > 0)
+          this.remainingReconnectionAttempts--;
+        _executor.schedule(this, reconnectionInterval, TimeUnit.SECONDS);
+      }
+    }
+  }
 }

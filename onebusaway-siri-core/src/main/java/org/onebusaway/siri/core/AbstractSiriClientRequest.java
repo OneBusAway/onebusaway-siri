@@ -8,6 +8,10 @@ public abstract class AbstractSiriClientRequest {
 
   private ESiriVersion targetVersion;
 
+  private int reconnectionAttempts = 0;
+
+  private int reconnectionInterval = 60;
+
   public String getTargetUrl() {
     return targetUrl;
   }
@@ -23,4 +27,29 @@ public abstract class AbstractSiriClientRequest {
   public void setTargetVersion(ESiriVersion targetVersion) {
     this.targetVersion = targetVersion;
   }
+
+  public int getReconnectionAttempts() {
+    return reconnectionAttempts;
+  }
+
+  public void setReconnectionAttempts(int reconnectionAttempts) {
+    this.reconnectionAttempts = reconnectionAttempts;
+  }
+
+  /**
+   * 
+   * @return time, in seconds, to wait between reconnection attempts
+   */
+  public int getReconnectionInterval() {
+    return reconnectionInterval;
+  }
+
+  /**
+   * 
+   * @param reconnectionInterval time in seconds
+   */
+  public void setReconnectionInterval(int reconnectionInterval) {
+    this.reconnectionInterval = reconnectionInterval;
+  }
+
 }

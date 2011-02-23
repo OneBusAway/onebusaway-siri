@@ -71,7 +71,7 @@ public class SiriModuleDeliveryFilterFactory {
     @Override
     public AbstractServiceDeliveryStructure filter(ServiceDelivery delivery,
         AbstractServiceDeliveryStructure moduleDelivery) {
-      return null;
+      return moduleDelivery;
     }
   }
 }
