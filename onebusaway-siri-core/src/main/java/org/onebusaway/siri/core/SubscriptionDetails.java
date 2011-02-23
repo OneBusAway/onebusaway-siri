@@ -1,58 +1,44 @@
 package org.onebusaway.siri.core;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
-
-import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 
 class SubscriptionDetails {
 
-  private final ESiriModuleType moduleType;
-
-  private final SubscriptionId id;
-
   private final String address;
-  
+
+  private final String messageId;
+
   private final SubscriptionRequest subscriptionRequest;
 
-  private final AbstractSubscriptionStructure moduleSubscription;
+  private List<ModuleSubscriptionDetails> moduleDetails = new ArrayList<ModuleSubscriptionDetails>();
 
-  private final List<SiriModuleDeliveryFilter> filters;
-
-  public SubscriptionDetails(ESiriModuleType moduleType, SubscriptionId id,
-      String address, SubscriptionRequest subscriptionRequest, AbstractSubscriptionStructure moduleSubscription,
-      List<SiriModuleDeliveryFilter> filters) {
-    this.moduleType = moduleType;
-    this.id = id;
+  public SubscriptionDetails(String address, String messageId,
+      SubscriptionRequest subscriptionRequest) {
     this.address = address;
+    this.messageId = messageId;
     this.subscriptionRequest = subscriptionRequest;
-    this.moduleSubscription = moduleSubscription;
-    this.filters = filters;
-  }
-
-  public ESiriModuleType getModuleType() {
-    return moduleType;
-  }
-
-  public SubscriptionId getId() {
-    return id;
   }
 
   public String getAddress() {
     return address;
   }
-  
+
+  public String getMessageId() {
+    return messageId;
+  }
+
   public SubscriptionRequest getSubscriptionRequest() {
     return subscriptionRequest;
   }
 
-  public AbstractSubscriptionStructure getModuleSubscription() {
-    return moduleSubscription;
+  public List<ModuleSubscriptionDetails> getModuleDetails() {
+    return moduleDetails;
   }
 
-  public List<SiriModuleDeliveryFilter> getFilters() {
-    return filters;
+  public void addModuleDetails(ModuleSubscriptionDetails details) {
+    moduleDetails.add(details);
   }
 }

@@ -6,8 +6,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+import javax.xml.datatype.Duration;
 
 import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriException;
@@ -18,10 +24,13 @@ import org.onebusaway.siri.core.versioning.SiriVersioning;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.org.siri.siri.MessageQualifierStructure;
+import uk.org.siri.siri.MessageRefStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
 import uk.org.siri.siri.Siri;
+import uk.org.siri.siri.SubscriptionContextStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 
 public class SiriServer extends SiriCommon implements SiriRawHandler {
@@ -40,7 +49,9 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
 
   private List<SiriSubscriptionRequestHandler> _subscriptionRequestHandlers = new ArrayList<SiriSubscriptionRequestHandler>();
 
-  private ExecutorService _executor;
+  private ConcurrentMap<String, ScheduledFuture<?>> _heartbeatTasksByMessageId = new ConcurrentHashMap<String, ScheduledFuture<?>>();
+
+  private ScheduledExecutorService _executor;
 
   public SiriServer() {
     _identity = UUID.randomUUID().toString();
@@ -107,7 +118,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
 
   public void start() throws SiriException {
 
-    _executor = Executors.newFixedThreadPool(5);
+    _executor = Executors.newScheduledThreadPool(5);
   }
 
   public void stop() {
@@ -127,17 +138,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
 
   public void publish(ServiceDelivery serviceDelivery) {
 
-    if (serviceDelivery.getAddress() == null)
-      serviceDelivery.setAddress(_serverUrl);
-
-    if (serviceDelivery.getProducerRef() == null) {
-      ParticipantRefStructure producerRef = new ParticipantRefStructure();
-      producerRef.setValue(_identity);
-      serviceDelivery.setProducerRef(producerRef);
-    }
-
-    if (serviceDelivery.getResponseTimestamp() == null)
-      serviceDelivery.setResponseTimestamp(new Date());
+    fillInServiceDeliveryDefaults(serviceDelivery);
 
     List<SubscriptionEvent> events = _subscriptionManager.publish(serviceDelivery);
 
@@ -205,7 +206,19 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
     for (SiriSubscriptionRequestHandler handler : _subscriptionRequestHandlers)
       handler.handleSubscriptionRequest(subscriptionRequest);
 
-    _subscriptionManager.handleSubscriptionRequest(subscriptionRequest);
+    SubscriptionDetails details = _subscriptionManager.handleSubscriptionRequest(subscriptionRequest);
+
+    SubscriptionContextStructure context = subscriptionRequest.getSubscriptionContext();
+
+    if (context != null && context.getHeartbeatInterval() != null) {
+      Duration interval = context.getHeartbeatInterval();
+      long heartbeatInterval = interval.getTimeInMillis(new Date());
+
+      HeartbeatTask task = new HeartbeatTask(details);
+      ScheduledFuture<?> future = _executor.scheduleAtFixedRate(task,
+          heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
+      _heartbeatTasksByMessageId.put(details.getMessageId(), future);
+    }
   }
 
   private void handleServiceRequest(ServiceRequest serviceRequest, Writer writer) {
@@ -227,17 +240,46 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
     marshall(response, writer);
   }
 
+  private void fillInServiceDeliveryDefaults(ServiceDelivery serviceDelivery) {
+
+    if (serviceDelivery.getAddress() == null)
+      serviceDelivery.setAddress(_serverUrl);
+
+    if (serviceDelivery.getProducerRef() == null) {
+      ParticipantRefStructure producerRef = new ParticipantRefStructure();
+      producerRef.setValue(_identity);
+      serviceDelivery.setProducerRef(producerRef);
+    }
+
+    if (serviceDelivery.getResponseTimestamp() == null)
+      serviceDelivery.setResponseTimestamp(new Date());
+
+    if (serviceDelivery.getResponseMessageIdentifier() == null) {
+      MessageQualifierStructure messageId = new MessageQualifierStructure();
+      messageId.setValue(UUID.randomUUID().toString());
+      serviceDelivery.setResponseMessageIdentifier(messageId);
+    }
+  }
+
   private void publishResponse(SubscriptionEvent event) {
 
-    SubscriptionDetails details = event.getDetails();
+    ModuleSubscriptionDetails moduleDetails = event.getDetails();
+    SubscriptionDetails details = moduleDetails.getDetails();
     String address = details.getAddress();
     ServiceDelivery delivery = event.getDelivery();
 
     try {
       sendHttpRequest(address, delivery);
     } catch (SiriConnectionException ex) {
-      _subscriptionManager.terminateSubscription(details);
+      terminateSubscription(details);
     }
+  }
+
+  private void terminateSubscription(SubscriptionDetails details) {
+    _subscriptionManager.terminateSubscription(details);
+    ScheduledFuture<?> future = _heartbeatTasksByMessageId.remove(details.getMessageId());
+    if (future != null)
+      future.cancel(true);
   }
 
   private class PublishEventTask implements Runnable {
@@ -253,11 +295,45 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
       try {
         publishResponse(_event);
       } catch (Throwable ex) {
-        SubscriptionDetails details = _event.getDetails();
+        ModuleSubscriptionDetails details = _event.getDetails();
         _log.warn("error publishing to " + details.getId(), ex);
       }
     }
+  }
 
+  private class HeartbeatTask implements Runnable {
+
+    private final SubscriptionDetails _details;
+
+    public HeartbeatTask(SubscriptionDetails details) {
+      _details = details;
+    }
+
+    @Override
+    public void run() {
+
+      String address = _details.getAddress();
+
+      ServiceDelivery serviceDelivery = new ServiceDelivery();
+      fillInServiceDeliveryDefaults(serviceDelivery);
+
+      String messageId = _details.getMessageId();
+      if (messageId != null) {
+        MessageRefStructure messageRef = new MessageRefStructure();
+        messageRef.setValue(messageId);
+        serviceDelivery.setRequestMessageRef(messageRef);
+      }
+
+      try {
+
+        _log.debug("publishing heartbeat to " + address);
+        sendHttpRequest(address, serviceDelivery);
+
+      } catch (SiriConnectionException ex) {
+        _log.warn("error publishing heartbeat to " + address, ex);
+        terminateSubscription(_details);
+      }
+    }
   }
 
 }

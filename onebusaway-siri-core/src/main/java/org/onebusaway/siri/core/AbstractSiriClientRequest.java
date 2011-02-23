@@ -11,7 +11,7 @@ public abstract class AbstractSiriClientRequest {
   private int reconnectionAttempts = 0;
 
   private int reconnectionInterval = 60;
-
+  
   public String getTargetUrl() {
     return targetUrl;
   }

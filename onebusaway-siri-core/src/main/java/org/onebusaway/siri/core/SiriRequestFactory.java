@@ -4,6 +4,10 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
+
 import org.onebusaway.siri.core.exceptions.SiriMissingArgumentException;
 import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
@@ -24,6 +28,7 @@ import uk.org.siri.siri.StopMonitoringRequestStructure;
 import uk.org.siri.siri.StopMonitoringSubscriptionStructure;
 import uk.org.siri.siri.StopTimetableRequestStructure;
 import uk.org.siri.siri.StopTimetableSubscriptionStructure;
+import uk.org.siri.siri.SubscriptionContextStructure;
 import uk.org.siri.siri.SubscriptionQualifierStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.VehicleMonitoringRefStructure;
@@ -39,6 +44,7 @@ public class SiriRequestFactory {
   private static final String ARG_RECONNECTION_ATTEMPTS = "ReconnectionAttempts";
   private static final String ARG_RECONNECTION_INTERVAL = "ReconnectionInterval";
 
+  private static final String ARG_HEARTBEAT_INTERVAL = "HeartbeatInterval";
   private static final String ARG_MESSAGE_IDENTIFIER = "MessageIdentifier";
   private static final String ARG_MAXIMUM_VEHICLES = "MaximumVehicles";
   private static final String ARG_VEHICLE_REF = "VehicleRef";
@@ -95,6 +101,17 @@ public class SiriRequestFactory {
       MessageQualifierStructure messageIdentifier = new MessageQualifierStructure();
       messageIdentifier.setValue(messageIdentifierValue);
       subscriptionRequest.setMessageIdentifier(messageIdentifier);
+    }
+
+    String heartbeatIntervalValue = args.get(ARG_HEARTBEAT_INTERVAL);
+    if (heartbeatIntervalValue != null) {
+      DatatypeFactory dataTypeFactory = createDataTypeFactory();
+      int heartbeatInterval = Integer.parseInt(heartbeatIntervalValue);
+      Duration interval = dataTypeFactory.newDuration(heartbeatInterval * 1000);
+      SubscriptionContextStructure context = new SubscriptionContextStructure();
+      context.setHeartbeatInterval(interval);
+      subscriptionRequest.setSubscriptionContext(context);
+      request.setHeartbeatInterval(heartbeatInterval);
     }
 
     String moduleTypeValue = args.get(ARG_MODULE_TYPE);
@@ -224,6 +241,7 @@ public class SiriRequestFactory {
       case VEHICLE_MONITORING:
         handleVehicleMonitoringSubscriptionSpecificArguments(
             (VehicleMonitoringSubscriptionStructure) moduleSubscription, args);
+        break;
       case SITUATION_EXCHANGE:
         handleSituationExchangeSubscriptionSpecificArguments(
             (SituationExchangeSubscriptionStructure) moduleSubscription, args);
@@ -292,5 +310,13 @@ public class SiriRequestFactory {
   private void applyArgsToSituationExchangeRequest(
       SituationExchangeRequestStructure request, Map<String, String> args) {
 
+  }
+
+  private DatatypeFactory createDataTypeFactory() {
+    try {
+      return DatatypeFactory.newInstance();
+    } catch (DatatypeConfigurationException e) {
+      throw new IllegalStateException(e);
+    }
   }
 }

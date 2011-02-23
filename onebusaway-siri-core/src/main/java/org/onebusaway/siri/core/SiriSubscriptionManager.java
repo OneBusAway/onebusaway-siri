@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import uk.org.siri.siri.AbstractServiceDeliveryStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.MessageQualifierStructure;
+import uk.org.siri.siri.MessageRefStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.SubscriptionQualifierStructure;
@@ -26,7 +28,7 @@ public class SiriSubscriptionManager {
 
   private static Logger _log = LoggerFactory.getLogger(SiriSubscriptionManager.class);
 
-  private Map<ESiriModuleType, ConcurrentMap<SubscriptionId, SubscriptionDetails>> _subscriptionsByType = new HashMap<ESiriModuleType, ConcurrentMap<SubscriptionId, SubscriptionDetails>>();
+  private Map<ESiriModuleType, ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails>> _subscriptionsByType = new HashMap<ESiriModuleType, ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails>>();
 
   private SiriModuleDeliveryFilterFactory _deliveryFilterFactory = new SiriModuleDeliveryFilterFactory();
 
@@ -34,7 +36,7 @@ public class SiriSubscriptionManager {
 
   public SiriSubscriptionManager() {
     for (ESiriModuleType type : ESiriModuleType.values()) {
-      ConcurrentMap<SubscriptionId, SubscriptionDetails> subscriptionDetailsBySubscriberId = new ConcurrentHashMap<SubscriptionId, SubscriptionDetails>();
+      ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails> subscriptionDetailsBySubscriberId = new ConcurrentHashMap<SubscriptionId, ModuleSubscriptionDetails>();
       _subscriptionsByType.put(type, subscriptionDetailsBySubscriberId);
     }
   }
@@ -49,27 +51,46 @@ public class SiriSubscriptionManager {
     _deliveryFilterSources.remove(source);
   }
 
-  /****
+  /**
+   * @return **
    * 
    ****/
 
-  public void handleSubscriptionRequest(SubscriptionRequest subscriptionRequest) {
+  public SubscriptionDetails handleSubscriptionRequest(
+      SubscriptionRequest subscriptionRequest) {
 
     String address = subscriptionRequest.getAddress();
 
     if (subscriptionRequest.getConsumerAddress() != null)
       address = subscriptionRequest.getConsumerAddress();
 
+    String messageId = null;
+    if (subscriptionRequest.getMessageIdentifier() != null)
+      messageId = subscriptionRequest.getMessageIdentifier().getValue();
+    if (messageId == null)
+      messageId = UUID.randomUUID().toString();
+
+    SubscriptionDetails details = new SubscriptionDetails(address, messageId,
+        subscriptionRequest);
+
     for (ESiriModuleType moduleType : ESiriModuleType.values())
-      handleSubscriptionRequests(moduleType, address, subscriptionRequest);
+      handleSubscriptionRequests(moduleType, details);
+
+    return details;
   }
 
   public void terminateSubscription(SubscriptionDetails details) {
-    ESiriModuleType moduleType = details.getModuleType();
-    SubscriptionId id = details.getId();
+    for (ModuleSubscriptionDetails moduleDetails : details.getModuleDetails()) {
+      ESiriModuleType moduleType = moduleDetails.getModuleType();
+      SubscriptionId id = moduleDetails.getId();
 
-    ConcurrentMap<SubscriptionId, SubscriptionDetails> subscriptionDetailsBySubscriberId = _subscriptionsByType.get(moduleType);
-    subscriptionDetailsBySubscriberId.remove(id);
+      ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails> subscriptionDetailsBySubscriberId = _subscriptionsByType.get(moduleType);
+      subscriptionDetailsBySubscriberId.remove(id);
+    }
+  }
+
+  public void terminateSubscription(ModuleSubscriptionDetails moduleDetails) {
+    terminateSubscription(moduleDetails.getDetails());
   }
 
   public List<SubscriptionEvent> publish(ServiceDelivery delivery) {
@@ -87,13 +108,14 @@ public class SiriSubscriptionManager {
    ****/
 
   private <T extends AbstractSubscriptionStructure> void handleSubscriptionRequests(
-      ESiriModuleType moduleType, String address,
-      SubscriptionRequest subscriptionRequest) {
+      ESiriModuleType moduleType, SubscriptionDetails details) {
+
+    SubscriptionRequest subscriptionRequest = details.getSubscriptionRequest();
 
     List<AbstractSubscriptionStructure> subscriptionRequests = SiriLibrary.getSubscriptionRequestsForModule(
         subscriptionRequest, moduleType);
 
-    ConcurrentMap<SubscriptionId, SubscriptionDetails> subscriptionDetailsBySubscriberId = _subscriptionsByType.get(moduleType);
+    ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails> subscriptionDetailsBySubscriberId = _subscriptionsByType.get(moduleType);
 
     for (AbstractSubscriptionStructure request : subscriptionRequests) {
 
@@ -120,10 +142,11 @@ public class SiriSubscriptionManager {
       List<SiriModuleDeliveryFilter> filters = computeFilterSetForSubscriptionRequest(
           subscriptionRequest, moduleType, request);
 
-      SubscriptionDetails details = new SubscriptionDetails(moduleType, id,
-          address, subscriptionRequest, request, filters);
+      ModuleSubscriptionDetails moduleDetails = new ModuleSubscriptionDetails(
+          details, moduleType, id, request, filters);
+      details.addModuleDetails(moduleDetails);
 
-      subscriptionDetailsBySubscriberId.put(id, details);
+      subscriptionDetailsBySubscriberId.put(id, moduleDetails);
     }
   }
 
@@ -157,14 +180,14 @@ public class SiriSubscriptionManager {
     List<T> deliveries = SiriLibrary.getServiceDeliveriesForModule(delivery,
         moduleType);
 
-    ConcurrentMap<SubscriptionId, SubscriptionDetails> subscriptionDetailsBySubscriberId = _subscriptionsByType.get(moduleType);
+    ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails> subscriptionDetailsBySubscriberId = _subscriptionsByType.get(moduleType);
 
-    for (SubscriptionDetails details : subscriptionDetailsBySubscriberId.values()) {
+    for (ModuleSubscriptionDetails moduleDetails : subscriptionDetailsBySubscriberId.values()) {
 
       ServiceDelivery updatedDelivery = copyDeliveryShallow(delivery);
 
       List<T> applicableResponses = getApplicableResponses(updatedDelivery,
-          moduleType, details, deliveries);
+          moduleType, moduleDetails, deliveries);
 
       if (applicableResponses == null || applicableResponses.isEmpty())
         continue;
@@ -173,7 +196,18 @@ public class SiriSubscriptionManager {
           updatedDelivery, moduleType);
       SiriLibrary.copyList(applicableResponses, specifiedDeliveries);
 
-      SubscriptionEvent event = new SubscriptionEvent(details, updatedDelivery);
+      SubscriptionDetails details = moduleDetails.getDetails();
+      SubscriptionRequest subscriptionRequest = details.getSubscriptionRequest();
+      MessageQualifierStructure messageId = subscriptionRequest.getMessageIdentifier();
+
+      if (messageId != null && messageId.getValue() != null) {
+        MessageRefStructure messageRef = new MessageRefStructure();
+        messageRef.setValue(messageId.getValue());
+        updatedDelivery.setRequestMessageRef(messageRef);
+      }
+
+      SubscriptionEvent event = new SubscriptionEvent(moduleDetails,
+          updatedDelivery);
       events.add(event);
     }
   }
@@ -181,12 +215,13 @@ public class SiriSubscriptionManager {
   @SuppressWarnings("unchecked")
   private <T extends AbstractServiceDeliveryStructure> List<T> getApplicableResponses(
       ServiceDelivery delivery, ESiriModuleType type,
-      SubscriptionDetails details, List<T> responses) {
+      ModuleSubscriptionDetails moduleDetails, List<T> responses) {
 
-    SubscriptionId subId = details.getId();
+    SubscriptionDetails details = moduleDetails.getDetails();
+    SubscriptionId subId = moduleDetails.getId();
     SubscriptionRequest sub = details.getSubscriptionRequest();
-    AbstractSubscriptionStructure moduleSub = details.getModuleSubscription();
-    List<SiriModuleDeliveryFilter> filters = details.getFilters();
+    AbstractSubscriptionStructure moduleSub = moduleDetails.getModuleSubscription();
+    List<SiriModuleDeliveryFilter> filters = moduleDetails.getFilters();
 
     List<T> applicable = new ArrayList<T>();
 

@@ -6,8 +6,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpEntity;
@@ -20,8 +23,10 @@ import org.onebusaway.siri.core.versioning.SiriVersioning;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.org.siri.siri.AbstractServiceDeliveryStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.MessageQualifierStructure;
+import uk.org.siri.siri.MessageRefStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
@@ -40,6 +45,10 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
   protected String _privateClientUrl;
 
   private List<SiriServiceDeliveryHandler> _serviceDeliveryHandlers = new ArrayList<SiriServiceDeliveryHandler>();
+
+  private ConcurrentMap<String, ActiveSubscription> _activeSubscriptionsByMessageId = new ConcurrentHashMap<String, ActiveSubscription>();
+
+  private ConcurrentMap<SubscriptionId, ActiveSubscription> _activeSubscriptionsById = new ConcurrentHashMap<SubscriptionId, ActiveSubscription>();
 
   private ScheduledExecutorService _executor;
 
@@ -156,7 +165,6 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
   public void handleSubscriptionRequest(
       SiriClientSubscriptionRequest subscriptionRequest) {
 
-    String targetUrl = subscriptionRequest.getTargetUrl();
     SubscriptionRequest request = subscriptionRequest.getRequest();
 
     ParticipantRefStructure identity = new ParticipantRefStructure();
@@ -166,8 +174,14 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     request.setAddress(_clientUrl.toString());
 
     MessageQualifierStructure messageIdentifier = new MessageQualifierStructure();
-    messageIdentifier.setValue(UUID.randomUUID().toString());
+    String messageId = UUID.randomUUID().toString();
+    messageIdentifier.setValue(messageId);
     request.setMessageIdentifier(messageIdentifier);
+
+    ActiveSubscription activeSubscription = new ActiveSubscription(
+        subscriptionRequest, messageId);
+
+    List<SubscriptionId> ids = new ArrayList<SubscriptionId>();
 
     for (ESiriModuleType moduleType : ESiriModuleType.values()) {
       List<AbstractSubscriptionStructure> requests = SiriLibrary.getSubscriptionRequestsForModule(
@@ -178,10 +192,21 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
         SubscriptionQualifierStructure subId = subRequest.getSubscriptionIdentifier();
         if (subId == null) {
           subId = new SubscriptionQualifierStructure();
-          subId.setValue(UUID.randomUUID().toString());
+          String subscriptionId = UUID.randomUUID().toString();
+          subId.setValue(subscriptionId);
           subRequest.setSubscriptionIdentifier(subId);
+
+          SubscriptionId id = new SubscriptionId(_identity, subscriptionId);
+          ids.add(id);
         }
       }
+    }
+
+    _activeSubscriptionsByMessageId.put(messageId, activeSubscription);
+
+    activeSubscription.setSubscriptionIds(ids);
+    for (SubscriptionId id : ids) {
+      _activeSubscriptionsById.put(id, activeSubscription);
     }
 
     /**
@@ -193,9 +218,11 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     Object payload = versioning.getPayloadAsVersion(request,
         subscriptionRequest.getTargetVersion());
 
-    ConnectionAttempt attempt = new ConnectionAttempt(targetUrl, payload);
+    ConnectionAttempt attempt = new ConnectionAttempt(activeSubscription,
+        payload);
     attempt.setReconnectionInterval(subscriptionRequest.getReconnectionInterval());
     attempt.setRemainingReconnectionAttempts(subscriptionRequest.getReconnectionAttempts());
+
     _executor.execute(attempt);
   }
 
@@ -205,6 +232,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
   @Override
   public void handleRawRequest(Reader reader, Writer writer) {
+
     Object data = unmarshall(reader);
 
     /**
@@ -219,14 +247,12 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
       Siri siri = (Siri) data;
       ServiceDelivery delivery = siri.getServiceDelivery();
       if (delivery != null) {
-        for (SiriServiceDeliveryHandler handler : _serviceDeliveryHandlers)
-          handler.handleServiceDelivery(delivery);
+        handleServiceDelivery(delivery);
       }
 
     } else if (data instanceof ServiceDelivery) {
       ServiceDelivery delivery = (ServiceDelivery) data;
-      for (SiriServiceDeliveryHandler handler : _serviceDeliveryHandlers)
-        handler.handleServiceDelivery(delivery);
+      handleServiceDelivery(delivery);
     }
   }
 
@@ -234,15 +260,57 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    * Private Methods
    ****/
 
+  private void handleServiceDelivery(ServiceDelivery serviceDelivery) {
+    
+    resetHeartbeatTimeouts(serviceDelivery);
+
+    for (SiriServiceDeliveryHandler handler : _serviceDeliveryHandlers)
+      handler.handleServiceDelivery(serviceDelivery);
+  }
+
+  private void resetHeartbeatTimeouts(ServiceDelivery serviceDelivery) {
+
+    MessageRefStructure requestMessageId = serviceDelivery.getRequestMessageRef();
+    if (requestMessageId != null && requestMessageId.getValue() != null) {
+      String messageId = requestMessageId.getValue();
+      ActiveSubscription activeSubscription = _activeSubscriptionsByMessageId.get(messageId);
+      if (activeSubscription != null)
+        activeSubscription.resetHeartbeatTimeout();
+    }
+
+    /**
+     * Reset any applicable heart beats
+     */
+    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
+
+      List<AbstractServiceDeliveryStructure> deliveries = SiriLibrary.getServiceDeliveriesForModule(
+          serviceDelivery, moduleType);
+
+      for (AbstractServiceDeliveryStructure delivery : deliveries) {
+        String subscriberId = delivery.getSubscriberRef().getValue();
+        String subscriptionId = delivery.getSubscriptionRef().getValue();
+        SubscriptionId id = new SubscriptionId(subscriberId, subscriptionId);
+        ActiveSubscription activeSubscription = _activeSubscriptionsById.get(id);
+        if (activeSubscription != null)
+          activeSubscription.resetHeartbeatTimeout();
+      }
+    }
+  }
+
+  /****
+   * 
+   ****/
+
   private class ConnectionAttempt implements Runnable {
 
-    private final String targetUrl;
+    private final ActiveSubscription activeSubscription;
     private final Object payload;
     private int remainingReconnectionAttempts = 0;
     private int reconnectionInterval = 60;
 
-    public ConnectionAttempt(String targetUrl, Object payload) {
-      this.targetUrl = targetUrl;
+    public ConnectionAttempt(ActiveSubscription activeSubscription,
+        Object payload) {
+      this.activeSubscription = activeSubscription;
       this.payload = payload;
     }
 
@@ -257,8 +325,20 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
     @Override
     public void run() {
+
+      SiriClientSubscriptionRequest request = activeSubscription.request;
+      String targetUrl = request.getTargetUrl();
+
       try {
+
         sendHttpRequest(targetUrl, payload);
+
+        /***
+         * Now that we've successfully connected, we register our heartbeat
+         * timeout
+         */
+        activeSubscription.resetHeartbeatTimeout();
+
       } catch (SiriConnectionException ex) {
         _log.warn("error connecting to " + targetUrl + " ("
             + this.remainingReconnectionAttempts
@@ -272,10 +352,90 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
          * We have some reconnection attempts remaining, so we schedule another
          * connection attempt
          */
-        if( this.remainingReconnectionAttempts > 0)
+        if (this.remainingReconnectionAttempts > 0)
           this.remainingReconnectionAttempts--;
         _executor.schedule(this, reconnectionInterval, TimeUnit.SECONDS);
       }
     }
   }
+
+  private class ActiveSubscription {
+
+    private final SiriClientSubscriptionRequest request;
+
+    private final String messageId;
+
+    private List<SubscriptionId> subscriptionIds;
+
+    private ScheduledFuture<?> heartbeatTimeout;
+
+    private boolean canceled = false;
+
+    public ActiveSubscription(SiriClientSubscriptionRequest request,
+        String messageId) {
+      this.request = request;
+      this.messageId = messageId;
+    }
+
+    public void setSubscriptionIds(List<SubscriptionId> subscriptionIds) {
+      this.subscriptionIds = subscriptionIds;
+    }
+
+    public synchronized void resetHeartbeatTimeout() {
+
+      clearTimeout();
+
+      if (canceled)
+        return;
+
+      int heartbeatInterval = request.getHeartbeatInterval();
+      if (heartbeatInterval > 0) {
+        heartbeatTimeout = _executor.schedule(new HeartbeatTimeout(this),
+            heartbeatInterval * 2, TimeUnit.SECONDS);
+      }
+    }
+
+    public synchronized void cancel() {
+
+      canceled = true;
+
+      clearTimeout();
+
+      /**
+       * We timed out! First, we clean up our existing connection
+       */
+      _activeSubscriptionsByMessageId.remove(messageId);
+      _activeSubscriptionsById.keySet().removeAll(subscriptionIds);
+
+      /**
+       * Second, we attempt to reconnect
+       */
+      handleSubscriptionRequest(request);
+    }
+
+    private void clearTimeout() {
+      if (heartbeatTimeout != null) {
+        heartbeatTimeout.cancel(true);
+        heartbeatTimeout = null;
+      }
+    }
+  }
+
+  private class HeartbeatTimeout implements Runnable {
+
+    private final ActiveSubscription activeSubscription;
+
+    public HeartbeatTimeout(ActiveSubscription activeSubscription) {
+      this.activeSubscription = activeSubscription;
+    }
+
+    @Override
+    public void run() {
+
+      _log.warn("heartbeat interval timeout");
+
+      activeSubscription.cancel();
+    }
+  }
+
 }

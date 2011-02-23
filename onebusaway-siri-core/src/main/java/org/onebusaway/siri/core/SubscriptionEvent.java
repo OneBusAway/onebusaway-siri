@@ -4,17 +4,17 @@ import uk.org.siri.siri.ServiceDelivery;
 
 class SubscriptionEvent {
 
-  private final SubscriptionDetails details;
+  private final ModuleSubscriptionDetails details;
 
   private final ServiceDelivery delivery;
 
-  public SubscriptionEvent(SubscriptionDetails details,
+  public SubscriptionEvent(ModuleSubscriptionDetails details,
       ServiceDelivery delivery) {
     this.details = details;
     this.delivery = delivery;
   }
 
-  public SubscriptionDetails getDetails() {
+  public ModuleSubscriptionDetails getDetails() {
     return details;
   }
 
