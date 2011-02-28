@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>onebusaway</artifactId>
@@ -13,11 +14,23 @@
   <name>onebusaway-siri</name>
   <description>Support for the SIRI api for real-time transit data</description>
 
+  <properties>
+    <spring.version>3.0.5.RELEASE</spring.version>
+  </properties>
+  
   <scm>
     <connection>scm:svn:http://onebusaway.googlecode.com/svn/onebusaway-siri/trunk</connection>
     <developerConnection>scm:svn:https://onebusaway.googlecode.com/svn/onebusaway-siri/trunk</developerConnection>
     <url>http://code.google.com/p/onebusaway/source/browse/#svn/onebusaway-siri/trunk</url>
   </scm>
+
+  <distributionManagement>
+    <!-- Even though we specify this in the parent pom, we need to specify it here to have full control over the url -->
+    <site>
+      <id>${site_id}</id>
+      <url>${site_url}</url>
+    </site>
+  </distributionManagement>
 
   <modules>
     <module>onebusaway-siri-api</module>
@@ -30,10 +43,6 @@
     <module>onebusaway-siri-repeater-cli</module>
     <module>onebusaway-siri-repeater-webapp</module>
   </modules>
-
-  <properties>
-    <spring.version>3.0.5.RELEASE</spring.version>
-  </properties>
 
   <!-- This is where we control the master dependency version used by all modules -->
   <dependencyManagement>
