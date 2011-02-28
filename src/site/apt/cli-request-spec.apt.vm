@@ -1,0 +1,45 @@
+ ------
+Command-Line Request Spec
+ ------
+Brian Ferris
+ ------
+2011-02-28
+ ------
+
+Introduction
+
+  A number of our SIRI tools, including the {{{./onebusaway-siri-client-cli.html}command-line client}} and the
+{{{./onebusaway-siri-repeater-cli.html}repeater application}}, accept command-line argument request specifications.
+These request specs determine how the SIRI applications will connect to remote SIRI data sources.
+
+Details
+
+  Each request spec string indicates a private SIRI data source to connect to. The request has the following syntax:
+
++---+
+Key=Value,Key=Value,...
++---+
+
+  At minimum, you need to specify a <<<Url>>> that indicates the SIRI resource to connect to, and a <<<ModuleType>>> that
+indicates the SIRI module type to request. Additional keys specific to the module type can be used to further filter
+the request. For example:
+
++---+
+Url=http://host:port/path,ModuleType=VEHICLE_MONITORING
++---+
+
+  We provide additional argument documentation below:
+
+* Vehicle Monitoring
+
+  You can specify any of the following sub-elements of the <<<VehicleMonitoringRequest>>> request element:
+
+  * <<<VehicleMonitoringRef>>>
+  
+  * <<<VehicleRef>>>
+  
+  * <<<LineRef>>>
+  
+  * <<<DirectionRef>>>
+  
+  * <<<MaximumVehicles>>>

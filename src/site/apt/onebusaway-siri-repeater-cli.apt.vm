@@ -1,0 +1,222 @@
+ ------
+SIRI Repeater Application
+ ------
+Brian Ferris
+ ------
+2011-02-28
+ ------
+
+Introduction
+
+  The SIRI repeater application is a command-line application that provides a repeater/proxy between existing
+SIRI data sources and other SIRI clients.  The repeater serves to provide:
+
+  * reduction on the load of your primary SIRI data source
+  
+  * customizable data filtering and transforming
+  
+  * additional client authentication and management
+
+  []
+  
+  The app is still under active development as we work to flesh out these features.
+
+  The general idea is that the repeater application connects to your existing SIRI data sources as a client and also
+provides a server to rebroadcast SIRI data to other clients.
+
+  In the this documentation, we'll often refer to <<PRIVATE>> SIRI sources, which are the SIRI data sources you wish to
+proxy, and <<PUBLIC>> SIRI clients, which will be proxied by the application.
+
+
+Getting the Application
+
+  You can download the latest application here:
+
+#if( $currentVersion.contains('SNAPSHOT') )
+  #set( $repo_base = 'snapshot-repository' )
+#else
+  #set( $repo_base = 'repository' )
+#end
+  
+  {{{http://developer.onebusaway.org/maven/${repo_base}/org/onebusaway/onebusaway-siri-repeater-cli/${currentVersion}/onebusaway-siri-repeater-cli-${currentVersion}.jar}onebusaway-siri-repeater-cli-${currentVersion}.jar}}
+ 
+
+Using the Application
+
+  You'll need a Java 1.6 runtime installed to run the client.  To run the client:
+
++---+
+java -jar onebusaway-siri-repeater-cli.jar [-args] request [request ...]
++---+
+
+* Arguments
+
+  * <<<-id userId>>> : specify the SIRI client user id
+  
+  * <<<-repeaterUrl url>>> : the url your repeater applications binds to and shares for incoming public client requests (default=http://localhost:8080/)
+  
+  * <<<-privateRepeaterUrl url>>> : optionally set an alternate repeater url for binding, but still report -repeaterUrl to connected clients
+  
+  * <<<-clientUrl url>>> : the url your repeater application binds to and shares for for private server requests (default=http://localhost:8081/)
+  
+  * <<<-privateClientUrl url>>> : optionally set an alternate client url for binding, but still report -clientUrl to connected clients
+will actually bind to, if specified (default=repeaterUrl)
+  
+  * <<<-dataSource path>>> : a Spring context.xml file containing additional bean defs
+
+* Request Spec
+
+  Each <<<request>>> command line argument indicates a private SIRI data source to connect to.  The <<<request>>> has
+the following syntax:
+
++---+
+Key=Value,Key=Value,...
++---+
+
+  At minimum, you need to specify a <<<Url>>> that indicates the SIRI resource to connect to, and a <<<ModuleType>>> that
+indicates the SIRI module type to request.  Additional keys specific to the module type can be used to further filter the
+request.  For example:
+
++---+
+Url=http://host:port/path,ModuleType=VEHICLE_MONITORING
++---+
+
+  For more details, see the full {{{./cli-request-spec.html}command-line request spec}} documentation.
+
+* Repeater and Client Urls
+
+  There are two types of urls you might specify to the repeater application:
+
+ * repeater url - the url the application will listen to for incoming public client connections (default=http://localhost:8080/)
+ 
+ * client url - the url the application will use for publish/subscribe communication with private SIRI data sources (default=http://localhost:8081/)
+ 
+ []
+
+  There may be situations, as determined by your network/firewall/NAT configuration, that require a different public
+url that external clients will try to connect to and a private url that the application will actually bind to (with
+your firewall connecting the dots).
+
+  For example, your public url for incoming client requests might be <<<http://yourdomain.com/>>> while internally
+you want the SIRI repeater application to listen at <<<http://localhost:8080>>>, with port-forwarding linking the two.
+In such a case, you'd specify <<<-clientUrl http://yourdomain.com/>>> and <<<-privateClientUrl http://localhost:8080>>>.
+
+Custom Filters
+
+* Writing a Filter
+
+  On key area of functionality is the ability to specify filters that control how SIRI data is shared between your private data sources and public clients.
+
+  Right now, filters are implemented as Java classes.  As we learn more about how agencies hope to filter / transform SIRI data, we hope to provide tools that can be more easily configured.  Until then, you're going to have to get your hands dirty with some Java hacking if you want to develop a filter.
+
+  The key interface to implement for a filter is {{{./apidocs/org/onebusaway/siri/core/filters/SiriModuleDeliveryFilter.html}org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter}}.
+The interface looks like:
+
++---+
+public interface SiriModuleDeliveryFilter {
+
+  public AbstractServiceDeliveryStructure filter(ServiceDelivery delivery, AbstractServiceDeliveryStructure moduleDelivery);
+
+}
++---+
+
+  Recall that a SIRI service delivery payload typically looks like:
+
++---+
+<ServiceDelivery>
+  <StopMonitoringDelivery/>
+  <VehicleMonitoringDelivery/>
+  ...
+</ServiceDelivery>
++---+
+
+  We have a parent <<<\<ServiceDelivery/\>>>> element wrapping module-specific delivery elements.  The filter interface
+operates on these module-specific delivery elements.  Specifically, the filter takes the parent <<<\<ServiceDelivery/\>>>>
+element and the module-specific delivery element as argument and returns a filtered module delivery element, or null
+if the element should be filtered out completely.
+
+  To create filter class of your own, you'll need to add the <<<onebusaway-siri-repeater-cli.jar>>> to your developer
+classpath so that Java can find the definition for <<<SiriModuleDeliveryFilter>>>.
+
+  Here's a quick example that works with <<<\<VehicleMonitoringDelivery/\>>>> elements, filtering on <<<\<VehicleActivity/\>>>>
+elements with a specific vehicle id:
+
++---+
+public class TestFilter implements SiriModuleDeliveryFilter {
+
+  private String _vehicleId = "2305";
+
+  public void setVehicleId(String vehicleId) {
+    _vehicleId = vehicleId;
+  }
+
+  @Override
+  public AbstractServiceDeliveryStructure filter(ServiceDelivery delivery,
+      AbstractServiceDeliveryStructure moduleDelivery) {
+
+    VehicleMonitoringDeliveryStructure vm = (VehicleMonitoringDeliveryStructure) moduleDelivery;
+
+    List<VehicleActivityStructure> vas = vm.getVehicleActivity();
+    List<VehicleActivityStructure> vasFiltered = new ArrayList<VehicleActivityStructure>();
+
+    for (VehicleActivityStructure va : vas) {
+
+      MonitoredVehicleJourney mvj = va.getMonitoredVehicleJourney();
+
+      if (mvj == null)
+        continue;
+
+      VehicleRefStructure vehicleRef = mvj.getVehicleRef();
+
+      if (vehicleRef == null || vehicleRef.getValue() == null)
+        continue;
+
+      String vid = vehicleRef.getValue();
+
+      if (!vid.equals(_vehicleId))
+        continue;
+
+      vasFiltered.add(va);
+    }
+
+    if (vasFiltered.isEmpty())
+      return null;
+
+    if (vasFiltered.size() < vas.size())
+      SiriLibrary.copyList(vasFiltered, vas);
+
+    return vm;
+  }
+}
++---+
+
+  Your filter implementation can simply return the input module delivery object, perhaps modified in some way. It can
+also return an entirely new module delivery object or null to indicate no result should be published to the client.
+
+  When modifying the module delivery object, your filter implementation must adhere to the following behavior:
+
+  The filter is free to modify the module delivery object itself, changing field values or modifying first level result
+lists (for example, adding or removing items from <<<VehicleMonitoringDelivery/VehicleActivity>>>. However, if you wish to
+transform the second-level objects (other than adding or removing them from the parent module delivery object list), YOU MUST MAKE COPIES, which you can then modify and include in the filtered delivery result.
+
+  The idea is that for performance reasons, we make a shallow copy of the incoming module delivery object for filter
+to work with (as opposed to a deep-copy), leaving the second-level objects unaltered. Since most filters will simply
+be removing these objects from the module delivery object, this approach is appropriate for the majority of use-cases.
+However, if your filter needs to modify or transform the second-level objects, you need to make copies of those objects.
+Otherwise, your modifications will affect the output of other unrelated filter chains (aka bad).
+
+  If you want to exclude all output in the filter, simply return null.
+
+* Including a Filter
+
+  To include a filter, add the following command line:
+
++---+
+-filter Class=package.FilterClassName,ModuleType=VEHICLE_MONITORING,Participant=participantId
++---+
+
+  Here you specify the filter class with the <<<Class>>> parameter.  The additional parameters are optional, but shown
+as an example.  You can specify the SIRI module type you want the filter to apply to with the <<<ModuleType>>>
+parameter.  If you don't specify a module type, the filter will apply to all modules.  You can also specify
+the SIRI participant id with <<<Participant>>>.  This will match against "RequestorRef" or "SubscriberRef" in an
+incoming <<<\<SubscriptionRequest/\>>>>.

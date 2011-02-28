@@ -7,6 +7,20 @@ for sharing real-time public transit operations data.
 
   Details on all releases can be found in the {{{./release-notes.html}Release Notes}}.
   
+* Functionality  
+  
+  The library provides some key functionality:
+  
+  * Library for implementing both SIRI clients and servers
+  
+  * {{{./onebusaway-siri-client-cli.html}Command-line utility for querying SIRI data sources}}
+  
+  * {{{./onebusaway-siri-repeater-cli.html}Command-line application SIRI repeater application}}
+  
+  []
+
+* Modules
+  
   The library is broken up into a few key modules:
   
   * <<<onebusaway-siri-api-v10>>> - A JAXB-enabled collection of Java classes for serializing SIRI 1.0 data 
@@ -19,11 +33,11 @@ for sharing real-time public transit operations data.
   
   * <<<onebusaway-siri-jetty>>> - Extension to <<<onebusaway-siri-core>>> that uses embedded Jetty instance for server functionality
   
-  * <<<onebusaway-siri-client-cli>>> - Command-line utility for querying SIRI data sources
+  * <<<onebusaway-siri-client-cli>>> - {{{./onebusaway-siri-client-cli.html}Command-line utility for querying SIRI data sources}}
   
   * <<<onebusaway-siri-repeater>>> - Library for multiplexing, sharing, and repeating SIRI data sources to clients
   
-  * <<<onebusaway-siri-repeater-cli>>> - Command-line utility around  the <<<onebusaway-siri-repeater>>> library
+  * <<<onebusaway-siri-repeater-cli>>> - {{{./onebusaway-siri-repeater-cli.html}Command-line application SIRI repeater application}}
   
   * <<<onebusaway-siri-repeater-webapp>>> - Deployable webapp around  the <<<onebusaway-siri-repeater>>> library
 

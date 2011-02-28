@@ -1,0 +1,96 @@
+ ------
+SIRI Command-Line Client Application
+ ------
+Brian Ferris
+ ------
+2011-02-28
+ ------
+
+Introduction
+
+  The SIRI command-line client application is a simple command-line tool for querying SIRI data providers.
+
+
+Getting the Client
+
+  You can download the latest client here:
+
+#if( $currentVersion.contains('SNAPSHOT') )
+  #set( $repo_base = 'snapshot-repository' )
+#else
+  #set( $repo_base = 'repository' )
+#end
+  
+  {{{http://developer.onebusaway.org/maven/${repo_base}/org/onebusaway/onebusaway-siri-client-cli/${currentVersion}/onebusaway-siri-client-cli-${currentVersion}.jar}onebusaway-siri-client-cli-${currentVersion}.jar}}
+  
+Using the Client
+
+  You'll need a Java 1.6 runtime installed to run the client.  To run the client:
+
++---+
+java -jar onebusaway-siri-client-cli.jar [-args] request [request ...]
++---+
+
+* Arguments
+
+  * <<<-id userId>>> : specify the SIRI client user id
+  
+  * <<<-subscribe>>> : client should perform a publish/subscribe (default is request/response)
+  
+  * <<<-clientUrl url>>> : the url your client publishes to a server in publish/subscribe
+  
+  * <<<-privateClientUrl url>>> : the internal url your client will actually bind to, if specified (default=clientUrl)
+
+* Request Spec
+
+  Each <<<request>>> command line argument indicates a SIRI service or subscription request.  The <<<request>>>
+has the following syntax:
+
++---+
+Key=Value,Key=Value,...
++---+
+
+  At minimum, you need to specify a <<<Url>>> that indicates the SIRI resource to connect to, and a <<<ModuleType>>>
+that indicates the SIRI module type to request.  Additional keys specific to the module type can be used to further
+filter the request.  For example:
+
++---+
+Url=http://host:port/path,ModuleType=VEHICLE_MONITORING,VehicleRef=1234
++---+
+
+  For more details, see the full {{{./cli-request-spec.html}command-line request spec}} documentation.
+
+
+* Examples
+
+  Say there's a SIRI data source at http://localhost:9090/ that's producing Vehicle Monitoring data.  You can subscribe
+to VM events with the following command:
+
++---+
+java -jar onebusaway-siri-client-cli.jar -subscribe Url=http://localhost:9090/,ModuleType=VEHICLE_MONITORING
++---+
+
+  You should start getting SIRI updates printed to the console:
+
++---+
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ServiceDelivery xmlns="http://www.siri.org.uk/siri">
+  <ResponseTimestamp>2011-01-19T17:14:10.049-08:00</ResponseTimestamp>
+  <ProducerRef>5f03db83-f8c0-4060-803a-001ae8dd010d</ProducerRef>
+  <Address>http://localhost:9090</Address>
+  <VehicleMonitoringDelivery>
+    <ResponseTimestamp>2011-01-19T17:14:10.049-08:00</ResponseTimestamp>
+    <RequestMessageRef>dadd8f84-9676-40c7-9de4-1535bf0a9913</RequestMessageRef>
+    <SubscriberRef>bdferris</SubscriberRef>
+    <SubscriptionRef>a528b158-b578-434d-8b56-799fc74c4adb</SubscriptionRef>
+    <VehicleActivity>
+      <MonitoredVehicleJourney>
+        <Delay>P0Y0M0DT0H0M0.490S</Delay>
+        <BlockRef>480060</BlockRef>
+        <CourseOfJourneyRef>15461584</CourseOfJourneyRef>
+        <VehicleRef>2305</VehicleRef>
+      </MonitoredVehicleJourney>
+    </VehicleActivity>
+  </VehicleMonitoringDelivery>
+</ServiceDelivery>
++---+
