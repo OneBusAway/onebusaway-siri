@@ -7,4 +7,5 @@ public class MonitoredCall {
 
   public Boolean VehicleAtStop;
   public DistanceExtensions Extensions;
+  public String StopPointName;
 }
