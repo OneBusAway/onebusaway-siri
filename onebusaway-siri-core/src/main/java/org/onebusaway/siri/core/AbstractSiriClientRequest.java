@@ -2,7 +2,7 @@ package org.onebusaway.siri.core;
 
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
-public abstract class AbstractSiriClientRequest {
+public abstract class AbstractSiriClientRequest<T> {
 
   private String targetUrl;
 
@@ -11,7 +11,29 @@ public abstract class AbstractSiriClientRequest {
   private int reconnectionAttempts = 0;
 
   private int reconnectionInterval = 60;
-  
+
+  /**
+   * Interval, in seconds, on which check status requests are sent to the server
+   */
+  private int checkStatusInterval = 0;
+
+  private int heartbeatInterval = 0;
+
+  private T payload;
+
+  public AbstractSiriClientRequest() {
+
+  }
+
+  public AbstractSiriClientRequest(AbstractSiriClientRequest<?> request) {
+    this.targetUrl = request.targetUrl;
+    this.targetVersion = request.targetVersion;
+    this.reconnectionAttempts = request.reconnectionAttempts;
+    this.reconnectionInterval = request.reconnectionInterval;
+    this.checkStatusInterval = request.checkStatusInterval;
+    this.heartbeatInterval = request.heartbeatInterval;
+  }
+
   public String getTargetUrl() {
     return targetUrl;
   }
@@ -52,4 +74,27 @@ public abstract class AbstractSiriClientRequest {
     this.reconnectionInterval = reconnectionInterval;
   }
 
+  public int getCheckStatusInterval() {
+    return checkStatusInterval;
+  }
+
+  public void setCheckStatusInterval(int checkStatusInterval) {
+    this.checkStatusInterval = checkStatusInterval;
+  }
+
+  public int getHeartbeatInterval() {
+    return heartbeatInterval;
+  }
+
+  public void setHeartbeatInterval(int heartbeatInterval) {
+    this.heartbeatInterval = heartbeatInterval;
+  }
+
+  public T getPayload() {
+    return payload;
+  }
+
+  public void setPayload(T payload) {
+    this.payload = payload;
+  }
 }

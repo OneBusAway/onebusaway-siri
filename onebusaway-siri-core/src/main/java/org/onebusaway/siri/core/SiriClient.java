@@ -13,26 +13,35 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriSerializationException;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
+import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.onebusaway.siri.core.versioning.SiriVersioning;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.org.siri.siri.AbstractServiceDeliveryStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
+import uk.org.siri.siri.CheckStatusRequestStructure;
+import uk.org.siri.siri.CheckStatusResponseStructure;
+import uk.org.siri.siri.HeartbeatNotificationStructure;
 import uk.org.siri.siri.MessageQualifierStructure;
-import uk.org.siri.siri.MessageRefStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
+import uk.org.siri.siri.RequestStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
 import uk.org.siri.siri.Siri;
+import uk.org.siri.siri.SubscriptionContextStructure;
 import uk.org.siri.siri.SubscriptionQualifierStructure;
 import uk.org.siri.siri.SubscriptionRequest;
+import uk.org.siri.siri.SubscriptionResponseStructure;
 
 public class SiriClient extends SiriCommon implements SiriRawHandler {
 
@@ -46,9 +55,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
   private List<SiriServiceDeliveryHandler> _serviceDeliveryHandlers = new ArrayList<SiriServiceDeliveryHandler>();
 
-  private ConcurrentMap<String, ActiveSubscription> _activeSubscriptionsByMessageId = new ConcurrentHashMap<String, ActiveSubscription>();
-
-  private ConcurrentMap<SubscriptionId, ActiveSubscription> _activeSubscriptionsById = new ConcurrentHashMap<SubscriptionId, ActiveSubscription>();
+  private ConcurrentMap<String, ClientSubscriptionChannel> _channelsById = new ConcurrentHashMap<String, ClientSubscriptionChannel>();
 
   private ScheduledExecutorService _executor;
 
@@ -115,115 +122,70 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    * Primary Client Methods
    ****/
 
-  /**
-   * 
-   * @param serviceRequest
-   * @return the immediate service delivery received from the server
-   */
-  public ServiceDelivery handleServiceRequestWithResponse(
-      SiriClientServiceRequest serviceRequest) {
+  public Siri handleSiriRequestWithResponse(SiriClientRequest request) {
 
-    String targetUrl = serviceRequest.getTargetUrl();
-    ServiceRequest request = serviceRequest.getRequest();
+    Siri siri = request.getPayload();
+    fillAllSiriRequestStructures(siri);
+    return processRequestWithResponse(request);
+  }
 
-    ParticipantRefStructure identity = new ParticipantRefStructure();
-    identity.setValue(_identity);
-    request.setRequestorRef(identity);
+  public void handleSiriRequest(SiriClientRequest request) {
 
-    request.setAddress(_clientUrl);
-
-    MessageQualifierStructure messageIdentifier = new MessageQualifierStructure();
-    messageIdentifier.setValue(UUID.randomUUID().toString());
-    request.setMessageIdentifier(messageIdentifier);
-
-    request.setRequestTimestamp(new Date());
-
-    /**
-     * We potentially need to translate the Siri payload to an older version of
-     * the specification, as requested by the caller
-     */
-    SiriVersioning versioning = SiriVersioning.getInstance();
-
-    Object payload = versioning.getPayloadAsVersion(request,
-        serviceRequest.getTargetVersion());
-
-    HttpResponse response = sendHttpRequest(targetUrl, payload);
-
-    HttpEntity entity = response.getEntity();
-    try {
-      return unmarshall(entity.getContent());
-    } catch (Exception ex) {
-      throw new SiriSerializationException(ex);
-    }
+    Siri siri = request.getPayload();
+    fillAllSiriRequestStructures(siri);
+    processRequest(request);
   }
 
   /**
    * 
-   * @param targetUrl the target server url to connect to
+   * @param request
+   * @return the immediate service delivery received from the server
+   */
+  public ServiceDelivery handleServiceRequestWithResponse(
+      SiriClientServiceRequest request) {
+
+    fillRequestStructure(request.getPayload());
+
+    return processRequestWithResponse(request);
+  }
+
+  /**
+   * 
+   * @param request
+   */
+  public void handleServiceRequest(SiriClientServiceRequest request) {
+
+    fillRequestStructure(request.getPayload());
+    processRequest(request);
+  }
+
+  /**
+   * 
    * @param request the subscription request
    */
-  public void handleSubscriptionRequest(
-      SiriClientSubscriptionRequest subscriptionRequest) {
+  public Siri handleSubscriptionRequestWithResponse(
+      SiriClientSubscriptionRequest request) {
 
-    SubscriptionRequest request = subscriptionRequest.getRequest();
+    SubscriptionRequest subRequest = request.getPayload();
 
-    ParticipantRefStructure identity = new ParticipantRefStructure();
-    identity.setValue(_identity);
-    request.setRequestorRef(identity);
+    fillRequestStructure(subRequest);
+    fillSubscriptionRequestStructure(request, subRequest);
 
-    request.setAddress(_clientUrl.toString());
+    return processRequestWithResponse(request);
+  }
 
-    MessageQualifierStructure messageIdentifier = new MessageQualifierStructure();
-    String messageId = UUID.randomUUID().toString();
-    messageIdentifier.setValue(messageId);
-    request.setMessageIdentifier(messageIdentifier);
+  /**
+   * 
+   * @param request the subscription request
+   */
+  public void handleSubscriptionRequest(SiriClientSubscriptionRequest request) {
 
-    ActiveSubscription activeSubscription = new ActiveSubscription(
-        subscriptionRequest, messageId);
+    SubscriptionRequest subRequest = request.getPayload();
 
-    List<SubscriptionId> ids = new ArrayList<SubscriptionId>();
+    fillRequestStructure(subRequest);
+    fillSubscriptionRequestStructure(request, subRequest);
 
-    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
-      List<AbstractSubscriptionStructure> requests = SiriLibrary.getSubscriptionRequestsForModule(
-          request, moduleType);
-
-      for (AbstractSubscriptionStructure subRequest : requests) {
-
-        SubscriptionQualifierStructure subId = subRequest.getSubscriptionIdentifier();
-        if (subId == null) {
-          subId = new SubscriptionQualifierStructure();
-          String subscriptionId = UUID.randomUUID().toString();
-          subId.setValue(subscriptionId);
-          subRequest.setSubscriptionIdentifier(subId);
-
-          SubscriptionId id = new SubscriptionId(_identity, subscriptionId);
-          ids.add(id);
-        }
-      }
-    }
-
-    _activeSubscriptionsByMessageId.put(messageId, activeSubscription);
-
-    activeSubscription.setSubscriptionIds(ids);
-    for (SubscriptionId id : ids) {
-      _activeSubscriptionsById.put(id, activeSubscription);
-    }
-
-    /**
-     * We potentially need to translate the Siri payload to an older version of
-     * the specification, as requested by the caller
-     */
-    SiriVersioning versioning = SiriVersioning.getInstance();
-
-    Object payload = versioning.getPayloadAsVersion(request,
-        subscriptionRequest.getTargetVersion());
-
-    ConnectionAttempt attempt = new ConnectionAttempt(activeSubscription,
-        payload);
-    attempt.setReconnectionInterval(subscriptionRequest.getReconnectionInterval());
-    attempt.setRemainingReconnectionAttempts(subscriptionRequest.getReconnectionAttempts());
-
-    _executor.execute(attempt);
+    processRequest(request);
   }
 
   /*****
@@ -245,9 +207,15 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
     if (data instanceof Siri) {
       Siri siri = (Siri) data;
+
       ServiceDelivery delivery = siri.getServiceDelivery();
       if (delivery != null) {
         handleServiceDelivery(delivery);
+      }
+
+      HeartbeatNotificationStructure heartbeat = siri.getHeartbeatNotification();
+      if (heartbeat != null) {
+        handleHeartbeatNotification(heartbeat);
       }
 
     } else if (data instanceof ServiceDelivery) {
@@ -260,39 +228,209 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    * Private Methods
    ****/
 
+  @SuppressWarnings("unchecked")
+  private <T> T processRequestWithResponse(AbstractSiriClientRequest<?> request) {
+
+    String targetUrl = request.getTargetUrl();
+
+    /**
+     * We potentially need to translate the Siri payload to an older version of
+     * the specification, as requested by the caller
+     */
+    SiriVersioning versioning = SiriVersioning.getInstance();
+
+    Object payload = versioning.getPayloadAsVersion(request.getPayload(),
+        request.getTargetVersion());
+
+    HttpResponse response = sendHttpRequest(targetUrl, payload);
+
+    HttpEntity entity = response.getEntity();
+
+    Object responseData = null;
+    try {
+      responseData = unmarshall(entity.getContent());
+      responseData = versioning.getPayloadAsVersion(responseData,
+          versioning.getDefaultVersion());
+    } catch (Exception ex) {
+      throw new SiriSerializationException(ex);
+    }
+
+    SubscriptionRequest subRequest = null;
+    SubscriptionResponseStructure subResponse = null;
+
+    if (request instanceof SiriClientRequest) {
+      SiriClientRequest r = (SiriClientRequest) request;
+      Siri siri = r.getPayload();
+      subRequest = siri.getSubscriptionRequest();
+    } else if (request instanceof SiriClientSubscriptionRequest) {
+      SiriClientSubscriptionRequest r = (SiriClientSubscriptionRequest) request;
+      subRequest = r.getPayload();
+    }
+
+    if (responseData instanceof Siri) {
+      Siri siri = (Siri) responseData;
+      subResponse = siri.getSubscriptionResponse();
+    }
+
+    if (subRequest != null && subResponse != null)
+      registerSubscription(request, subRequest, subResponse);
+
+    return (T) responseData;
+  }
+
+  private void processRequest(AbstractSiriClientRequest<?> request) {
+
+    AsynchronousClientConnectionAttempt attempt = new AsynchronousClientConnectionAttempt(
+        request);
+    attempt.setReconnectionInterval(request.getReconnectionInterval());
+    attempt.setRemainingReconnectionAttempts(request.getReconnectionAttempts());
+
+    _executor.execute(attempt);
+  }
+
+  private void registerSubscription(AbstractSiriClientRequest<?> request,
+      SubscriptionRequest subscriptionRequest,
+      SubscriptionResponseStructure subResponse) {
+
+    String address = request.getTargetUrl();
+    String serverId = address;
+
+    ParticipantRefStructure responderRef = subResponse.getResponderRef();
+    if (responderRef != null && responderRef.getValue() != null)
+      serverId = responderRef.getValue();
+
+    ESiriVersion targetVersion = request.getTargetVersion();
+
+    ClientSubscriptionChannel channel = getChannelForServer(serverId, address,
+        targetVersion);
+
+    Date serviceStartedTime = subResponse.getServiceStartedTime();
+    if (serviceStartedTime != null)
+      channel.setLastServiceStartedTime(serviceStartedTime);
+
+    ConcurrentMap<String, ClientSubscriptionInstance> subscriptions = channel.getSubscriptions();
+
+    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
+
+      List<AbstractSubscriptionStructure> requests = SiriLibrary.getSubscriptionRequestsForModule(
+          subscriptionRequest, moduleType);
+
+      for (AbstractSubscriptionStructure subRequest : requests) {
+
+        SubscriptionQualifierStructure subId = subRequest.getSubscriptionIdentifier();
+        String subscriptionId = subId.getValue();
+
+        ClientSubscriptionInstance instance = new ClientSubscriptionInstance(
+            channel, subscriptionId, moduleType, subRequest);
+
+        ClientSubscriptionInstance existing = subscriptions.put(subscriptionId,
+            instance);
+
+        if (existing != null) {
+          _log.warn("existing subscription");
+        }
+      }
+    }
+
+    synchronized (channel) {
+
+      channel.setReconnectionAttempts(request.getReconnectionAttempts());
+      channel.setReconnectionInterval(request.getReconnectionInterval());
+
+      long heartbeatInterval = request.getHeartbeatInterval();
+
+      if (heartbeatInterval != channel.getHeartbeatInterval()) {
+        channel.setHeartbeatInterval(heartbeatInterval);
+
+        resetHeartbeat(channel, heartbeatInterval);
+      }
+
+      long checkStatusInterval = request.getCheckStatusInterval();
+
+      if (checkStatusInterval > 0) {
+        channel.setCheckStatusInterval(checkStatusInterval);
+
+        resetCheckStatusTask(channel, checkStatusInterval);
+      }
+    }
+  }
+
+  private void resetHeartbeat(ClientSubscriptionChannel channel,
+      long heartbeatInterval) {
+
+    ScheduledFuture<?> heartbeatTask = channel.getHeartbeatTask();
+    if (heartbeatTask != null)
+      heartbeatTask.cancel(true);
+
+    if (heartbeatInterval > 0) {
+      ClientHeartbeatTimeoutTask task = new ClientHeartbeatTimeoutTask(channel);
+
+      // Why is this * 2? We want to give the heartbeat a little slack time.
+      // Could be better...
+      heartbeatTask = _executor.schedule(task, heartbeatInterval * 2,
+          TimeUnit.SECONDS);
+      channel.setHeartbeatTask(heartbeatTask);
+    }
+  }
+
+  private void resetCheckStatusTask(ClientSubscriptionChannel channel,
+      long checkStatusInterval) {
+
+    ScheduledFuture<?> checkStatusTask = channel.getCheckStatusTask();
+    if (checkStatusTask != null) {
+      checkStatusTask.cancel(true);
+      channel.setCheckStatusTask(null);
+    }
+
+    if (checkStatusInterval > 0) {
+      ClientCheckStatusTask task = new ClientCheckStatusTask(channel);
+      checkStatusTask = _executor.scheduleAtFixedRate(task,
+          checkStatusInterval, checkStatusInterval, TimeUnit.SECONDS);
+      channel.setCheckStatusTask(checkStatusTask);
+    }
+  }
+
+  private ClientSubscriptionChannel getChannelForServer(String serverId,
+      String address, ESiriVersion targetVersion) {
+
+    ClientSubscriptionChannel channel = _channelsById.get(serverId);
+
+    if (channel == null) {
+
+      ClientSubscriptionChannel newChannel = new ClientSubscriptionChannel(
+          serverId, address, targetVersion);
+
+      channel = _channelsById.put(serverId, newChannel);
+      if (channel == null)
+        channel = newChannel;
+    }
+    return channel;
+  }
+
   private void handleServiceDelivery(ServiceDelivery serviceDelivery) {
-    
-    resetHeartbeatTimeouts(serviceDelivery);
 
     for (SiriServiceDeliveryHandler handler : _serviceDeliveryHandlers)
       handler.handleServiceDelivery(serviceDelivery);
   }
 
-  private void resetHeartbeatTimeouts(ServiceDelivery serviceDelivery) {
+  private void handleHeartbeatNotification(
+      HeartbeatNotificationStructure heartbeat) {
 
-    MessageRefStructure requestMessageId = serviceDelivery.getRequestMessageRef();
-    if (requestMessageId != null && requestMessageId.getValue() != null) {
-      String messageId = requestMessageId.getValue();
-      ActiveSubscription activeSubscription = _activeSubscriptionsByMessageId.get(messageId);
-      if (activeSubscription != null)
-        activeSubscription.resetHeartbeatTimeout();
+    _log.debug("hearbeat notification");
+
+    ClientSubscriptionChannel channel = null;
+
+    ParticipantRefStructure producerRef = heartbeat.getProducerRef();
+    if (producerRef != null && producerRef.getValue() != null) {
+      channel = _channelsById.get(producerRef.getValue());
     }
 
-    /**
-     * Reset any applicable heart beats
-     */
-    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
+    if (channel == null && heartbeat.getAddress() != null)
+      channel = _channelsById.get(heartbeat.getAddress());
 
-      List<AbstractServiceDeliveryStructure> deliveries = SiriLibrary.getServiceDeliveriesForModule(
-          serviceDelivery, moduleType);
-
-      for (AbstractServiceDeliveryStructure delivery : deliveries) {
-        String subscriberId = delivery.getSubscriberRef().getValue();
-        String subscriptionId = delivery.getSubscriptionRef().getValue();
-        SubscriptionId id = new SubscriptionId(subscriberId, subscriptionId);
-        ActiveSubscription activeSubscription = _activeSubscriptionsById.get(id);
-        if (activeSubscription != null)
-          activeSubscription.resetHeartbeatTimeout();
+    if (channel != null) {
+      synchronized (channel) {
+        resetHeartbeat(channel, channel.getHeartbeatInterval());
       }
     }
   }
@@ -301,17 +439,220 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    * 
    ****/
 
-  private class ConnectionAttempt implements Runnable {
+  private void fillAllSiriRequestStructures(Siri siri) {
 
-    private final ActiveSubscription activeSubscription;
-    private final Object payload;
+    fillRequestStructure(siri.getCapabilitiesRequest());
+    fillRequestStructure(siri.getCheckStatusRequest());
+    fillRequestStructure(siri.getFacilityRequest());
+    fillRequestStructure(siri.getInfoChannelRequest());
+    fillRequestStructure(siri.getLinesRequest());
+    fillRequestStructure(siri.getProductCategoriesRequest());
+    fillRequestStructure(siri.getServiceFeaturesRequest());
+    fillRequestStructure(siri.getStopPointsRequest());
+    fillRequestStructure(siri.getSubscriptionRequest());
+    fillRequestStructure(siri.getTerminateSubscriptionRequest());
+    fillRequestStructure(siri.getVehicleFeaturesRequest());
+
+    fillRequestStructure(siri.getServiceRequest());
+  }
+
+  private void fillSubscriptionRequestStructure(
+      AbstractSiriClientRequest<?> request,
+      SubscriptionRequest subscriptionRequest) {
+
+    if (subscriptionRequest == null)
+      return;
+
+    int heartbeatInterval = request.getHeartbeatInterval();
+    if (heartbeatInterval > 0) {
+      DatatypeFactory dataTypeFactory = createDataTypeFactory();
+      Duration interval = dataTypeFactory.newDuration(heartbeatInterval * 1000);
+      SubscriptionContextStructure context = new SubscriptionContextStructure();
+      context.setHeartbeatInterval(interval);
+      subscriptionRequest.setSubscriptionContext(context);
+    }
+
+    /**
+     * Fill in subscription ids
+     */
+    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
+
+      List<AbstractSubscriptionStructure> subs = SiriLibrary.getSubscriptionRequestsForModule(
+          subscriptionRequest, moduleType);
+
+      for (AbstractSubscriptionStructure sub : subs) {
+
+        if (sub.getSubscriberRef() == null)
+          sub.setSubscriberRef(SiriTypeFactory.particpantRef(_identity));
+
+        if (sub.getSubscriptionIdentifier() == null)
+          sub.setSubscriptionIdentifier(SiriTypeFactory.randomSubscriptionId());
+      }
+    }
+  }
+
+  private void fillRequestStructure(RequestStructure request) {
+
+    if (request == null)
+      return;
+
+    request.setRequestorRef(SiriTypeFactory.particpantRef(_identity));
+
+    request.setAddress(_clientUrl);
+
+    MessageQualifierStructure messageIdentifier = SiriTypeFactory.randomMessageId();
+    request.setMessageIdentifier(messageIdentifier);
+
+    request.setRequestTimestamp(new Date());
+  }
+
+  /**
+   * TODO: It sure would be nice if {@link ServiceRequest} was a sub-class of
+   * {@link RequestStructure}
+   * 
+   * @param request
+   */
+  private void fillRequestStructure(ServiceRequest request) {
+
+    if( request == null)
+      return;
+    
+    request.setRequestorRef(SiriTypeFactory.particpantRef(_identity));
+
+    request.setAddress(_clientUrl);
+
+    MessageQualifierStructure messageIdentifier = SiriTypeFactory.randomMessageId();
+    request.setMessageIdentifier(messageIdentifier);
+
+    request.setRequestTimestamp(new Date());
+  }
+
+  private void handleDisconnectAndReconnect(ClientSubscriptionChannel channel) {
+
+    _log.info("terminate subscription: {}", channel);
+    _channelsById.remove(channel.getServerId());
+
+    synchronized (channel) {
+      resetHeartbeat(channel, 0);
+      resetCheckStatusTask(channel, 0);
+    }
+
+    SubscriptionRequest request = new SubscriptionRequest();
+
+    ConcurrentMap<String, ClientSubscriptionInstance> subscriptions = channel.getSubscriptions();
+
+    for (ClientSubscriptionInstance instance : subscriptions.values()) {
+      ESiriModuleType moduleType = instance.getModuleType();
+      AbstractSubscriptionStructure subRequest = instance.getSubscriptionRequest();
+      subRequest.setSubscriptionIdentifier(null);
+      List<AbstractSubscriptionStructure> subRequests = SiriLibrary.getSubscriptionRequestsForModule(
+          request, moduleType);
+      subRequests.add(subRequest);
+    }
+
+    SiriClientSubscriptionRequest clientRequest = new SiriClientSubscriptionRequest();
+    clientRequest.setCheckStatusInterval((int) channel.getCheckStatusInterval());
+    clientRequest.setHeartbeatInterval((int) channel.getHeartbeatInterval());
+    clientRequest.setReconnectionInterval(channel.getReconnectionInterval());
+    clientRequest.setReconnectionAttempts(channel.getReconnectionAttempts());
+    clientRequest.setTargetUrl(channel.getAddress());
+    clientRequest.setTargetVersion(channel.getTargetVersion());
+    clientRequest.setPayload(request);
+
+    handleSubscriptionRequest(clientRequest);
+  }
+
+  private void checkStatus(ClientSubscriptionChannel channel) {
+
+    CheckStatusRequestStructure checkStatus = new CheckStatusRequestStructure();
+    checkStatus.setRequestTimestamp(new Date());
+
+    Siri siri = new Siri();
+    siri.setCheckStatusRequest(checkStatus);
+
+    SiriClientRequest request = new SiriClientRequest();
+    request.setTargetUrl(channel.getAddress());
+    request.setTargetVersion(channel.getTargetVersion());
+    request.setPayload(siri);
+
+    Siri siriResponse = null;
+
+    try {
+      siriResponse = handleSiriRequestWithResponse(request);
+    } catch (Throwable ex) {
+      _log.warn("error performing check-status on channel=" + channel, ex);
+      siriResponse = null;
+    }
+
+    if (!isCheckStatusValid(channel, siriResponse)) {
+
+      /**
+       * The check status did not succeed, so we cancel the subscription
+       */
+      _log.warn("check status failed");
+      handleDisconnectAndReconnect(channel);
+    }
+
+  }
+
+  private boolean isCheckStatusValid(ClientSubscriptionChannel channel,
+      Siri response) {
+
+    if (response == null)
+      return false;
+
+    CheckStatusResponseStructure checkStatusResponse = response.getCheckStatusResponse();
+
+    if (checkStatusResponse == null)
+      return true;
+
+    Date serviceStartedTime = checkStatusResponse.getServiceStartedTime();
+
+    /**
+     * Has the service start time been adjusted since our last status check?
+     */
+    if (serviceStartedTime != null) {
+      Date lastServiceStartedTime = channel.getLastServiceStartedTime();
+      if (lastServiceStartedTime == null) {
+        channel.setLastServiceStartedTime(serviceStartedTime);
+      } else if (serviceStartedTime.after(lastServiceStartedTime)) {
+        channel.setLastServiceStartedTime(serviceStartedTime);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private DatatypeFactory createDataTypeFactory() {
+    try {
+      return DatatypeFactory.newInstance();
+    } catch (DatatypeConfigurationException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  /****
+   * 
+   ****/
+
+  /**
+   * A runnable task that attempts a connection from a SIRI client to a SIRI
+   * server. Handles reconnection semantics.
+   * 
+   * @author bdferris
+   */
+  private class AsynchronousClientConnectionAttempt implements Runnable {
+
+    private final AbstractSiriClientRequest<?> request;
+
     private int remainingReconnectionAttempts = 0;
     private int reconnectionInterval = 60;
+    private int connectionErrorCount = 0;
 
-    public ConnectionAttempt(ActiveSubscription activeSubscription,
-        Object payload) {
-      this.activeSubscription = activeSubscription;
-      this.payload = payload;
+    public AsynchronousClientConnectionAttempt(
+        AbstractSiriClientRequest<?> request) {
+      this.request = request;
     }
 
     public void setRemainingReconnectionAttempts(
@@ -326,23 +667,36 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     @Override
     public void run() {
 
-      SiriClientSubscriptionRequest request = activeSubscription.request;
-      String targetUrl = request.getTargetUrl();
-
       try {
 
-        sendHttpRequest(targetUrl, payload);
+        processRequestWithResponse(request);
 
-        /***
-         * Now that we've successfully connected, we register our heartbeat
-         * timeout
+        /**
+         * Reset our connection error count and note that we've successfully
+         * reconnected if the we've had problems before
          */
-        activeSubscription.resetHeartbeatTimeout();
+        if (connectionErrorCount > 0)
+          _log.info("successfully reconnected to " + request.getTargetUrl());
+        connectionErrorCount = 0;
 
       } catch (SiriConnectionException ex) {
-        _log.warn("error connecting to " + targetUrl + " ("
-            + this.remainingReconnectionAttempts
-            + " remaining reconnection attempts)", ex);
+
+        String message = "error connecting to " + request.getTargetUrl()
+            + " (remainingConnectionAttempts="
+            + this.remainingReconnectionAttempts + " connectionErrorCount="
+            + connectionErrorCount + ")";
+
+        /**
+         * We display the full exception on the first connection error, but hide
+         * it on recurring errors
+         */
+        if (connectionErrorCount == 0) {
+          _log.warn(message, ex);
+        } else {
+          _log.warn(message);
+        }
+
+        connectionErrorCount++;
 
         if (this.remainingReconnectionAttempts == 0) {
           return;
@@ -354,88 +708,49 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
          */
         if (this.remainingReconnectionAttempts > 0)
           this.remainingReconnectionAttempts--;
+
         _executor.schedule(this, reconnectionInterval, TimeUnit.SECONDS);
       }
     }
   }
 
-  private class ActiveSubscription {
+  /**
+   * This task is run when a {@link SiriClient} heartbeat times out, canceling
+   * the active subscription for that connection.
+   * 
+   * @author bdferris
+   */
+  private class ClientHeartbeatTimeoutTask implements Runnable {
 
-    private final SiriClientSubscriptionRequest request;
+    private final ClientSubscriptionChannel channel;
 
-    private final String messageId;
-
-    private List<SubscriptionId> subscriptionIds;
-
-    private ScheduledFuture<?> heartbeatTimeout;
-
-    private boolean canceled = false;
-
-    public ActiveSubscription(SiriClientSubscriptionRequest request,
-        String messageId) {
-      this.request = request;
-      this.messageId = messageId;
-    }
-
-    public void setSubscriptionIds(List<SubscriptionId> subscriptionIds) {
-      this.subscriptionIds = subscriptionIds;
-    }
-
-    public synchronized void resetHeartbeatTimeout() {
-
-      clearTimeout();
-
-      if (canceled)
-        return;
-
-      int heartbeatInterval = request.getHeartbeatInterval();
-      if (heartbeatInterval > 0) {
-        heartbeatTimeout = _executor.schedule(new HeartbeatTimeout(this),
-            heartbeatInterval * 2, TimeUnit.SECONDS);
-      }
-    }
-
-    public synchronized void cancel() {
-
-      canceled = true;
-
-      clearTimeout();
-
-      /**
-       * We timed out! First, we clean up our existing connection
-       */
-      _activeSubscriptionsByMessageId.remove(messageId);
-      _activeSubscriptionsById.keySet().removeAll(subscriptionIds);
-
-      /**
-       * Second, we attempt to reconnect
-       */
-      handleSubscriptionRequest(request);
-    }
-
-    private void clearTimeout() {
-      if (heartbeatTimeout != null) {
-        heartbeatTimeout.cancel(true);
-        heartbeatTimeout = null;
-      }
-    }
-  }
-
-  private class HeartbeatTimeout implements Runnable {
-
-    private final ActiveSubscription activeSubscription;
-
-    public HeartbeatTimeout(ActiveSubscription activeSubscription) {
-      this.activeSubscription = activeSubscription;
+    public ClientHeartbeatTimeoutTask(ClientSubscriptionChannel channel) {
+      this.channel = channel;
     }
 
     @Override
     public void run() {
-
-      _log.warn("heartbeat interval timeout");
-
-      activeSubscription.cancel();
+      _log.warn("heartbeat interval timeout: " + channel.getAddress());
+      handleDisconnectAndReconnect(channel);
     }
   }
 
+  private class ClientCheckStatusTask implements Runnable {
+
+    private final ClientSubscriptionChannel channel;
+
+    public ClientCheckStatusTask(ClientSubscriptionChannel channel) {
+      this.channel = channel;
+    }
+
+    @Override
+    public void run() {
+      try {
+        checkStatus(channel);
+      } catch (Throwable ex) {
+        _log.warn("unexpected error while performing check-status for channel="
+            + channel, ex);
+      }
+    }
+  }
 }

@@ -2,20 +2,20 @@ package org.onebusaway.siri.core;
 
 import uk.org.siri.siri.ServiceDelivery;
 
-class SubscriptionEvent {
+class ServerSubscriptionEvent {
 
-  private final ModuleSubscriptionDetails details;
+  private final ServerSubscriptionInstance instance;
 
   private final ServiceDelivery delivery;
 
-  public SubscriptionEvent(ModuleSubscriptionDetails details,
+  public ServerSubscriptionEvent(ServerSubscriptionInstance instance,
       ServiceDelivery delivery) {
-    this.details = details;
+    this.instance = instance;
     this.delivery = delivery;
   }
 
-  public ModuleSubscriptionDetails getDetails() {
-    return details;
+  public ServerSubscriptionInstance getInstance() {
+    return instance;
   }
 
   public ServiceDelivery getDelivery() {

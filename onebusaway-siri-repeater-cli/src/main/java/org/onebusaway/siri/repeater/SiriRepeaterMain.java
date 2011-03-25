@@ -104,7 +104,7 @@ public class SiriRepeaterMain {
       }
 
       SiriClientSubscriptionRequest request = factory.createSubscriptionRequest(subArgs);
-      client.handleSubscriptionRequest(request);
+      client.handleSubscriptionRequestWithResponse(request);
     }
   }
 

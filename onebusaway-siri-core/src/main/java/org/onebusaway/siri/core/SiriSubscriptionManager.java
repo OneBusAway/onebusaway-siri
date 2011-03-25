@@ -5,20 +5,20 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.onebusaway.siri.core.exceptions.SiriMissingArgumentException;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterFactory;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterSource;
+import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.AbstractServiceDeliveryStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.MessageQualifierStructure;
-import uk.org.siri.siri.MessageRefStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.SubscriptionQualifierStructure;
@@ -28,16 +28,18 @@ public class SiriSubscriptionManager {
 
   private static Logger _log = LoggerFactory.getLogger(SiriSubscriptionManager.class);
 
-  private Map<ESiriModuleType, ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails>> _subscriptionsByType = new HashMap<ESiriModuleType, ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails>>();
+  private ConcurrentMap<ServerSubscriptionChannelId, ServerSubscriptionChannel> _channelsById = new ConcurrentHashMap<ServerSubscriptionChannelId, ServerSubscriptionChannel>();
+
+  private Map<ESiriModuleType, ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance>> _subscriptions = new HashMap<ESiriModuleType, ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance>>();
 
   private SiriModuleDeliveryFilterFactory _deliveryFilterFactory = new SiriModuleDeliveryFilterFactory();
 
   private List<SiriModuleDeliveryFilterSource> _deliveryFilterSources = new ArrayList<SiriModuleDeliveryFilterSource>();
 
   public SiriSubscriptionManager() {
-    for (ESiriModuleType type : ESiriModuleType.values()) {
-      ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails> subscriptionDetailsBySubscriberId = new ConcurrentHashMap<SubscriptionId, ModuleSubscriptionDetails>();
-      _subscriptionsByType.put(type, subscriptionDetailsBySubscriberId);
+    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
+      ConcurrentHashMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> m = new ConcurrentHashMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance>();
+      _subscriptions.put(moduleType, m);
     }
   }
 
@@ -51,51 +53,64 @@ public class SiriSubscriptionManager {
     _deliveryFilterSources.remove(source);
   }
 
-  /**
-   * @return **
+  /****
    * 
    ****/
 
-  public SubscriptionDetails handleSubscriptionRequest(
-      SubscriptionRequest subscriptionRequest) {
+  public ServerSubscriptionChannel handleSubscriptionRequest(
+      SubscriptionRequest subscriptionRequest, ESiriVersion originalVersion)
+      throws SiriMissingArgumentException {
 
-    String address = subscriptionRequest.getAddress();
+    ParticipantRefStructure subscriberRef = subscriptionRequest.getRequestorRef();
+    if (subscriberRef == null || subscriberRef.getValue() == null)
+      throw new SiriMissingArgumentException("RequestorRef");
+    String subscriberId = subscriberRef.getValue();
 
+    String consumerAddress = subscriptionRequest.getAddress();
     if (subscriptionRequest.getConsumerAddress() != null)
-      address = subscriptionRequest.getConsumerAddress();
+      consumerAddress = subscriptionRequest.getConsumerAddress();
+    if (consumerAddress == null)
+      throw new SiriMissingArgumentException("ConsumerAddress");
 
-    String messageId = null;
-    if (subscriptionRequest.getMessageIdentifier() != null)
-      messageId = subscriptionRequest.getMessageIdentifier().getValue();
-    if (messageId == null)
-      messageId = UUID.randomUUID().toString();
+    ServerSubscriptionChannelId channelId = new ServerSubscriptionChannelId(
+        subscriberId, consumerAddress);
 
-    SubscriptionDetails details = new SubscriptionDetails(address, messageId,
-        subscriptionRequest);
+    ServerSubscriptionChannel channel = getChannelForId(channelId,
+        originalVersion);
 
     for (ESiriModuleType moduleType : ESiriModuleType.values())
-      handleSubscriptionRequests(moduleType, details);
+      handleSubscriptionRequests(moduleType, channel, subscriptionRequest);
 
-    return details;
+    return channel;
   }
 
-  public void terminateSubscription(SubscriptionDetails details) {
-    for (ModuleSubscriptionDetails moduleDetails : details.getModuleDetails()) {
-      ESiriModuleType moduleType = moduleDetails.getModuleType();
-      SubscriptionId id = moduleDetails.getId();
-
-      ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails> subscriptionDetailsBySubscriberId = _subscriptionsByType.get(moduleType);
-      subscriptionDetailsBySubscriberId.remove(id);
-    }
+  public void terminateSubscriptionChannel(ServerSubscriptionChannel channel) {
+    _channelsById.remove(channel.getId());
   }
 
-  public void terminateSubscription(ModuleSubscriptionDetails moduleDetails) {
-    terminateSubscription(moduleDetails.getDetails());
+  /**
+   * 
+   * @param instance
+   * @return true if the instance's channel no longer has any subscriptions,
+   *         otherwise false
+   */
+  public boolean terminateSubscriptionInstance(
+      ServerSubscriptionInstance instance) {
+
+    ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> subscriptionsForModule = _subscriptions.get(instance.getModuleType());
+
+    subscriptionsForModule.remove(instance.getId());
+
+    ServerSubscriptionChannel channel = instance.getChannel();
+    ConcurrentMap<String, ServerSubscriptionInstance> subscriptions = channel.getSubscriptions();
+    subscriptions.remove(instance.getSubscriptionId());
+
+    return subscriptions.isEmpty();
   }
 
-  public List<SubscriptionEvent> publish(ServiceDelivery delivery) {
+  public List<ServerSubscriptionEvent> publish(ServiceDelivery delivery) {
 
-    List<SubscriptionEvent> events = new ArrayList<SubscriptionEvent>();
+    List<ServerSubscriptionEvent> events = new ArrayList<ServerSubscriptionEvent>();
 
     for (ESiriModuleType moduleType : ESiriModuleType.values())
       handlePublication(moduleType, delivery, events);
@@ -104,49 +119,83 @@ public class SiriSubscriptionManager {
   }
 
   /****
-   * 
+   * Private Methods
    ****/
 
-  private <T extends AbstractSubscriptionStructure> void handleSubscriptionRequests(
-      ESiriModuleType moduleType, SubscriptionDetails details) {
+  /**
+   * 
+   * @param channelId
+   * @param channelVersion
+   * @return
+   */
+  private ServerSubscriptionChannel getChannelForId(
+      ServerSubscriptionChannelId channelId, ESiriVersion channelVersion) {
 
-    SubscriptionRequest subscriptionRequest = details.getSubscriptionRequest();
+    ServerSubscriptionChannel channel = _channelsById.get(channelId);
+    if (channel == null) {
+      ServerSubscriptionChannel newChannel = new ServerSubscriptionChannel(
+          channelId, channelVersion);
+      channel = _channelsById.putIfAbsent(channelId, newChannel);
+      if (channel == null)
+        channel = newChannel;
+    }
+
+    return channel;
+  }
+
+  private <T extends AbstractSubscriptionStructure> void handleSubscriptionRequests(
+      ESiriModuleType moduleType, ServerSubscriptionChannel channel,
+      SubscriptionRequest subscriptionRequest) {
 
     List<AbstractSubscriptionStructure> subscriptionRequests = SiriLibrary.getSubscriptionRequestsForModule(
         subscriptionRequest, moduleType);
 
-    ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails> subscriptionDetailsBySubscriberId = _subscriptionsByType.get(moduleType);
+    /**
+     * No subscriptions of the specified type? Nothing left to do then...
+     */
+    if (subscriptionRequests.isEmpty())
+      return;
+
+    ConcurrentMap<String, ServerSubscriptionInstance> subscriptions = channel.getSubscriptions();
+
+    String messageId = null;
+    if (subscriptionRequest.getMessageIdentifier() != null)
+      messageId = subscriptionRequest.getMessageIdentifier().getValue();
+
+    ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> subscriptionsForModule = _subscriptions.get(moduleType);
 
     for (AbstractSubscriptionStructure request : subscriptionRequests) {
 
-      ParticipantRefStructure participantId = request.getSubscriberRef();
+      SubscriptionQualifierStructure subscriptionRef = request.getSubscriptionIdentifier();
 
-      if (participantId == null || participantId.getValue() == null)
-        participantId = subscriptionRequest.getRequestorRef();
-
-      if (participantId == null || participantId.getValue() == null) {
-        _log.warn("no SubscriberRef or RequestorRef for subscription request");
-        continue;
-      }
-
-      SubscriptionQualifierStructure subscriptionId = request.getSubscriptionIdentifier();
-
-      if (subscriptionId == null || subscriptionId.getValue() == null) {
+      if (subscriptionRef == null || subscriptionRef.getValue() == null) {
         _log.warn("no SubscriptionIdentifier for subscription request");
         continue;
       }
 
-      SubscriptionId id = new SubscriptionId(participantId.getValue(),
-          subscriptionId.getValue());
+      String subscriptionId = subscriptionRef.getValue();
 
       List<SiriModuleDeliveryFilter> filters = computeFilterSetForSubscriptionRequest(
           subscriptionRequest, moduleType, request);
 
-      ModuleSubscriptionDetails moduleDetails = new ModuleSubscriptionDetails(
-          details, moduleType, id, request, filters);
-      details.addModuleDetails(moduleDetails);
+      ServerSubscriptionInstance instance = new ServerSubscriptionInstance(
+          channel, moduleType, subscriptionId, messageId, request, filters);
 
-      subscriptionDetailsBySubscriberId.put(id, moduleDetails);
+      ServerSubscriptionInstance existing = subscriptions.put(subscriptionId,
+          instance);
+
+      if (existing != null) {
+        _log.warn("existing subscription?  What do we do here?");
+      }
+
+      ServerSubscriptionInstanceId id = instance.getId();
+
+      ServerSubscriptionInstance otherExisting = subscriptionsForModule.put(id,
+          instance);
+      if (otherExisting != null) {
+        _log.warn("other existing subscription?  What do we do here?");
+      }
+
     }
   }
 
@@ -175,14 +224,14 @@ public class SiriSubscriptionManager {
 
   private <T extends AbstractServiceDeliveryStructure> void handlePublication(
       ESiriModuleType moduleType, ServiceDelivery delivery,
-      List<SubscriptionEvent> events) {
+      List<ServerSubscriptionEvent> events) {
 
     List<T> deliveries = SiriLibrary.getServiceDeliveriesForModule(delivery,
         moduleType);
 
-    ConcurrentMap<SubscriptionId, ModuleSubscriptionDetails> subscriptionDetailsBySubscriberId = _subscriptionsByType.get(moduleType);
+    ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> subscriptionsById = _subscriptions.get(moduleType);
 
-    for (ModuleSubscriptionDetails moduleDetails : subscriptionDetailsBySubscriberId.values()) {
+    for (ServerSubscriptionInstance moduleDetails : subscriptionsById.values()) {
 
       ServiceDelivery updatedDelivery = copyDeliveryShallow(delivery);
 
@@ -196,18 +245,8 @@ public class SiriSubscriptionManager {
           updatedDelivery, moduleType);
       SiriLibrary.copyList(applicableResponses, specifiedDeliveries);
 
-      SubscriptionDetails details = moduleDetails.getDetails();
-      SubscriptionRequest subscriptionRequest = details.getSubscriptionRequest();
-      MessageQualifierStructure messageId = subscriptionRequest.getMessageIdentifier();
-
-      if (messageId != null && messageId.getValue() != null) {
-        MessageRefStructure messageRef = new MessageRefStructure();
-        messageRef.setValue(messageId.getValue());
-        updatedDelivery.setRequestMessageRef(messageRef);
-      }
-
-      SubscriptionEvent event = new SubscriptionEvent(moduleDetails,
-          updatedDelivery);
+      ServerSubscriptionEvent event = new ServerSubscriptionEvent(
+          moduleDetails, updatedDelivery);
       events.add(event);
     }
   }
@@ -215,13 +254,13 @@ public class SiriSubscriptionManager {
   @SuppressWarnings("unchecked")
   private <T extends AbstractServiceDeliveryStructure> List<T> getApplicableResponses(
       ServiceDelivery delivery, ESiriModuleType type,
-      ModuleSubscriptionDetails moduleDetails, List<T> responses) {
+      ServerSubscriptionInstance instance, List<T> responses) {
 
-    SubscriptionDetails details = moduleDetails.getDetails();
-    SubscriptionId subId = moduleDetails.getId();
-    SubscriptionRequest sub = details.getSubscriptionRequest();
-    AbstractSubscriptionStructure moduleSub = moduleDetails.getModuleSubscription();
-    List<SiriModuleDeliveryFilter> filters = moduleDetails.getFilters();
+    ServerSubscriptionChannel channel = instance.getChannel();
+    ServerSubscriptionChannelId channelId = channel.getId();
+
+    AbstractSubscriptionStructure moduleSub = instance.getModuleSubscription();
+    List<SiriModuleDeliveryFilter> filters = instance.getFilters();
 
     List<T> applicable = new ArrayList<T>();
 
@@ -235,21 +274,21 @@ public class SiriSubscriptionManager {
       /**
        * Set subscriber-specific parameters
        */
-      MessageQualifierStructure messageId = sub.getMessageIdentifier();
-      element.setRequestMessageRef(messageId);
-
-      ParticipantRefStructure subscriberRef = new ParticipantRefStructure();
-      subscriberRef.setValue(subId.getSubscriberId());
+      ParticipantRefStructure subscriberRef = SiriTypeFactory.particpantRef(channelId.getSubscriberId());
       element.setSubscriberRef(subscriberRef);
 
-      SubscriptionQualifierStructure subcriptionRef = new SubscriptionQualifierStructure();
-      subcriptionRef.setValue(subId.getSubscriptionId());
+      SubscriptionQualifierStructure subcriptionRef = SiriTypeFactory.subscriptionId(instance.getSubscriptionId());
       element.setSubscriptionRef(subcriptionRef);
 
       element.setValidUntil(moduleSub.getInitialTerminationTime());
 
       if (element.getResponseTimestamp() == null)
         element.setResponseTimestamp(new Date());
+
+      if (instance.getMessageId() != null) {
+        MessageQualifierStructure messageId = SiriTypeFactory.messageId(instance.getMessageId());
+        element.setRequestMessageRef(messageId);
+      }
 
       /**
        * Apply any filters

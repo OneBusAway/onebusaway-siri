@@ -2,25 +2,16 @@ package org.onebusaway.siri.core;
 
 import uk.org.siri.siri.SubscriptionRequest;
 
-public class SiriClientSubscriptionRequest extends AbstractSiriClientRequest {
+public class SiriClientSubscriptionRequest extends
+    AbstractSiriClientRequest<SubscriptionRequest> {
 
-  private SubscriptionRequest request;
+  public SiriClientSubscriptionRequest() {
 
-  private int heartbeatInterval = 0;
-
-  public SubscriptionRequest getRequest() {
-    return request;
   }
 
-  public void setRequest(SubscriptionRequest request) {
-    this.request = request;
-  }
-
-  public int getHeartbeatInterval() {
-    return heartbeatInterval;
-  }
-
-  public void setHeartbeatInterval(int heartbeatInterval) {
-    this.heartbeatInterval = heartbeatInterval;
+  public SiriClientSubscriptionRequest(AbstractSiriClientRequest<?> request,
+      SubscriptionRequest subscriptionRequest) {
+    super(request);
+    setPayload(subscriptionRequest);
   }
 }

@@ -51,6 +51,19 @@ public class SiriVersioning {
   public ESiriVersion getDefaultVersion() {
     return ESiriVersion.V1_3;
   }
+  
+  public ESiriVersion getVersionOfObject(Object payload) {
+
+    Class<?> type = payload.getClass();
+    String typeName = type.getName();
+
+    if (typeName.startsWith(SIRI_1_3_PACKAGE))
+      return ESiriVersion.V1_3;
+    else if (typeName.startsWith(SIRI_1_0_PACKAGE))
+      return ESiriVersion.V1_0;
+
+    throw new SiriUnknownVersionException(typeName);
+  }
 
   public Object getPayloadAsVersion(Object payload, ESiriVersion targetVersion) {
 
@@ -80,18 +93,5 @@ public class SiriVersioning {
     Pair<ESiriVersion> pair = Tuples.pair(versionFrom, versionTo);
 
     return _convertersByVersions.get(pair);
-  }
-
-  private ESiriVersion getVersionOfObject(Object payload) {
-
-    Class<?> type = payload.getClass();
-    String typeName = type.getName();
-
-    if (typeName.startsWith(SIRI_1_3_PACKAGE))
-      return ESiriVersion.V1_3;
-    else if (typeName.startsWith(SIRI_1_0_PACKAGE))
-      return ESiriVersion.V1_0;
-
-    throw new SiriUnknownVersionException(typeName);
   }
 }
