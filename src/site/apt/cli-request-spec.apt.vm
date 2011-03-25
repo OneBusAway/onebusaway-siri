@@ -30,6 +30,46 @@ Url=http://host:port/path,ModuleType=VEHICLE_MONITORING
 
   We provide additional argument documentation below:
 
+* Common Arguments
+
+  You can specify a number of common arguments, some of which we mentioned above:
+  
+  * <<<Url>>> - The url address of the SIRI resource to connect to
+  
+  * <<<Version>>> - Specify the target version of the SIRI spec to use when communicating with the remote SIRI resource (1.0, 1.3 [default])
+  
+  * <<<ModuleType>>> - The SIRI module type for which we'll construct a request.  Supported values include:
+  
+    * <<<PRODUCTION_TIMETABLE>>>
+
+    * <<<ESTIMATED_TIMETABLE>>>
+
+    * <<<STOP_TIMETABLE>>>
+
+    * <<<STOP_MONITORING>>>
+
+    * <<<VEHICLE_MONITORING>>>
+
+    * <<<CONNECTION_TIMETABLE>>>
+
+    * <<<CONNECTION_MONITORING_FEEDER>>>
+
+    * <<<CONNECTION_MONITORING_DISTRIBUTOR>>>
+
+    * <<<GENERAL_MESSAGE>>>
+
+    * <<<FACILITY_MONITORING>>>
+
+    * <<<SITUATION_EXCHANGE>>>
+   
+  * <<<ReconnectionAttempts>>> - The number of times we will attempt to reconnect to a SIRI resource on connection error.  A value of 0 will mean no reconnections, while a value of -1 means we will never stop trying to reconnect. 
+
+  * <<<ReconnectionInterval>>> - How long we wait between reconnection attempts (in seconds)
+
+  * <<<HeartbeatInterval>>> - For pub-sub, the requested heartbeat interval (in seconds)
+     
+  * <<<CheckStatusInterval>>> - For pub-sub, the requested check-status interval (in seconds)
+    
 * Vehicle Monitoring
 
   You can specify any of the following sub-elements of the <<<VehicleMonitoringRequest>>> request element:
