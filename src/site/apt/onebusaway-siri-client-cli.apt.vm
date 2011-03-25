@@ -16,12 +16,12 @@ Getting the Client
   You can download the latest client here:
 
 #if( $currentVersion.contains('SNAPSHOT') )
-  #set( $repo_base = 'snapshot-repository' )
+  #set( $repo_base = 'snapshots' )
 #else
-  #set( $repo_base = 'repository' )
+  #set( $repo_base = 'releases' )
 #end
   
-  {{{http://developer.onebusaway.org/maven/${repo_base}/org/onebusaway/onebusaway-siri-client-cli/${currentVersion}/onebusaway-siri-client-cli-${currentVersion}.jar}onebusaway-siri-client-cli-${currentVersion}.jar}}
+  {{{http://nexus.onebusaway.org/content/repositories/${repo_base}/org/onebusaway/onebusaway-siri-client-cli/${currentVersion}/}onebusaway-siri-client-cli-${currentVersion}.jar}}
   
 Using the Client
 

@@ -33,12 +33,12 @@ Getting the Application
   You can download the latest application here:
 
 #if( $currentVersion.contains('SNAPSHOT') )
-  #set( $repo_base = 'snapshot-repository' )
+  #set( $repo_base = 'snapshots' )
 #else
-  #set( $repo_base = 'repository' )
+  #set( $repo_base = 'releases' )
 #end
   
-  {{{http://developer.onebusaway.org/maven/${repo_base}/org/onebusaway/onebusaway-siri-repeater-cli/${currentVersion}/onebusaway-siri-repeater-cli-${currentVersion}.jar}onebusaway-siri-repeater-cli-${currentVersion}.jar}}
+  {{{http://nexus.onebusaway.org/content/repositories/${repo_base}/org/onebusaway/onebusaway-siri-repeater-cli/${currentVersion}/}onebusaway-siri-repeater-cli-${currentVersion}.jar}}
  
 
 Using the Application
