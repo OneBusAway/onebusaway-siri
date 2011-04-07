@@ -7,7 +7,6 @@
   </parent>
   <groupId>org.onebusaway</groupId>
   <artifactId>onebusaway-siri-core</artifactId>
-  <version>0.0.3-SNAPSHOT</version>
   <name>onebusaway-siri-core</name>
   <description>Common core classes</description>
 
