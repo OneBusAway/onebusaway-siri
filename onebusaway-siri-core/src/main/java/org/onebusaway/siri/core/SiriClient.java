@@ -320,6 +320,8 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
         SubscriptionQualifierStructure subId = subRequest.getSubscriptionIdentifier();
         String subscriptionId = subId.getValue();
 
+        _log.info("subscriptionId=" + subId.getValue());
+
         ClientSubscriptionInstance instance = new ClientSubscriptionInstance(
             channel, subscriptionId, moduleType, subRequest);
 
@@ -514,9 +516,9 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    */
   private void fillRequestStructure(ServiceRequest request) {
 
-    if( request == null)
+    if (request == null)
       return;
-    
+
     request.setRequestorRef(SiriTypeFactory.particpantRef(_identity));
 
     request.setAddress(_clientUrl);
