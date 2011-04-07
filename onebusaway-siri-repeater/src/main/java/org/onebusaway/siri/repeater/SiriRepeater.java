@@ -1,5 +1,6 @@
 package org.onebusaway.siri.repeater;
 
+import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClient;
 import org.onebusaway.siri.core.SiriServer;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
@@ -70,7 +71,7 @@ public class SiriRepeater {
       SiriServiceDeliveryHandler {
 
     @Override
-    public void handleServiceDelivery(ServiceDelivery serviceDelivery) {
+    public void handleServiceDelivery(SiriChannelInfo channelInfo, ServiceDelivery serviceDelivery) {
       _siriServer.publish(serviceDelivery);
     }
   }

@@ -19,6 +19,8 @@ public abstract class AbstractSiriClientRequest<T> {
 
   private int heartbeatInterval = 0;
 
+  private Object channelContext;
+
   private T payload;
 
   public AbstractSiriClientRequest() {
@@ -88,6 +90,14 @@ public abstract class AbstractSiriClientRequest<T> {
 
   public void setHeartbeatInterval(int heartbeatInterval) {
     this.heartbeatInterval = heartbeatInterval;
+  }
+
+  public Object getChannelContext() {
+    return channelContext;
+  }
+
+  public void setChannelContext(Object channelContext) {
+    this.channelContext = channelContext;
   }
 
   public T getPayload() {

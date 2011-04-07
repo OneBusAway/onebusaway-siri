@@ -282,9 +282,6 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
     AsynchronousClientConnectionAttempt attempt = new AsynchronousClientConnectionAttempt(
         request);
-    attempt.setReconnectionInterval(request.getReconnectionInterval());
-    attempt.setRemainingReconnectionAttempts(request.getReconnectionAttempts());
-
     _executor.execute(attempt);
   }
 
@@ -320,8 +317,6 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
         SubscriptionQualifierStructure subId = subRequest.getSubscriptionIdentifier();
         String subscriptionId = subId.getValue();
 
-        _log.info("subscriptionId=" + subId.getValue());
-
         ClientSubscriptionInstance instance = new ClientSubscriptionInstance(
             channel, subscriptionId, moduleType, subRequest);
 
@@ -338,6 +333,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
       channel.setReconnectionAttempts(request.getReconnectionAttempts());
       channel.setReconnectionInterval(request.getReconnectionInterval());
+      channel.setContext(request.getChannelContext());
 
       long heartbeatInterval = request.getHeartbeatInterval();
 
@@ -411,8 +407,35 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
   private void handleServiceDelivery(ServiceDelivery serviceDelivery) {
 
+    SiriChannelInfo channelInfo = getChannelInfoForServiceDelivery(serviceDelivery);
+
     for (SiriServiceDeliveryHandler handler : _serviceDeliveryHandlers)
-      handler.handleServiceDelivery(serviceDelivery);
+      handler.handleServiceDelivery(channelInfo, serviceDelivery);
+  }
+
+  private SiriChannelInfo getChannelInfoForServiceDelivery(
+      ServiceDelivery serviceDelivery) {
+
+    SiriChannelInfo channelInfo = new SiriChannelInfo();
+
+    ClientSubscriptionChannel clientSubscriptionChannel = null;
+
+    String address = serviceDelivery.getAddress();
+    if (address != null)
+      clientSubscriptionChannel = _channelsById.get(address);
+
+    ParticipantRefStructure producerRef = serviceDelivery.getProducerRef();
+    if (producerRef != null && producerRef.getValue() != null) {
+      ClientSubscriptionChannel other = _channelsById.get(producerRef.getValue());
+      if (other != null)
+        clientSubscriptionChannel = other;
+    }
+
+    if (clientSubscriptionChannel != null) {
+      channelInfo.setContext(clientSubscriptionChannel.getContext());
+    }
+
+    return channelInfo;
   }
 
   private void handleHeartbeatNotification(
@@ -559,6 +582,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     clientRequest.setReconnectionAttempts(channel.getReconnectionAttempts());
     clientRequest.setTargetUrl(channel.getAddress());
     clientRequest.setTargetVersion(channel.getTargetVersion());
+    clientRequest.setChannelContext(channel.getContext());
     clientRequest.setPayload(request);
 
     handleSubscriptionRequest(clientRequest);
@@ -655,15 +679,8 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     public AsynchronousClientConnectionAttempt(
         AbstractSiriClientRequest<?> request) {
       this.request = request;
-    }
-
-    public void setRemainingReconnectionAttempts(
-        int remainingReconnectionAttempts) {
-      this.remainingReconnectionAttempts = remainingReconnectionAttempts;
-    }
-
-    public void setReconnectionInterval(int reconnectionInterval) {
-      this.reconnectionInterval = reconnectionInterval;
+      this.remainingReconnectionAttempts = request.getReconnectionAttempts();
+      this.reconnectionInterval = request.getReconnectionInterval();
     }
 
     @Override

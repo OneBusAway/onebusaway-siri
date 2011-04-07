@@ -1,5 +1,6 @@
 package org.onebusaway.siri.core.handlers;
 
+import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClient;
 
 import uk.org.siri.siri.ServiceDelivery;
@@ -14,5 +15,5 @@ import uk.org.siri.siri.ServiceDelivery;
  */
 public interface SiriServiceDeliveryHandler {
 
-  public void handleServiceDelivery(ServiceDelivery serviceDelivery);
+  public void handleServiceDelivery(SiriChannelInfo channelInfo, ServiceDelivery serviceDelivery);
 }

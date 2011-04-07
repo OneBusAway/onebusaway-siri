@@ -31,6 +31,8 @@ public class ClientSubscriptionChannel {
 
   private int reconnectionInterval = 0;
 
+  private Object context;
+
   public ClientSubscriptionChannel(String serverId, String address,
       ESiriVersion targetVersion) {
     this.serverId = serverId;
@@ -108,6 +110,14 @@ public class ClientSubscriptionChannel {
 
   public void setReconnectionInterval(int reconnectionInterval) {
     this.reconnectionInterval = reconnectionInterval;
+  }
+
+  public Object getContext() {
+    return context;
+  }
+
+  public void setContext(Object context) {
+    this.context = context;
   }
 
   @Override

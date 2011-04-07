@@ -11,6 +11,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClientServiceRequest;
 import org.onebusaway.siri.core.SiriClientSubscriptionRequest;
 import org.onebusaway.siri.core.SiriLibrary;
@@ -176,7 +177,7 @@ public class SiriClientMain {
       SiriServiceDeliveryHandler {
 
     @Override
-    public void handleServiceDelivery(ServiceDelivery serviceDelivery) {
+    public void handleServiceDelivery(SiriChannelInfo channelInfo, ServiceDelivery serviceDelivery) {
       printAsXml(serviceDelivery);
     }
   }

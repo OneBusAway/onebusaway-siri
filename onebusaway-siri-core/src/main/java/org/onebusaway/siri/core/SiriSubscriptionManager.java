@@ -175,8 +175,6 @@ public class SiriSubscriptionManager {
 
       String subscriptionId = subscriptionRef.getValue();
       
-      _log.info("subscriptionId="+ subscriptionId);
-
       List<SiriModuleDeliveryFilter> filters = computeFilterSetForSubscriptionRequest(
           subscriptionRequest, moduleType, request);
 
