@@ -3,7 +3,7 @@
     <parent>
         <artifactId>onebusaway-siri</artifactId>
         <groupId>org.onebusaway</groupId>
-        <version>0.0.3-SNAPSHOT</version>
+        <version>0.1.0-SNAPSHOT</version>
     </parent>
     <groupId>org.onebusaway</groupId>
     <artifactId>onebusaway-siri-api-v13</artifactId>
