@@ -87,7 +87,8 @@ public class SiriCommon {
     HttpPost post = new HttpPost(url);
 
     try {
-      post.setEntity(new StringEntity(writer.toString()));
+      String content = writer.toString();
+      post.setEntity(new StringEntity(content));
     } catch (UnsupportedEncodingException ex) {
       throw new SiriSerializationException(ex);
     }

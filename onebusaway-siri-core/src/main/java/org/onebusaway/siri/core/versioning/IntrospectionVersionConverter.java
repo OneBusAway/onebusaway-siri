@@ -6,8 +6,11 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -21,8 +24,22 @@ public class IntrospectionVersionConverter implements VersionConverter {
 
   private final TypeMappingStrategy _typeMappingStrategy;
 
+  private final Set<TypeAndPropertyName> _propertiesToIgnore = new HashSet<TypeAndPropertyName>();
+
+  private final Map<TypeAndPropertyName, PropertyConverterFactory> _propertyConverterFactories = new HashMap<IntrospectionVersionConverter.TypeAndPropertyName, PropertyConverterFactory>();
+
   public IntrospectionVersionConverter(TypeMappingStrategy typeMappingStrategy) {
     _typeMappingStrategy = typeMappingStrategy;
+  }
+
+  public void addPropertyToIgnore(Class<?> fromType, String propertyName) {
+    _propertiesToIgnore.add(new TypeAndPropertyName(fromType, propertyName));
+  }
+
+  public void addPropertyConverterFactory(Class<?> fromType,
+      String propertyName, PropertyConverterFactory factory) {
+    _propertyConverterFactories.put(new TypeAndPropertyName(fromType,
+        propertyName), factory);
   }
 
   @Override
@@ -105,14 +122,33 @@ public class IntrospectionVersionConverter implements VersionConverter {
       if ("class".equals(name))
         continue;
 
+      TypeAndPropertyName fromPropertyKey = new TypeAndPropertyName(sourceType,
+          name);
+
+      if (_propertiesToIgnore.contains(fromPropertyKey))
+        continue;
+
       PropertyDescriptor fromDesc = fromDescs.get(name);
       PropertyDescriptor toDesc = toDescs.get(name);
 
-      PropertyConverter converter = getPropertyConverter(sourceType,
-          targetType, name, fromDesc, toDesc);
+      PropertyConverterFactory factory = _propertyConverterFactories.get(fromPropertyKey);
 
-      if (converter != null)
-        converters.add(converter);
+      if (factory != null) {
+
+        PropertyConverter converter = factory.createConverter(this, sourceType,
+            targetType, name, fromDesc, toDesc);
+
+        if (converter != null)
+          converters.add(converter);
+
+      } else {
+
+        PropertyConverter converter = getPropertyConverter(sourceType,
+            targetType, name, fromDesc, toDesc);
+
+        if (converter != null)
+          converters.add(converter);
+      }
     }
 
     return converters;
@@ -131,15 +167,23 @@ public class IntrospectionVersionConverter implements VersionConverter {
       Method readMethod = fromDesc.getReadMethod();
       Method writeMethod = toDesc.getWriteMethod();
 
-      if (readMethod == null && fromDesc.getPropertyType() == Boolean.class) {
+      Class<?> fromPropertyType = fromDesc.getPropertyType();
+      Class<?> toPropertyType = toDesc.getPropertyType();
+
+      if (readMethod == null && fromPropertyType == Boolean.class) {
         String getter = "is" + name.substring(0, 1).toUpperCase()
             + name.substring(1);
         readMethod = sourceType.getMethod(getter);
       }
 
-      if (writeMethod == null && fromDesc.getPropertyType() == List.class) {
-        return new ListPropertyConverter(this, readMethod,
-            toDesc.getReadMethod());
+      if (writeMethod == null && toPropertyType == List.class) {
+        if (fromPropertyType == List.class) {
+          return new ListPropertyConverter(this, readMethod,
+              toDesc.getReadMethod());
+        } else {
+          return new ElementToListPropertyConverter(this, readMethod,
+              toDesc.getReadMethod());
+        }
       }
 
       if (readMethod == null)
@@ -162,6 +206,48 @@ public class IntrospectionVersionConverter implements VersionConverter {
     public Object convert(Object source) {
       return source;
     }
+  }
+
+  private static class TypeAndPropertyName {
+
+    private final Class<?> type;
+
+    private final String propertyName;
+
+    public TypeAndPropertyName(Class<?> type, String propertyName) {
+      if (type == null)
+        throw new IllegalArgumentException();
+      if (propertyName == null)
+        throw new IllegalArgumentException();
+      this.type = type;
+      this.propertyName = propertyName;
+    }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + propertyName.hashCode();
+      result = prime * result + type.hashCode();
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj)
+        return true;
+      if (obj == null)
+        return false;
+      if (getClass() != obj.getClass())
+        return false;
+      TypeAndPropertyName other = (TypeAndPropertyName) obj;
+      if (!propertyName.equals(other.propertyName))
+        return false;
+      if (!type.equals(other.type))
+        return false;
+      return true;
+    }
+
   }
 
 }

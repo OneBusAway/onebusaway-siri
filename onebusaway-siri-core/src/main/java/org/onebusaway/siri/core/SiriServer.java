@@ -137,11 +137,12 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
       _log.debug("SiriServer stopped");
   }
 
-  /****
+  /**
+   * @return **
    * 
    ****/
 
-  public void publish(ServiceDelivery serviceDelivery) {
+  public int publish(ServiceDelivery serviceDelivery) {
 
     fillInServiceDeliveryDefaults(serviceDelivery);
 
@@ -155,6 +156,8 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
       for (ServerSubscriptionEvent event : events)
         _executor.submit(new PublishEventTask(event));
     }
+    
+    return events.size();
   }
 
   /****
@@ -392,8 +395,18 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
 
     String address = channel.getConsumerAddress();
 
+    Siri siri = new Siri();
+    siri.setServiceDelivery(delivery);
+
+    /**
+     * Make sure the outgoing SIRI data is updated to the client version
+     */
+    SiriVersioning versioning = SiriVersioning.getInstance();
+    ESiriVersion originalVersion = channel.getTargetVersion();
+    Object data = versioning.getPayloadAsVersion(siri, originalVersion);
+
     try {
-      sendHttpRequest(address, delivery);
+      sendHttpRequest(address, data);
     } catch (SiriConnectionException ex) {
       _log.warn("error connecting to client at " + address);
       terminateSubscriptionInstance(instance);
@@ -410,7 +423,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
   }
 
   private void terminateSubscriptionInstance(ServerSubscriptionInstance instance) {
-    
+
     _log.debug("terminating subscription instance: {}", instance);
 
     ServerSubscriptionChannel channel = instance.getChannel();

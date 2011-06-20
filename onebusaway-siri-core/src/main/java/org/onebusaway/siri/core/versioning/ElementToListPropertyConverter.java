@@ -1,10 +1,10 @@
 package org.onebusaway.siri.core.versioning;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-public class ListPropertyConverter implements PropertyConverter {
+public class ElementToListPropertyConverter implements PropertyConverter {
 
   private final VersionConverter _converter;
 
@@ -12,8 +12,8 @@ public class ListPropertyConverter implements PropertyConverter {
 
   private final Method _to;
 
-  public ListPropertyConverter(VersionConverter converter, Method from,
-      Method to) {
+  public ElementToListPropertyConverter(VersionConverter converter,
+      Method from, Method to) {
     _converter = converter;
     _from = from;
     _to = to;
@@ -28,16 +28,8 @@ public class ListPropertyConverter implements PropertyConverter {
     if (sourceProperty == null)
       return;
 
-    List<?> sourceList = (List<?>) sourceProperty;
-    if (sourceList.isEmpty())
-      return;
-
-    List<Object> targetList = new ArrayList<Object>(sourceList.size());
-    for (Object sourceValue : sourceList) {
-      Object targetProperty = _converter.convert(sourceValue);
-      targetList.add(targetProperty);
-    }
-
+    Object targetProperty = _converter.convert(sourceProperty);
+    List<Object> targetList = Arrays.asList(targetProperty);
     PropertyConverterSupport.setTargetPropertyValues(target, _to, targetList);
   }
 }

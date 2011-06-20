@@ -36,6 +36,8 @@ public class SiriSubscriptionManager {
 
   private List<SiriModuleDeliveryFilterSource> _deliveryFilterSources = new ArrayList<SiriModuleDeliveryFilterSource>();
 
+  private String _consumerAddressDefault = null;
+
   public SiriSubscriptionManager() {
     for (ESiriModuleType moduleType : ESiriModuleType.values()) {
       ConcurrentHashMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> m = new ConcurrentHashMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance>();
@@ -51,6 +53,18 @@ public class SiriSubscriptionManager {
   public void removeModuleDeliveryFilterSource(
       SiriModuleDeliveryFilterSource source) {
     _deliveryFilterSources.remove(source);
+  }
+
+  /**
+   * There may be situations where you wish to hard-code the consumer address
+   * for any incoming subscription requests. This default consumer address value
+   * will be used in the case where no consumer address is included in a
+   * subscription request.
+   * 
+   * @param consumerAddressDefault
+   */
+  public void setConsumerAddressDefault(String consumerAddressDefault) {
+    _consumerAddressDefault = consumerAddressDefault;
   }
 
   /****
@@ -69,6 +83,8 @@ public class SiriSubscriptionManager {
     String consumerAddress = subscriptionRequest.getAddress();
     if (subscriptionRequest.getConsumerAddress() != null)
       consumerAddress = subscriptionRequest.getConsumerAddress();
+    if (consumerAddress == null)
+      consumerAddress = _consumerAddressDefault;
     if (consumerAddress == null)
       throw new SiriMissingArgumentException("ConsumerAddress");
 
@@ -174,7 +190,7 @@ public class SiriSubscriptionManager {
       }
 
       String subscriptionId = subscriptionRef.getValue();
-      
+
       List<SiriModuleDeliveryFilter> filters = computeFilterSetForSubscriptionRequest(
           subscriptionRequest, moduleType, request);
 
