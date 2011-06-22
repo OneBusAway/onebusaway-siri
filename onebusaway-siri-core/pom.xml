@@ -15,13 +15,11 @@
     <dependency>
       <groupId>org.onebusaway</groupId>
       <artifactId>onebusaway-siri-api-v10</artifactId>
-      <version>${project.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.onebusaway</groupId>
       <artifactId>onebusaway-siri-api-v13</artifactId>
-      <version>${project.version}</version>
     </dependency>
 
     <dependency>

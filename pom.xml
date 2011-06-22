@@ -4,7 +4,7 @@
   <parent>
     <artifactId>onebusaway</artifactId>
     <groupId>org.onebusaway</groupId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
   </parent>
   <groupId>org.onebusaway</groupId>
   <artifactId>onebusaway-siri</artifactId>
@@ -16,8 +16,17 @@
 
   <properties>
     <spring.version>3.0.5.RELEASE</spring.version>
+    <onebusaway_siri_api_v10_version>1.0.0</onebusaway_siri_api_v10_version>
+    <onebusaway_siri_api_v13_version>1.0.0</onebusaway_siri_api_v13_version>
   </properties>
-  
+
+  <repositories>
+    <repository>
+      <id>public.onebusaway.org</id>
+      <url>http://nexus.onebusaway.org/content/groups/public/</url>
+    </repository>
+  </repositories>
+
   <scm>
     <connection>scm:svn:http://onebusaway.googlecode.com/svn/onebusaway-siri/trunk</connection>
     <developerConnection>scm:svn:https://onebusaway.googlecode.com/svn/onebusaway-siri/trunk</developerConnection>
@@ -33,9 +42,6 @@
   </distributionManagement>
 
   <modules>
-    <module>onebusaway-siri-api</module>
-    <module>onebusaway-siri-api-v10</module>
-    <module>onebusaway-siri-api-v13</module>
     <module>onebusaway-siri-core</module>
     <module>onebusaway-siri-client-cli</module>
     <module>onebusaway-siri-jetty</module>
@@ -47,6 +53,18 @@
   <!-- This is where we control the master dependency version used by all modules -->
   <dependencyManagement>
     <dependencies>
+
+      <dependency>
+        <groupId>org.onebusaway</groupId>
+        <artifactId>onebusaway-siri-api-v10</artifactId>
+        <version>${onebusaway_siri_api_v10_version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.onebusaway</groupId>
+        <artifactId>onebusaway-siri-api-v13</artifactId>
+        <version>${onebusaway_siri_api_v13_version}</version>
+      </dependency>
 
       <dependency>
         <groupId>org.onebusaway</groupId>
@@ -137,6 +155,16 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+        <links>
+          <link>http://developer.onebusaway.org/modules/onebusaway-siri-api-v10/${onebusaway_siri_api_v10_version}/apidocs</link>
+          <link>http://developer.onebusaway.org/modules/onebusaway-siri-api-v13/${onebusaway_siri_api_v13_version}/apidocs</link>
+        </links>
+        </configuration>
       </plugin>
     </plugins>
   </build>
