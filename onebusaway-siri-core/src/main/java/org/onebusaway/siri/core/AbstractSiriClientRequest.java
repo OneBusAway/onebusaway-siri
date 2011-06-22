@@ -1,5 +1,6 @@
 package org.onebusaway.siri.core;
 
+import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
 public abstract class AbstractSiriClientRequest<T> {
@@ -92,10 +93,25 @@ public abstract class AbstractSiriClientRequest<T> {
     this.heartbeatInterval = heartbeatInterval;
   }
 
+  /**
+   * See {@link #setChannelContext(Object)}.
+   * 
+   * @return channel-specific callback data to be associated with the
+   *         subscription.
+   */
   public Object getChannelContext() {
     return channelContext;
   }
 
+  /**
+   * If you wish to associate some channel-specific data with this subscription,
+   * you can supply it with this method. Think of this as supplying callback
+   * data. The context data will be included in
+   * {@link SiriChannelInfo#getContext()} when the siri client notifies you of a
+   * new service delivery in a {@link SiriServiceDeliveryHandler}.
+   * 
+   * @param channelContext
+   */
   public void setChannelContext(Object channelContext) {
     this.channelContext = channelContext;
   }

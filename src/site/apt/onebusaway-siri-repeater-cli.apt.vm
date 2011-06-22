@@ -59,9 +59,10 @@ java -jar onebusaway-siri-repeater-cli.jar [-args] request [request ...]
   
   * <<<-clientUrl url>>> : the url your repeater application binds to and shares for for private server requests (default=http://localhost:8081/)
   
-  * <<<-privateClientUrl url>>> : optionally set an alternate client url for binding, but still report -clientUrl to connected clients
-will actually bind to, if specified (default=repeaterUrl)
+  * <<<-privateClientUrl url>>> : optionally set an alternate client url for binding, but still report -clientUrl to connected clients will actually bind to, if specified (default=repeaterUrl)
   
+  * <<<-requestorConsumerAddressDefault>>> : set a default consumer address for a particular requestor, used when an address is not included in a subscription request.  Argument should take the form <<<requestorRef=address>>>.
+   
   * <<<-dataSource path>>> : a Spring context.xml file containing additional bean defs
 
 * Request Spec

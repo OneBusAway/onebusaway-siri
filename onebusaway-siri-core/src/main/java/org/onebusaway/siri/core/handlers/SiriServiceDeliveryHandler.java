@@ -15,5 +15,13 @@ import uk.org.siri.siri.ServiceDelivery;
  */
 public interface SiriServiceDeliveryHandler {
 
-  public void handleServiceDelivery(SiriChannelInfo channelInfo, ServiceDelivery serviceDelivery);
+  /**
+   * Handle an incoming SIRI {@link ServiceDelivery} payload, typically received
+   * asynchronously from a publish/subscribe event.
+   * 
+   * @param channelInfo information about the subscription channel
+   * @param serviceDelivery the data payload
+   */
+  public void handleServiceDelivery(SiriChannelInfo channelInfo,
+      ServiceDelivery serviceDelivery);
 }

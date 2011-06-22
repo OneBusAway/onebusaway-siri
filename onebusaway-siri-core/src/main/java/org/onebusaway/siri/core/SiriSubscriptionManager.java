@@ -12,6 +12,7 @@ import org.onebusaway.siri.core.exceptions.SiriMissingArgumentException;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterFactory;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterSource;
+import org.onebusaway.siri.core.handlers.SiriSubscriptionManagerListener;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,10 @@ public class SiriSubscriptionManager {
 
   private List<SiriModuleDeliveryFilterSource> _deliveryFilterSources = new ArrayList<SiriModuleDeliveryFilterSource>();
 
+  private List<SiriSubscriptionManagerListener> _listeners = new ArrayList<SiriSubscriptionManagerListener>();
+
+  private Map<String, String> _consumerAddressDefaultsByRequestorRef = new HashMap<String, String>();
+
   private String _consumerAddressDefault = null;
 
   public SiriSubscriptionManager() {
@@ -55,13 +60,39 @@ public class SiriSubscriptionManager {
     _deliveryFilterSources.remove(source);
   }
 
+  public void addListener(SiriSubscriptionManagerListener listener) {
+    _listeners.add(listener);
+  }
+
+  public void removeListener(SiriSubscriptionManagerListener listener) {
+    _listeners.remove(listener);
+  }
+
   /**
    * There may be situations where you wish to hard-code the consumer address
-   * for any incoming subscription requests. This default consumer address value
-   * will be used in the case where no consumer address is included in a
-   * subscription request.
+   * for an incoming subscription request from a particular requestor. This
+   * default consumer address value will be used in the case where no consumer
+   * address is included in a subscription request with the specified
+   * requestor ref.
    * 
-   * @param consumerAddressDefault
+   * @param requestorRef the id of the participant
+   * @param consumerAddressDefault the default consumer address
+   */
+  public void setConsumerAddressDefaultForRequestorRef(String requestorRef,
+      String consumerAddressDefault) {
+    _consumerAddressDefaultsByRequestorRef.put(requestorRef,
+        consumerAddressDefault);
+  }
+
+  /**
+   * There may be situations where you wish to hard-code the consumer address
+   * for an incoming subscription request. This default consumer address value
+   * will be used in the case where no consumer address is included in a
+   * subscription request AND no consumer address has been specified for the
+   * subscription requestor ref, as with
+   * {@link #setConsumerAddressDefaultForRequestorRef(String, String)}.
+   * 
+   * @param consumerAddressDefault the default consumer address
    */
   public void setConsumerAddressDefault(String consumerAddressDefault) {
     _consumerAddressDefault = consumerAddressDefault;
@@ -70,6 +101,10 @@ public class SiriSubscriptionManager {
   /****
    * 
    ****/
+
+  public List<ServerSubscriptionChannelId> getActiveSubscriptionChannels() {
+    return new ArrayList<ServerSubscriptionChannelId>(_channelsById.keySet());
+  }
 
   public ServerSubscriptionChannel handleSubscriptionRequest(
       SubscriptionRequest subscriptionRequest, ESiriVersion originalVersion)
@@ -83,6 +118,8 @@ public class SiriSubscriptionManager {
     String consumerAddress = subscriptionRequest.getAddress();
     if (subscriptionRequest.getConsumerAddress() != null)
       consumerAddress = subscriptionRequest.getConsumerAddress();
+    if (consumerAddress == null)
+      consumerAddress = _consumerAddressDefaultsByRequestorRef.get(subscriberId);
     if (consumerAddress == null)
       consumerAddress = _consumerAddressDefault;
     if (consumerAddress == null)
@@ -101,7 +138,14 @@ public class SiriSubscriptionManager {
   }
 
   public void terminateSubscriptionChannel(ServerSubscriptionChannel channel) {
-    _channelsById.remove(channel.getId());
+
+    ServerSubscriptionChannel existing = _channelsById.remove(channel.getId());
+
+    if (existing != null) {
+      for (SiriSubscriptionManagerListener listener : _listeners) {
+        listener.subscriptionRemoved(this);
+      }
+    }
   }
 
   /**
@@ -152,8 +196,11 @@ public class SiriSubscriptionManager {
       ServerSubscriptionChannel newChannel = new ServerSubscriptionChannel(
           channelId, channelVersion);
       channel = _channelsById.putIfAbsent(channelId, newChannel);
-      if (channel == null)
+      if (channel == null) {
         channel = newChannel;
+        for (SiriSubscriptionManagerListener listener : _listeners)
+          listener.subscriptionAdded(this);
+      }
     }
 
     return channel;

@@ -9,6 +9,15 @@ import org.onebusaway.siri.jetty.SiriJettyServer;
 
 import uk.org.siri.siri.ServiceDelivery;
 
+/**
+ * The SIRI repeater create a {@link SiriClient} and a {@link SiriServer} and
+ * repeats data received on the client to anyone connected on the server, as
+ * appropriate. It's that simple. Want to filter or modify the data passing
+ * through the repeater? See the methods available to {@link SiriServer}, as
+ * exposed through {@link #getSiriServer()}.
+ * 
+ * @author bdferris
+ */
 public class SiriRepeater {
 
   /**
@@ -43,7 +52,7 @@ public class SiriRepeater {
   public void start() {
 
     /**
-     * Register our ServiceDelivery repeater handler
+     * Register our ServiceDelivery repeater handler with the client
      */
     _siriClient.addServiceDeliveryHandler(_serviceDeliveryRepeater);
 
@@ -71,7 +80,8 @@ public class SiriRepeater {
       SiriServiceDeliveryHandler {
 
     @Override
-    public void handleServiceDelivery(SiriChannelInfo channelInfo, ServiceDelivery serviceDelivery) {
+    public void handleServiceDelivery(SiriChannelInfo channelInfo,
+        ServiceDelivery serviceDelivery) {
       _siriServer.publish(serviceDelivery);
     }
   }

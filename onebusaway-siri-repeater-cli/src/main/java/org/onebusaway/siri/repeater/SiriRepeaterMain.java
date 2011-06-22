@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Parser;
 import org.apache.commons.cli.PosixParser;
@@ -38,6 +39,8 @@ public class SiriRepeaterMain {
   private static final String ARG_FILTER = "filter";
 
   private static final String ARG_PRIVATE_CLIENT_URL = "privateClientUrl";
+
+  private static final String ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT = "requestorConsumerAddressDefault";
 
   private static final String ARG_DATA_SOURCE = "dataSource";
 
@@ -143,8 +146,11 @@ public class SiriRepeaterMain {
     options.addOption(ARG_PRIVATE_REPEATER_URL, true, "private repeater url");
     options.addOption(ARG_CLIENT_URL, true, "client url");
     options.addOption(ARG_PRIVATE_CLIENT_URL, true, "private client url");
+    options.addOption(ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT, true,
+        "consumer address default for requestor");
     options.addOption(ARG_FILTER, true, "filter specification");
     options.addOption(ARG_DATA_SOURCE, true, "Spring data source xml file");
+
   }
 
   protected void handleCommandLineOptions(CommandLine cli,
@@ -171,6 +177,8 @@ public class SiriRepeaterMain {
       siriServer.setServerUrl(cli.getOptionValue(ARG_REPEATER_URL));
     if (cli.hasOption(ARG_PRIVATE_REPEATER_URL))
       siriServer.setPrivateServerUrl(cli.getOptionValue(ARG_PRIVATE_REPEATER_URL));
+
+    addRequestorConsumerAddressDefaults(cli, subscriptionManager);
 
     /**
      * Filters
@@ -199,6 +207,32 @@ public class SiriRepeaterMain {
         match.setModuleType(ESiriModuleType.valueOf(moduleType));
 
       subscriptionManager.addModuleDeliveryFilterSource(match);
+    }
+  }
+
+  private void addRequestorConsumerAddressDefaults(CommandLine cli,
+      SiriSubscriptionManager subscriptionManager) {
+
+    if (cli.hasOption(ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT)) {
+
+      String[] values = cli.getOptionValues(ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT);
+
+      for (String value : values) {
+        int index = value.indexOf('=');
+        if (index == -1) {
+          System.err.println("invalid "
+              + ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT + " arg: " + value
+              + " (expected format: requestorRef=address)");
+          printUsage();
+          System.exit(-1);
+        }
+
+        String requestorRef = value.substring(0, index);
+        String consumerAddressDefault = value.substring(index + 1);
+
+        subscriptionManager.setConsumerAddressDefaultForRequestorRef(
+            requestorRef, consumerAddressDefault);
+      }
     }
   }
 
