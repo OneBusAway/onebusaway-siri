@@ -1,39 +1,42 @@
 package org.onebusaway.siri.core.versioning;
 
 import java.lang.reflect.Method;
-import java.util.List;
+import java.util.Collection;
+
+import org.onebusaway.siri.core.exceptions.SiriException;
 
 public class PropertyConverterSupport {
 
-  public static Object getSourcePropertyValue(Object source, Method method) {
+  public static Object getSourcePropertyValue(Object source,
+      Method propertyReadMethod) {
     try {
-      return method.invoke(source);
+      return propertyReadMethod.invoke(source);
     } catch (Throwable ex) {
-      throw new IllegalStateException("error getting property "
-          + method.getName() + " for " + source, ex);
+      throw new SiriException("error getting property "
+          + propertyReadMethod.getName() + " for " + source, ex);
     }
   }
 
-  public static void setTargetPropertyValue(Object target, Method method,
-      Object targetPropertyValue) {
+  public static void setTargetPropertyValue(Object target,
+      Method propertyWriteMethod, Object targetPropertyValue) {
     try {
-      method.invoke(target, targetPropertyValue);
+      propertyWriteMethod.invoke(target, targetPropertyValue);
     } catch (Throwable ex) {
-      throw new IllegalStateException("error setting property "
-          + method.getName() + " for " + target, ex);
+      throw new SiriException("error setting property "
+          + propertyWriteMethod.getName() + " for " + target, ex);
     }
   }
 
-  public static void setTargetPropertyValues(Object target, Method method,
-      List<?> targetListValues) {
+  public static void setTargetPropertyValues(Object target,
+      Method propertyReadMethod, Collection<?> targetListValues) {
     try {
       @SuppressWarnings("unchecked")
-      List<Object> targetList = (List<Object>) method.invoke(target);
+      Collection<Object> targetList = (Collection<Object>) propertyReadMethod.invoke(target);
       targetList.clear();
       targetList.addAll(targetListValues);
     } catch (Throwable ex) {
-      throw new IllegalStateException("error getting property "
-          + method.getName() + " for " + target, ex);
+      throw new SiriException("error getting property "
+          + propertyReadMethod.getName() + " for " + target, ex);
     }
   }
 }

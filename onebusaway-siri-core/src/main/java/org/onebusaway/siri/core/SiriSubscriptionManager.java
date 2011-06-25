@@ -8,10 +8,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.onebusaway.collections.tuple.T2;
+import org.onebusaway.collections.tuple.Tuples;
 import org.onebusaway.siri.core.exceptions.SiriMissingArgumentException;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterFactory;
-import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterSource;
+import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
 import org.onebusaway.siri.core.handlers.SiriSubscriptionManagerListener;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.slf4j.Logger;
@@ -27,15 +29,35 @@ import uk.org.siri.siri.SubscriptionRequest;
 
 public class SiriSubscriptionManager {
 
+  /****
+   * Implementation Note:
+   * 
+   * The SiriSubscriptionManager is thread-safe, but we handle synchronization
+   * in a slightly complex way. The primary methods for subscription management
+   * ( {@link #handleSubscriptionRequest(SubscriptionRequest, ESiriVersion)},
+   * {@link #terminateSubscriptionChannel(ServerSubscriptionChannel)}, and
+   * {@link #terminateSubscriptionInstance(ServerSubscriptionInstance)}) are all
+   * centrally synchronized around the manager object. The idea here is that
+   * subscription subscribe / un-subscribe events are relatively uncommon, so
+   * there shouldn't be a performance bottle-neck around a central lock.
+   * 
+   * That said, we still use {@link ConcurrentMap} instances for managing the
+   * set of channels and the set of per-module subscriptions, such that more
+   * frequent methods that READ these values (as opposed to modifying) (see
+   * {@link #publish(ServiceDelivery)} and
+   * {@link #getActiveSubscriptionChannels()}) can access them without being
+   * blocked by a subscription event.
+   ****/
+
   private static Logger _log = LoggerFactory.getLogger(SiriSubscriptionManager.class);
 
   private ConcurrentMap<ServerSubscriptionChannelId, ServerSubscriptionChannel> _channelsById = new ConcurrentHashMap<ServerSubscriptionChannelId, ServerSubscriptionChannel>();
 
-  private Map<ESiriModuleType, ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance>> _subscriptions = new HashMap<ESiriModuleType, ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance>>();
+  private Map<ESiriModuleType, ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance>> _subscriptionsByModuleType = new HashMap<ESiriModuleType, ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance>>();
 
   private SiriModuleDeliveryFilterFactory _deliveryFilterFactory = new SiriModuleDeliveryFilterFactory();
 
-  private List<SiriModuleDeliveryFilterSource> _deliveryFilterSources = new ArrayList<SiriModuleDeliveryFilterSource>();
+  private List<T2<SiriModuleDeliveryFilterMatcher, SiriModuleDeliveryFilter>> _filters = new ArrayList<T2<SiriModuleDeliveryFilterMatcher, SiriModuleDeliveryFilter>>();
 
   private List<SiriSubscriptionManagerListener> _listeners = new ArrayList<SiriSubscriptionManagerListener>();
 
@@ -46,18 +68,8 @@ public class SiriSubscriptionManager {
   public SiriSubscriptionManager() {
     for (ESiriModuleType moduleType : ESiriModuleType.values()) {
       ConcurrentHashMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> m = new ConcurrentHashMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance>();
-      _subscriptions.put(moduleType, m);
+      _subscriptionsByModuleType.put(moduleType, m);
     }
-  }
-
-  public void addModuleDeliveryFilterSource(
-      SiriModuleDeliveryFilterSource source) {
-    _deliveryFilterSources.add(source);
-  }
-
-  public void removeModuleDeliveryFilterSource(
-      SiriModuleDeliveryFilterSource source) {
-    _deliveryFilterSources.remove(source);
   }
 
   public void addListener(SiriSubscriptionManagerListener listener) {
@@ -72,8 +84,8 @@ public class SiriSubscriptionManager {
    * There may be situations where you wish to hard-code the consumer address
    * for an incoming subscription request from a particular requestor. This
    * default consumer address value will be used in the case where no consumer
-   * address is included in a subscription request with the specified
-   * requestor ref.
+   * address is included in a subscription request with the specified requestor
+   * ref.
    * 
    * @param requestorRef the id of the participant
    * @param consumerAddressDefault the default consumer address
@@ -98,6 +110,15 @@ public class SiriSubscriptionManager {
     _consumerAddressDefault = consumerAddressDefault;
   }
 
+  public void addModuleDeliveryFilter(SiriModuleDeliveryFilterMatcher matcher,
+      SiriModuleDeliveryFilter filter) {
+
+    T2<SiriModuleDeliveryFilterMatcher, SiriModuleDeliveryFilter> tuple = Tuples.tuple(
+        matcher, filter);
+
+    _filters.add(tuple);
+  }
+
   /****
    * 
    ****/
@@ -106,7 +127,7 @@ public class SiriSubscriptionManager {
     return new ArrayList<ServerSubscriptionChannelId>(_channelsById.keySet());
   }
 
-  public ServerSubscriptionChannel handleSubscriptionRequest(
+  public synchronized ServerSubscriptionChannel handleSubscriptionRequest(
       SubscriptionRequest subscriptionRequest, ESiriVersion originalVersion)
       throws SiriMissingArgumentException {
 
@@ -137,7 +158,8 @@ public class SiriSubscriptionManager {
     return channel;
   }
 
-  public void terminateSubscriptionChannel(ServerSubscriptionChannel channel) {
+  public synchronized void terminateSubscriptionChannel(
+      ServerSubscriptionChannel channel) {
 
     ServerSubscriptionChannel existing = _channelsById.remove(channel.getId());
 
@@ -154,16 +176,25 @@ public class SiriSubscriptionManager {
    * @return true if the instance's channel no longer has any subscriptions,
    *         otherwise false
    */
-  public boolean terminateSubscriptionInstance(
+  public synchronized boolean terminateSubscriptionInstance(
       ServerSubscriptionInstance instance) {
 
-    ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> subscriptionsForModule = _subscriptions.get(instance.getModuleType());
+    ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> subscriptionsForModule = _subscriptionsByModuleType.get(instance.getModuleType());
 
     subscriptionsForModule.remove(instance.getId());
 
     ServerSubscriptionChannel channel = instance.getChannel();
     ConcurrentMap<String, ServerSubscriptionInstance> subscriptions = channel.getSubscriptions();
     subscriptions.remove(instance.getSubscriptionId());
+
+    /**
+     * If the channel is empty, we can remove it from the list of all channels
+     */
+    if (subscriptions.isEmpty())
+      _channelsById.remove(channel.getId());
+
+    for (SiriSubscriptionManagerListener listener : _listeners)
+      listener.subscriptionRemoved(this);
 
     return subscriptions.isEmpty();
   }
@@ -225,7 +256,7 @@ public class SiriSubscriptionManager {
     if (subscriptionRequest.getMessageIdentifier() != null)
       messageId = subscriptionRequest.getMessageIdentifier().getValue();
 
-    ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> subscriptionsForModule = _subscriptions.get(moduleType);
+    ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> subscriptionsForModule = _subscriptionsByModuleType.get(moduleType);
 
     for (AbstractSubscriptionStructure request : subscriptionRequests) {
 
@@ -271,9 +302,13 @@ public class SiriSubscriptionManager {
     /**
      * What filters apply?
      */
-    for (SiriModuleDeliveryFilterSource filterSource : _deliveryFilterSources)
-      filterSource.addFiltersForModuleSubscription(subscriptionRequest,
-          moduleType, moduleSubscriptionRequest, filters);
+    for (T2<SiriModuleDeliveryFilterMatcher, SiriModuleDeliveryFilter> tuple : _filters) {
+      SiriModuleDeliveryFilterMatcher matcher = tuple.getFirst();
+      if (matcher.isMatch(subscriptionRequest, moduleType,
+          moduleSubscriptionRequest)) {
+        filters.add(tuple.getSecond());
+      }
+    }
 
     /**
      * Add the base filter
@@ -292,7 +327,7 @@ public class SiriSubscriptionManager {
     List<T> deliveries = SiriLibrary.getServiceDeliveriesForModule(delivery,
         moduleType);
 
-    ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> subscriptionsById = _subscriptions.get(moduleType);
+    ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance> subscriptionsById = _subscriptionsByModuleType.get(moduleType);
 
     for (ServerSubscriptionInstance moduleDetails : subscriptionsById.values()) {
 

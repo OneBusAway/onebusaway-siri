@@ -1,16 +1,15 @@
 package org.onebusaway.siri.repeater;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Parser;
 import org.apache.commons.cli.PosixParser;
-import org.onebusaway.siri.core.ESiriModuleType;
 import org.onebusaway.siri.core.SiriClient;
 import org.onebusaway.siri.core.SiriClientSubscriptionRequest;
 import org.onebusaway.siri.core.SiriLibrary;
@@ -19,6 +18,12 @@ import org.onebusaway.siri.core.SiriServer;
 import org.onebusaway.siri.core.SiriSubscriptionManager;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
+import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterFactoryImpl;
+import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
+import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcherFactoryImpl;
+import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -27,6 +32,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 
 public class SiriRepeaterMain {
+
+  private static final Logger _log = LoggerFactory.getLogger(SiriRepeaterMain.class);
 
   private static final String ARG_ID = "id";
 
@@ -49,8 +56,13 @@ public class SiriRepeaterMain {
   private static final String FILE_PREFIX = "file:";
 
   public static void main(String[] args) throws Exception {
-    SiriRepeaterMain m = new SiriRepeaterMain();
-    m.run(args);
+    try {
+      SiriRepeaterMain m = new SiriRepeaterMain();
+      m.run(args);
+    } catch (Exception ex) {
+      _log.error("error running application", ex);
+      System.exit(-1);
+    }
   }
 
   public void run(String[] args) throws Exception {
@@ -183,31 +195,42 @@ public class SiriRepeaterMain {
     /**
      * Filters
      */
-    Map<String, SiriModuleDeliveryFilterMatch> filterSources = context.getBeansOfType(SiriModuleDeliveryFilterMatch.class);
-    for (SiriModuleDeliveryFilterMatch filterSource : filterSources.values())
-      subscriptionManager.addModuleDeliveryFilterSource(filterSource);
+    Map<String, SiriModuleDeliveryFilterSource> filterSources = context.getBeansOfType(SiriModuleDeliveryFilterSource.class);
+    for (SiriModuleDeliveryFilterSource filterSource : filterSources.values())
+      subscriptionManager.addModuleDeliveryFilter(filterSource.getMatcher(),
+          filterSource.getFilter());
 
     if (cli.hasOption(ARG_FILTER)) {
+
       String filterSpec = cli.getOptionValue(ARG_FILTER);
       Map<String, String> filterArgs = SiriLibrary.getLineAsMap(filterSpec);
 
-      String filterClassName = filterArgs.get("Class");
+      SiriModuleDeliveryFilterMatcher matcher = createFilterMatcherForArgs(filterArgs);
+      SiriModuleDeliveryFilter filter = createFilterForArgs(filterArgs);
 
-      SiriModuleDeliveryFilter filter = (SiriModuleDeliveryFilter) createObjectForClassName(filterClassName);
+      if (!filterArgs.isEmpty()) {
+        List<String> keys = new ArrayList<String>(filterArgs.keySet());
+        Collections.sort(keys);
+        throw new SiriException(
+            "the following filter parameters were unknown: " + keys);
+      }
 
-      SiriModuleDeliveryFilterMatch match = new SiriModuleDeliveryFilterMatch();
-      match.setFilter(filter);
-
-      String participant = filterArgs.get("Participant");
-      if (participant != null)
-        match.setParticipant(participant);
-
-      String moduleType = filterArgs.get("ModuleType");
-      if (moduleType != null)
-        match.setModuleType(ESiriModuleType.valueOf(moduleType));
-
-      subscriptionManager.addModuleDeliveryFilterSource(match);
+      subscriptionManager.addModuleDeliveryFilter(matcher, filter);
     }
+  }
+
+  protected SiriModuleDeliveryFilterMatcher createFilterMatcherForArgs(
+      Map<String, String> filterArgs) {
+
+    SiriModuleDeliveryFilterMatcherFactoryImpl factory = new SiriModuleDeliveryFilterMatcherFactoryImpl();
+    return factory.create(filterArgs);
+  }
+
+  protected SiriModuleDeliveryFilter createFilterForArgs(
+      Map<String, String> filterArgs) {
+
+    SiriModuleDeliveryFilterFactoryImpl factory = new SiriModuleDeliveryFilterFactoryImpl();
+    return factory.create(filterArgs);
   }
 
   private void addRequestorConsumerAddressDefaults(CommandLine cli,
@@ -262,15 +285,6 @@ public class SiriRepeaterMain {
     ctx.refresh();
     ctx.registerShutdownHook();
     return ctx;
-  }
-
-  private Object createObjectForClassName(String className) {
-    try {
-      Class<?> clazz = Class.forName(className);
-      return clazz.newInstance();
-    } catch (Throwable ex) {
-      throw new SiriException("error instantiating class " + className, ex);
-    }
   }
 
   private static class ShutdownHookRunnable implements Runnable {

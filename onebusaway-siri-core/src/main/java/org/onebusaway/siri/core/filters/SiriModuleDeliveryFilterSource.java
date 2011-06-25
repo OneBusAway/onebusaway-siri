@@ -1,16 +1,24 @@
 package org.onebusaway.siri.core.filters;
 
-import java.util.List;
+public class SiriModuleDeliveryFilterSource {
 
-import org.onebusaway.siri.core.ESiriModuleType;
+  private SiriModuleDeliveryFilterMatcher matcher;
 
-import uk.org.siri.siri.AbstractSubscriptionStructure;
-import uk.org.siri.siri.SubscriptionRequest;
+  private SiriModuleDeliveryFilter filter;
 
-public interface SiriModuleDeliveryFilterSource {
+  public SiriModuleDeliveryFilterMatcher getMatcher() {
+    return matcher;
+  }
 
-  public void addFiltersForModuleSubscription(
-      SubscriptionRequest subscriptionRequest, ESiriModuleType moduleType,
-      AbstractSubscriptionStructure moduleTypeSubscriptionRequest,
-      List<SiriModuleDeliveryFilter> filters);
+  public void setMatcher(SiriModuleDeliveryFilterMatcher matcher) {
+    this.matcher = matcher;
+  }
+
+  public SiriModuleDeliveryFilter getFilter() {
+    return filter;
+  }
+
+  public void setFilter(SiriModuleDeliveryFilter filter) {
+    this.filter = filter;
+  }
 }

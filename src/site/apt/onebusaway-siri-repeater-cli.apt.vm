@@ -64,6 +64,8 @@ java -jar onebusaway-siri-repeater-cli.jar [-args] request [request ...]
   * <<<-requestorConsumerAddressDefault>>> : set a default consumer address for a particular requestor, used when an address is not included in a subscription request.  Argument should take the form <<<requestorRef=address>>>.
    
   * <<<-dataSource path>>> : a Spring context.xml file containing additional bean defs
+  
+  * <<<-filter filterSpec>>> : specify a filter to be applied to SIRI data passing through the repeater.  See the Filters section below for more details.
 
 * Request Spec
 
@@ -102,9 +104,37 @@ your firewall connecting the dots).
 you want the SIRI repeater application to listen at <<<http://localhost:8080>>>, with port-forwarding linking the two.
 In such a case, you'd specify <<<-clientUrl http://yourdomain.com/>>> and <<<-privateClientUrl http://localhost:8080>>>.
 
-Custom Filters
+Filters
 
-* Writing a Filter
+  Filters provide functionality to modify and transform data as it passes through the repeater.  Filters can be conditionally
+applied and chained to provide powerful data customization.  There are two primary pieces to a filter: matching rules to
+determine when a filter is applied and the filter itself.  We cover both pieces in the following sections.
+
+* Example
+
+  Consider the scenario where we have an incoming SIRI Vehicle Monitoring data stream coming from an internal AVL system.  We
+wish to share that data with external developers, but we first want to remove sensitive data from the stream, such as operator
+ids.  We could specify the following filter:
+
++---+
+-filter Match.ModuleType=VEHICLE_MONITORING,Match.RequestorRef=JoeUser,Filter.Type=Elements,Filter.Element.VehicleActivity.MonitoredVehicleJourney.OperatorRef=null  
++---+
+
+  This filter specification can be described in terms of its specific arguments:
+  
+  * <<<Match.ModuleType=VEHICLE_MONITORING>>> - Apply the filter to vehicle monitoring data.
+  
+  * <<<Match.RequestorRef=JoeUser>>> - Match requests where the RequestorRef equals "JoeUser".
+  
+  * <<<Filter.Type=elements>>> - Specify the filter type to be a "Elements" filter, useful for modifying specific elements of the SIRI data.
+  
+  * <<<Filter.Element.VehicleActivity.MonitoredVehicleJourney.OperatorRef=null>>> - Specify that the "VehicleActivity.MonitoredVehicleJourney.OperatorRef" subelement of the Vehicle Monitoring delivery should be set to null. 
+* Matching a Filter to a Subscription
+
+  Filters are conditionally applied to particular SIRI data passing through the repeater based on customizable matching rules.
+There are two ways to specifying 
+
+* Custom Filters
 
   On key area of functionality is the ability to specify filters that control how SIRI data is shared between your private data sources and public clients.
 
