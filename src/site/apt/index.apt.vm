@@ -1,3 +1,7 @@
+ ------
+onebusaway-siri
+ ------
+ 
 onebusaway-siri
 
   We provide a Java library for handling {{{http://siri.org.uk/} SIRI}} data, a specification
@@ -11,7 +15,7 @@ for sharing real-time public transit operations data.
   
   The library provides some key functionality:
   
-  * Library for implementing both SIRI clients and servers
+  * Java library for implementing both SIRI clients and servers
   
   * {{{./onebusaway-siri-client-cli.html}Command-line utility for querying SIRI data sources}}
   

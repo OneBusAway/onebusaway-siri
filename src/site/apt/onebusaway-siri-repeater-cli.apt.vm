@@ -6,7 +6,7 @@ Brian Ferris
 2011-02-28
  ------
 
-Introduction
+The SIRI Repeater Application
 
   The SIRI repeater application is a command-line application that provides a repeater/proxy between existing
 SIRI data sources and other SIRI clients.  The repeater serves to provide:
@@ -32,13 +32,9 @@ Getting the Application
 
   You can download the latest application here:
 
-#if( $currentVersion.contains('SNAPSHOT') )
-  #set( $repo_base = 'snapshots' )
-#else
-  #set( $repo_base = 'releases' )
-#end
+#set( $url = 'http://nexus.onebusaway.org/service/local/artifact/maven/content?r=public&g=org.onebusaway&a=onebusaway-siri-repeater-cli&v=' + ${currentVersion} )
   
-  {{{http://nexus.onebusaway.org/content/repositories/${repo_base}/org/onebusaway/onebusaway-siri-repeater-cli/${currentVersion}/}onebusaway-siri-repeater-cli-${currentVersion}.jar}}
+  {{{${url}}onebusaway-siri-repeater-cli-${currentVersion}.jar}}
  
 
 Using the Application
@@ -117,7 +113,8 @@ wish to share that data with external developers, but we first want to remove se
 ids.  We could specify the following filter:
 
 +---+
--filter Match.ModuleType=VEHICLE_MONITORING,Match.RequestorRef=JoeUser,Filter.Type=Elements,Filter.Element.VehicleActivity.MonitoredVehicleJourney.OperatorRef=null  
+-filter Match.ModuleType=VEHICLE_MONITORING,Match.RequestorRef=JoeUser,Filter.Type=Elements,
+  Filter.Element.VehicleActivity.MonitoredVehicleJourney.OperatorRef  
 +---+
 
   This filter specification can be described in terms of its specific arguments:
@@ -126,19 +123,79 @@ ids.  We could specify the following filter:
   
   * <<<Match.RequestorRef=JoeUser>>> - Match requests where the RequestorRef equals "JoeUser".
   
-  * <<<Filter.Type=elements>>> - Specify the filter type to be a "Elements" filter, useful for modifying specific elements of the SIRI data.
+  * <<<Filter.Type=Elements>>> - Specify the filter type to be a "Elements" filter, useful for modifying specific elements of the SIRI data.
   
-  * <<<Filter.Element.VehicleActivity.MonitoredVehicleJourney.OperatorRef=null>>> - Specify that the "VehicleActivity.MonitoredVehicleJourney.OperatorRef" subelement of the Vehicle Monitoring delivery should be set to null. 
-* Matching a Filter to a Subscription
+  * <<<Filter.Element.VehicleActivity.MonitoredVehicleJourney.OperatorRef>>> - Specify that the "VehicleActivity.MonitoredVehicleJourney.OperatorRef" subelement of the Vehicle Monitoring delivery should be cleared. 
 
-  Filters are conditionally applied to particular SIRI data passing through the repeater based on customizable matching rules.
-There are two ways to specifying 
+  []
+  
+  For complete details on matching and filter rules, see the following sections.
+  
+* Matching Rules
+
+  Matching rules determine when a filter is applied to a particular pub/sub data stream.  Right now, we support a simple matching
+syntax that allows you to match the parameters of a subscription.  You can specify any or all these m
+
+  * <<<Match.ModuleType=match_spec>>> - The SIRI module type (eg. VEHICLE_MONITORING, SITUATION_EXCHANGE, etc.) - see {{{./apidocs/org/onebusaway/siri/core/ESiriModuleType.html}module types}} for full list
+  
+  * <<<Match.Address=match_spec>>> - Match a <<<Siri.SubscriptionRequest.Address>>> value
+  
+  * <<<Match.ConsumerAddress=match_spec>>> - Match a <<<Siri.SubscriptionRequest.ConsumerAddress>>> value
+    
+  * <<<Match.SubscriptionFilterIdentifier=match_spec>>> - Match a <<<Siri.SubscriptionRequest.SubscriptionFilterIdentifier>>> value
+
+  * <<<Match.RequestorRef=match_spec>>> - Match a <<<Siri.SubscriptionRequest.RequestorRef>>> value 
+  
+  * <<<Match.MessageIdentifier=match_spec>>> - Match a <<<Siri.SubscriptionRequest.MessageIdentifier>>> value
+
+  []
+  
+  Each matching rule includes a <<<match_spec>>> that determines how the target value will be matched.  We support the following matchers: 
+  
+  * <<<value>>> - Match a value directly 
+  
+  * <<<StartsWith(...)>>> - Match a value that starts with the specified prefix.
+  
+  * <<<EndsWith(...)>>> - Match a value that ends with the specified suffix.
+  
+  * <<<Regex(...)>>> - Match a value using a regex.
+  
+  * <<<Empty()>>> - Match an empty value, where an element is not present or has no value.
+  
+  []
+  
+* Filter Rules
+
+  We support some built-in filter functionality.  If you are looking to implement your own filter functionality beyond what is
+possible out-of-the-box, see the next section.  Right now, we support one simple element-based filtering modeling out-of-the-box.
+To use this filter, simply specify:
+
+  * <<<Filter.Type=Elements>>>
+  
+  []
+  
+  You can then specify multiple <<<Filter.Element.XXX=YYY>>> rules, where XXX is an XML element expression path and YYY is the
+filter value for any matching elements.  Note that the path is specified RELATIVE to the module delivery sub-element, not the root
+<SIRI/> element.  For example, if you specified a <<<Match.ModuleType=VEHICLE_MONITORING>>>, your filter will be operating relative
+to a <VehicleMonitoringDelivery/> elements.  Thus, if we want to filter the <OperatorRef/> out of the data stream, we'd specify:
+  
+  * <<<Filter.Element.VehicleActivity.MonitoredVehicleJourney.OperatorRef>>>
+  
+  []
+  
+  Note that we will filter ALL matching sub-elements.  That is, a particular <ServiceDelivery/> might contain multiple
+<VehicleMonitoringDelivery/> elements, which might contain multiple <VehicleActivity/> elements.  We'll filter all of these
+matching elements.  In terms of the actually element value, we clear the value by default.  You can optionally specify a NEW
+value using the following syntax:
+
+  * <<<Filter.Element.VehicleActivity.MonitoredVehicleJourney.OperatorRef=some value>>>
+  
+  []
 
 * Custom Filters
 
-  On key area of functionality is the ability to specify filters that control how SIRI data is shared between your private data sources and public clients.
-
-  Right now, filters are implemented as Java classes.  As we learn more about how agencies hope to filter / transform SIRI data, we hope to provide tools that can be more easily configured.  Until then, you're going to have to get your hands dirty with some Java hacking if you want to develop a filter.
+  If you need more complex filter behavior, you can additionally specify and implement your own filter.  The repeater application
+is written in Java, which means you can easily implement your own filter and add it to the application.
 
   The key interface to implement for a filter is {{{./apidocs/org/onebusaway/siri/core/filters/SiriModuleDeliveryFilter.html}org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter}}.
 The interface looks like:
@@ -154,100 +211,30 @@ public interface SiriModuleDeliveryFilter {
   Recall that a SIRI service delivery payload typically looks like:
 
 +---+
-<ServiceDelivery>
-  <StopMonitoringDelivery/>
-  <VehicleMonitoringDelivery/>
-  ...
-</ServiceDelivery>
+<Siri>
+  <ServiceDelivery>
+    <StopMonitoringDelivery/>
+    <VehicleMonitoringDelivery/>
+    ...
+  </ServiceDelivery>
+</Siri>
 +---+
 
   We have a parent <<<\<ServiceDelivery/\>>>> element wrapping module-specific delivery elements.  The filter interface
 operates on these module-specific delivery elements.  Specifically, the filter takes the parent <<<\<ServiceDelivery/\>>>>
 element and the module-specific delivery element as argument and returns a filtered module delivery element, or null
-if the element should be filtered out completely.
+if the element should be filtered out completely.   Your filter implementation can simply return the input module delivery object,
+perhaps modified in some way. It can also return an entirely new module delivery object or null to indicate no result should be
+published to the client.
 
   To create filter class of your own, you'll need to add the <<<onebusaway-siri-repeater-cli.jar>>> to your developer
 classpath so that Java can find the definition for <<<SiriModuleDeliveryFilter>>>.
 
-  Here's a quick example that works with <<<\<VehicleMonitoringDelivery/\>>>> elements, filtering on <<<\<VehicleActivity/\>>>>
-elements with a specific vehicle id:
+
+  To include your custom filter, use the <<<Filter.Class>>> parameter to specify the full class name of your filter.
 
 +---+
-public class TestFilter implements SiriModuleDeliveryFilter {
-
-  private String _vehicleId = "2305";
-
-  public void setVehicleId(String vehicleId) {
-    _vehicleId = vehicleId;
-  }
-
-  @Override
-  public AbstractServiceDeliveryStructure filter(ServiceDelivery delivery,
-      AbstractServiceDeliveryStructure moduleDelivery) {
-
-    VehicleMonitoringDeliveryStructure vm = (VehicleMonitoringDeliveryStructure) moduleDelivery;
-
-    List<VehicleActivityStructure> vas = vm.getVehicleActivity();
-    List<VehicleActivityStructure> vasFiltered = new ArrayList<VehicleActivityStructure>();
-
-    for (VehicleActivityStructure va : vas) {
-
-      MonitoredVehicleJourney mvj = va.getMonitoredVehicleJourney();
-
-      if (mvj == null)
-        continue;
-
-      VehicleRefStructure vehicleRef = mvj.getVehicleRef();
-
-      if (vehicleRef == null || vehicleRef.getValue() == null)
-        continue;
-
-      String vid = vehicleRef.getValue();
-
-      if (!vid.equals(_vehicleId))
-        continue;
-
-      vasFiltered.add(va);
-    }
-
-    if (vasFiltered.isEmpty())
-      return null;
-
-    if (vasFiltered.size() < vas.size())
-      SiriLibrary.copyList(vasFiltered, vas);
-
-    return vm;
-  }
-}
+-filter Filter.Class=package.FilterClassName,...
 +---+
 
-  Your filter implementation can simply return the input module delivery object, perhaps modified in some way. It can
-also return an entirely new module delivery object or null to indicate no result should be published to the client.
-
-  When modifying the module delivery object, your filter implementation must adhere to the following behavior:
-
-  The filter is free to modify the module delivery object itself, changing field values or modifying first level result
-lists (for example, adding or removing items from <<<VehicleMonitoringDelivery/VehicleActivity>>>. However, if you wish to
-transform the second-level objects (other than adding or removing them from the parent module delivery object list), YOU MUST MAKE COPIES, which you can then modify and include in the filtered delivery result.
-
-  The idea is that for performance reasons, we make a shallow copy of the incoming module delivery object for filter
-to work with (as opposed to a deep-copy), leaving the second-level objects unaltered. Since most filters will simply
-be removing these objects from the module delivery object, this approach is appropriate for the majority of use-cases.
-However, if your filter needs to modify or transform the second-level objects, you need to make copies of those objects.
-Otherwise, your modifications will affect the output of other unrelated filter chains (aka bad).
-
-  If you want to exclude all output in the filter, simply return null.
-
-* Including a Filter
-
-  To include a filter, add the following command line:
-
-+---+
--filter Class=package.FilterClassName,ModuleType=VEHICLE_MONITORING,Participant=participantId
-+---+
-
-  Here you specify the filter class with the <<<Class>>> parameter.  The additional parameters are optional, but shown
-as an example.  You can specify the SIRI module type you want the filter to apply to with the <<<ModuleType>>>
-parameter.  If you don't specify a module type, the filter will apply to all modules.  You can also specify
-the SIRI participant id with <<<Participant>>>.  This will match against "RequestorRef" or "SubscriberRef" in an
-incoming <<<\<SubscriptionRequest/\>>>>.
+  The class files for your custom filter will also need to be included in the Java classpath when running the application. 

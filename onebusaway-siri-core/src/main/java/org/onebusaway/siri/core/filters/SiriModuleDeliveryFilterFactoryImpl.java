@@ -47,17 +47,15 @@ public class SiriModuleDeliveryFilterFactoryImpl {
     ModuleDeliveryFilterCollection collection = new ModuleDeliveryFilterCollection();
 
     for (Iterator<Map.Entry<String, String>> it = filterArgs.entrySet().iterator(); it.hasNext();) {
-      
+
       Map.Entry<String, String> entry = it.next();
-      
+
       String key = entry.getKey();
       if (!key.startsWith(ARG_FILTER_ELEMENT_PREFIX))
         continue;
       it.remove();
       key = key.substring(ARG_FILTER_ELEMENT_PREFIX.length());
       String value = entry.getValue();
-      if (value.equals("null"))
-        value = null;
       ElementPathModuleDeliveryFilter filter = new ElementPathModuleDeliveryFilter(
           key, value);
       collection.addFilter(filter);

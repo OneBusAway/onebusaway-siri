@@ -57,7 +57,7 @@ public class ElementPathModuleDeliveryFilter implements
           readMethod);
 
       /**
-       * If the value is null, we exit the recusrive loop, because we don't have
+       * If the value is null, we exit the recursive loop, because we don't have
        * a target object to apply the filter to
        */
       if (subValue == null)

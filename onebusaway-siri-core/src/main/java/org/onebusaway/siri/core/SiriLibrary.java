@@ -170,7 +170,7 @@ public class SiriLibrary {
         String value = token.substring(index + 1);
         subArgs.put(key, value);
       } else {
-        subArgs.put(token, "");
+        subArgs.put(token, null);
       }
     }
     return subArgs;
