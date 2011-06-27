@@ -4,7 +4,7 @@
   <parent>
     <artifactId>onebusaway</artifactId>
     <groupId>org.onebusaway</groupId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
   </parent>
   <groupId>org.onebusaway</groupId>
   <artifactId>onebusaway-siri</artifactId>
@@ -158,14 +158,24 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
+        <artifactId>maven-site-plugin</artifactId>
         <configuration>
-        <links>
-          <link>http://developer.onebusaway.org/modules/onebusaway-siri-api-v10/${onebusaway_siri_api_v10_version}/apidocs</link>
-          <link>http://developer.onebusaway.org/modules/onebusaway-siri-api-v13/${onebusaway_siri_api_v13_version}/apidocs</link>
-        </links>
+          <reportPlugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-javadoc-plugin</artifactId>
+              <version>${maven_javadoc_plugin_version}</version>
+              <configuration>
+                <links>
+                  <link>http://developer.onebusaway.org/modules/onebusaway-siri-api-v10/${onebusaway_siri_api_v10_version}/apidocs/</link>
+                  <link>http://developer.onebusaway.org/modules/onebusaway-siri-api-v13/${onebusaway_siri_api_v13_version}/apidocs/</link>
+                </links>
+              </configuration>
+            </plugin>
+          </reportPlugins>
         </configuration>
       </plugin>
+
     </plugins>
   </build>
 </project>
