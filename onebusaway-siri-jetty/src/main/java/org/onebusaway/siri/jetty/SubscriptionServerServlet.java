@@ -1,6 +1,9 @@
 package org.onebusaway.siri.jetty;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -29,6 +32,12 @@ class SubscriptionServerServlet extends HttpServlet {
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
 
-    _siriListener.handleRawRequest(req.getReader(), resp.getWriter());
+    BufferedReader reader = req.getReader();
+    PrintWriter writer = resp.getWriter();
+    
+    _siriListener.handleRawRequest(reader, writer);
+    
+    reader.close();
+    writer.close();
   }
 }

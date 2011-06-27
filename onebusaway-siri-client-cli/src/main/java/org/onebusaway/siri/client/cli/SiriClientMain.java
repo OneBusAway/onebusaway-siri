@@ -11,17 +11,17 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriChannelInfo;
-import org.onebusaway.siri.core.SiriClientServiceRequest;
-import org.onebusaway.siri.core.SiriClientSubscriptionRequest;
 import org.onebusaway.siri.core.SiriLibrary;
-import org.onebusaway.siri.core.SiriRequestFactory;
+import org.onebusaway.siri.core.SiriClientRequestFactory;
 import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.onebusaway.siri.jetty.SiriJettyClient;
 
 import uk.org.siri.siri.ServiceDelivery;
+import uk.org.siri.siri.Siri;
 
 public class SiriClientMain {
 
@@ -72,7 +72,7 @@ public class SiriClientMain {
     if (cli.hasOption(ARG_PRIVATE_CLIENT_URL))
       _client.setPrivateClientUrl(cli.getOptionValue(ARG_PRIVATE_CLIENT_URL));
 
-    SiriRequestFactory factory = new SiriRequestFactory();
+    SiriClientRequestFactory factory = new SiriClientRequestFactory();
 
     if (cli.hasOption(ARG_SUBSCRIBE)) {
 
@@ -81,17 +81,16 @@ public class SiriClientMain {
       _client.start();
 
       for (String arg : args) {
-        SiriClientSubscriptionRequest request = getLineAsSubscriptionRequest(
-            factory, arg);
-        _client.handleSubscriptionRequest(request);
+        SiriClientRequest request = getLineAsSubscriptionRequest(factory, arg);
+        _client.handleRequest(request);
       }
 
     } else {
 
       for (String arg : args) {
 
-        SiriClientServiceRequest request = getLineAsServiceRequest(factory, arg);
-        ServiceDelivery delivery = _client.handleServiceRequestWithResponse(request);
+        SiriClientRequest request = getLineAsServiceRequest(factory, arg);
+        Siri delivery = _client.handleRequestWithResponse(request);
 
         printAsXml(delivery);
       }
@@ -102,8 +101,8 @@ public class SiriClientMain {
    * Private Methods
    ****/
 
-  private SiriClientSubscriptionRequest getLineAsSubscriptionRequest(
-      SiriRequestFactory factory, String arg) {
+  private SiriClientRequest getLineAsSubscriptionRequest(
+      SiriClientRequestFactory factory, String arg) {
 
     try {
       Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
@@ -115,8 +114,8 @@ public class SiriClientMain {
     return null;
   }
 
-  private SiriClientServiceRequest getLineAsServiceRequest(
-      SiriRequestFactory factory, String arg) {
+  private SiriClientRequest getLineAsServiceRequest(
+      SiriClientRequestFactory factory, String arg) {
 
     try {
       Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
@@ -177,8 +176,11 @@ public class SiriClientMain {
       SiriServiceDeliveryHandler {
 
     @Override
-    public void handleServiceDelivery(SiriChannelInfo channelInfo, ServiceDelivery serviceDelivery) {
-      printAsXml(serviceDelivery);
+    public void handleServiceDelivery(SiriChannelInfo channelInfo,
+        ServiceDelivery serviceDelivery) {
+      Siri siri = new Siri();
+      siri.setServiceDelivery(serviceDelivery);
+      printAsXml(siri);
     }
   }
 }

@@ -18,6 +18,7 @@ import uk.org.siri.siri.MessageQualifierStructure;
 import uk.org.siri.siri.ProductionTimetableRequestStructure;
 import uk.org.siri.siri.ProductionTimetableSubscriptionRequest;
 import uk.org.siri.siri.ServiceRequest;
+import uk.org.siri.siri.Siri;
 import uk.org.siri.siri.SituationExchangeRequestStructure;
 import uk.org.siri.siri.SituationExchangeSubscriptionStructure;
 import uk.org.siri.siri.StopMonitoringRequestStructure;
@@ -31,7 +32,7 @@ import uk.org.siri.siri.VehicleMonitoringRequestStructure;
 import uk.org.siri.siri.VehicleMonitoringSubscriptionStructure;
 import uk.org.siri.siri.VehicleRefStructure;
 
-public class SiriRequestFactory {
+public class SiriClientRequestFactory {
 
   private static final String ARG_URL = "Url";
   private static final String ARG_VERSION = "Version";
@@ -49,14 +50,16 @@ public class SiriRequestFactory {
   private static final String ARG_DIRECTION_REF = "DirectionRef";
   private static final String ARG_VEHICLE_MONITORING_REF = "VehicleMonitoringRef";
 
-  public SiriClientServiceRequest createServiceRequest(Map<String, String> args) {
+  public SiriClientRequest createServiceRequest(Map<String, String> args) {
 
-    SiriClientServiceRequest request = new SiriClientServiceRequest();
+    SiriClientRequest request = new SiriClientRequest();
 
     processCommonArgs(args, request);
 
     ServiceRequest serviceRequest = new ServiceRequest();
-    request.setPayload(serviceRequest);
+    Siri payload = new Siri();
+    payload.setServiceRequest(serviceRequest);
+    request.setPayload(payload);
 
     String messageIdentifierValue = args.get(ARG_MESSAGE_IDENTIFIER);
     if (messageIdentifierValue != null) {
@@ -84,14 +87,16 @@ public class SiriRequestFactory {
     return request;
   }
 
-  public SiriClientSubscriptionRequest createSubscriptionRequest(
+  public SiriClientRequest createSubscriptionRequest(
       Map<String, String> args) {
 
-    SiriClientSubscriptionRequest request = new SiriClientSubscriptionRequest();
+    SiriClientRequest request = new SiriClientRequest();
     processCommonArgs(args, request);
 
     SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
-    request.setPayload(subscriptionRequest);
+    Siri payload = new Siri();
+    payload.setSubscriptionRequest(subscriptionRequest);
+    request.setPayload(payload);
 
     String messageIdentifierValue = args.get(ARG_MESSAGE_IDENTIFIER);
     if (messageIdentifierValue != null) {
@@ -131,7 +136,7 @@ public class SiriRequestFactory {
    ****/
 
   private void processCommonArgs(Map<String, String> args,
-      AbstractSiriClientRequest<?> request) {
+      SiriClientRequest request) {
 
     String url = args.get(ARG_URL);
     if (url == null)

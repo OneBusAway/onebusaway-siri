@@ -63,6 +63,9 @@ public class SiriVersioning {
     converterV13ToV10.addPropertyConverterFactory(
         uk.org.siri.siri.VehicleMonitoringDeliveryStructure.class, "version",
         v10VersionFactory);
+    converterV13ToV10.addPropertyConverterFactory(
+        uk.org.siri.siri.VehicleMonitoringRequestStructure.class, "version",
+        v10VersionFactory);
 
     Pair<ESiriVersion> pairV13ToV10 = Tuples.pair(ESiriVersion.V1_3,
         ESiriVersion.V1_0);

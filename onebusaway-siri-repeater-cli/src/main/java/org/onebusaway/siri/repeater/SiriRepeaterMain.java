@@ -10,10 +10,10 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Parser;
 import org.apache.commons.cli.PosixParser;
+import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriClient;
-import org.onebusaway.siri.core.SiriClientSubscriptionRequest;
 import org.onebusaway.siri.core.SiriLibrary;
-import org.onebusaway.siri.core.SiriRequestFactory;
+import org.onebusaway.siri.core.SiriClientRequestFactory;
 import org.onebusaway.siri.core.SiriServer;
 import org.onebusaway.siri.core.SiriSubscriptionManager;
 import org.onebusaway.siri.core.exceptions.SiriException;
@@ -106,7 +106,7 @@ public class SiriRepeaterMain {
      */
     siriRepeater.start();
 
-    SiriRequestFactory factory = new SiriRequestFactory();
+    SiriClientRequestFactory factory = new SiriClientRequestFactory();
 
     for (String arg : args) {
 
@@ -118,8 +118,8 @@ public class SiriRepeaterMain {
         continue;
       }
 
-      SiriClientSubscriptionRequest request = factory.createSubscriptionRequest(subArgs);
-      client.handleSubscriptionRequestWithResponse(request);
+      SiriClientRequest request = factory.createSubscriptionRequest(subArgs);
+      client.handleRequestWithResponse(request);
     }
   }
 

@@ -3,6 +3,7 @@ package org.onebusaway.siri.core;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +29,8 @@ import org.onebusaway.siri.core.versioning.SiriVersioning;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.org.siri.siri.AbstractFunctionalServiceRequestStructure;
+import uk.org.siri.siri.AbstractRequestStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.CheckStatusRequestStructure;
 import uk.org.siri.siri.CheckStatusResponseStructure;
@@ -42,6 +45,7 @@ import uk.org.siri.siri.SubscriptionContextStructure;
 import uk.org.siri.siri.SubscriptionQualifierStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.SubscriptionResponseStructure;
+import uk.org.siri.siri.VehicleMonitoringSubscriptionStructure;
 
 public class SiriClient extends SiriCommon implements SiriRawHandler {
 
@@ -122,69 +126,15 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    * Primary Client Methods
    ****/
 
-  public Siri handleSiriRequestWithResponse(SiriClientRequest request) {
+  public Siri handleRequestWithResponse(SiriClientRequest request) {
 
-    Siri siri = request.getPayload();
-    fillAllSiriRequestStructures(siri);
+    fillAllSiriRequestStructures(request);
     return processRequestWithResponse(request);
   }
 
-  public void handleSiriRequest(SiriClientRequest request) {
+  public void handleRequest(SiriClientRequest request) {
 
-    Siri siri = request.getPayload();
-    fillAllSiriRequestStructures(siri);
-    processRequest(request);
-  }
-
-  /**
-   * 
-   * @param request
-   * @return the immediate service delivery received from the server
-   */
-  public ServiceDelivery handleServiceRequestWithResponse(
-      SiriClientServiceRequest request) {
-
-    fillRequestStructure(request.getPayload());
-
-    return processRequestWithResponse(request);
-  }
-
-  /**
-   * 
-   * @param request
-   */
-  public void handleServiceRequest(SiriClientServiceRequest request) {
-
-    fillRequestStructure(request.getPayload());
-    processRequest(request);
-  }
-
-  /**
-   * 
-   * @param request the subscription request
-   */
-  public Siri handleSubscriptionRequestWithResponse(
-      SiriClientSubscriptionRequest request) {
-
-    SubscriptionRequest subRequest = request.getPayload();
-
-    fillRequestStructure(subRequest);
-    fillSubscriptionRequestStructure(request, subRequest);
-
-    return processRequestWithResponse(request);
-  }
-
-  /**
-   * 
-   * @param request the subscription request
-   */
-  public void handleSubscriptionRequest(SiriClientSubscriptionRequest request) {
-
-    SubscriptionRequest subRequest = request.getPayload();
-
-    fillRequestStructure(subRequest);
-    fillSubscriptionRequestStructure(request, subRequest);
-
+    fillAllSiriRequestStructures(request);
     processRequest(request);
   }
 
@@ -229,7 +179,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    ****/
 
   @SuppressWarnings("unchecked")
-  private <T> T processRequestWithResponse(AbstractSiriClientRequest<?> request) {
+  private <T> T processRequestWithResponse(SiriClientRequest request) {
 
     String targetUrl = request.getTargetUrl();
 
@@ -258,14 +208,8 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     SubscriptionRequest subRequest = null;
     SubscriptionResponseStructure subResponse = null;
 
-    if (request instanceof SiriClientRequest) {
-      SiriClientRequest r = (SiriClientRequest) request;
-      Siri siri = r.getPayload();
-      subRequest = siri.getSubscriptionRequest();
-    } else if (request instanceof SiriClientSubscriptionRequest) {
-      SiriClientSubscriptionRequest r = (SiriClientSubscriptionRequest) request;
-      subRequest = r.getPayload();
-    }
+    Siri requestSiri = request.getPayload();
+    subRequest = requestSiri.getSubscriptionRequest();
 
     if (responseData instanceof Siri) {
       Siri siri = (Siri) responseData;
@@ -278,14 +222,14 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     return (T) responseData;
   }
 
-  private void processRequest(AbstractSiriClientRequest<?> request) {
+  private void processRequest(SiriClientRequest request) {
 
     AsynchronousClientConnectionAttempt attempt = new AsynchronousClientConnectionAttempt(
         request);
     _executor.execute(attempt);
   }
 
-  private void registerSubscription(AbstractSiriClientRequest<?> request,
+  private void registerSubscription(SiriClientRequest request,
       SubscriptionRequest subscriptionRequest,
       SubscriptionResponseStructure subResponse) {
 
@@ -460,11 +404,14 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     }
   }
 
-  /****
+  /**
+   * @param request TODO**
    * 
    ****/
 
-  private void fillAllSiriRequestStructures(Siri siri) {
+  private void fillAllSiriRequestStructures(SiriClientRequest request) {
+
+    Siri siri = request.getPayload();
 
     fillRequestStructure(siri.getCapabilitiesRequest());
     fillRequestStructure(siri.getCheckStatusRequest());
@@ -478,11 +425,11 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     fillRequestStructure(siri.getTerminateSubscriptionRequest());
     fillRequestStructure(siri.getVehicleFeaturesRequest());
 
-    fillRequestStructure(siri.getServiceRequest());
+    fillServiceRequestStructure(siri.getServiceRequest());
+    fillSubscriptionRequestStructure(request, siri.getSubscriptionRequest());
   }
 
-  private void fillSubscriptionRequestStructure(
-      AbstractSiriClientRequest<?> request,
+  private void fillSubscriptionRequestStructure(SiriClientRequest request,
       SubscriptionRequest subscriptionRequest) {
 
     if (subscriptionRequest == null)
@@ -512,6 +459,21 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
         if (sub.getSubscriptionIdentifier() == null)
           sub.setSubscriptionIdentifier(SiriTypeFactory.randomSubscriptionId());
+
+        if (sub.getInitialTerminationTime() == null) {
+          /**
+           * By default, expire in 24 hours
+           */
+          Calendar c = Calendar.getInstance();
+          c.add(Calendar.DAY_OF_YEAR, 1);
+          sub.setInitialTerminationTime(c.getTime());
+        }
+
+        /**
+         * TODO: Fill all these in
+         */
+        if (sub instanceof VehicleMonitoringSubscriptionStructure)
+          fillAbstractFunctionalServiceRequestStructure(((VehicleMonitoringSubscriptionStructure) sub).getVehicleMonitoringRequest());
       }
     }
   }
@@ -537,7 +499,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    * 
    * @param request
    */
-  private void fillRequestStructure(ServiceRequest request) {
+  private void fillServiceRequestStructure(ServiceRequest request) {
 
     if (request == null)
       return;
@@ -546,10 +508,36 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
     request.setAddress(_clientUrl);
 
-    MessageQualifierStructure messageIdentifier = SiriTypeFactory.randomMessageId();
-    request.setMessageIdentifier(messageIdentifier);
+    if (request.getRequestTimestamp() == null)
+      request.setRequestTimestamp(new Date());
 
-    request.setRequestTimestamp(new Date());
+    fillAbstractFunctionalServiceRequestStructures(request.getConnectionMonitoringRequest());
+    fillAbstractFunctionalServiceRequestStructures(request.getConnectionTimetableRequest());
+    fillAbstractFunctionalServiceRequestStructures(request.getEstimatedTimetableRequest());
+    fillAbstractFunctionalServiceRequestStructures(request.getFacilityMonitoringRequest());
+    fillAbstractFunctionalServiceRequestStructures(request.getGeneralMessageRequest());
+    fillAbstractFunctionalServiceRequestStructures(request.getProductionTimetableRequest());
+    fillAbstractFunctionalServiceRequestStructures(request.getSituationExchangeRequest());
+    fillAbstractFunctionalServiceRequestStructures(request.getStopMonitoringMultipleRequest());
+    fillAbstractFunctionalServiceRequestStructures(request.getStopMonitoringRequest());
+    fillAbstractFunctionalServiceRequestStructures(request.getVehicleMonitoringRequest());
+  }
+
+  private <T extends AbstractFunctionalServiceRequestStructure> void fillAbstractFunctionalServiceRequestStructures(
+      List<T> requests) {
+    for (AbstractFunctionalServiceRequestStructure request : requests)
+      fillAbstractFunctionalServiceRequestStructure(request);
+  }
+
+  private void fillAbstractFunctionalServiceRequestStructure(
+      AbstractFunctionalServiceRequestStructure request) {
+
+    fillAbstractRequestStructure(request);
+  }
+
+  private void fillAbstractRequestStructure(AbstractRequestStructure request) {
+    if (request.getRequestTimestamp() == null)
+      request.setRequestTimestamp(new Date());
   }
 
   private void handleDisconnectAndReconnect(ClientSubscriptionChannel channel) {
@@ -575,7 +563,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
       subRequests.add(subRequest);
     }
 
-    SiriClientSubscriptionRequest clientRequest = new SiriClientSubscriptionRequest();
+    SiriClientRequest clientRequest = new SiriClientRequest();
     clientRequest.setCheckStatusInterval((int) channel.getCheckStatusInterval());
     clientRequest.setHeartbeatInterval((int) channel.getHeartbeatInterval());
     clientRequest.setReconnectionInterval(channel.getReconnectionInterval());
@@ -583,9 +571,13 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     clientRequest.setTargetUrl(channel.getAddress());
     clientRequest.setTargetVersion(channel.getTargetVersion());
     clientRequest.setChannelContext(channel.getContext());
-    clientRequest.setPayload(request);
 
-    handleSubscriptionRequest(clientRequest);
+    Siri payload = new Siri();
+    payload.setSubscriptionRequest(request);
+
+    clientRequest.setPayload(payload);
+
+    handleRequest(clientRequest);
   }
 
   private void checkStatus(ClientSubscriptionChannel channel) {
@@ -604,7 +596,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     Siri siriResponse = null;
 
     try {
-      siriResponse = handleSiriRequestWithResponse(request);
+      siriResponse = handleRequestWithResponse(request);
     } catch (Throwable ex) {
       _log.warn("error performing check-status on channel=" + channel, ex);
       siriResponse = null;
@@ -670,14 +662,13 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    */
   private class AsynchronousClientConnectionAttempt implements Runnable {
 
-    private final AbstractSiriClientRequest<?> request;
+    private final SiriClientRequest request;
 
     private int remainingReconnectionAttempts = 0;
     private int reconnectionInterval = 60;
     private int connectionErrorCount = 0;
 
-    public AsynchronousClientConnectionAttempt(
-        AbstractSiriClientRequest<?> request) {
+    public AsynchronousClientConnectionAttempt(SiriClientRequest request) {
       this.request = request;
       this.remainingReconnectionAttempts = request.getReconnectionAttempts();
       this.reconnectionInterval = request.getReconnectionInterval();

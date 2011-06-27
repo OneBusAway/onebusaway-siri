@@ -14,7 +14,7 @@ public class SiriChannelInfo {
 
   /**
    * User-supplied context data associated with this channel. See
-   * {@link AbstractSiriClientRequest#getChannelContext()}. Think of this a
+   * {@link SiriClientRequest#getChannelContext()}. Think of this a
    * user-supplied callback data associated with your subscription channel.
    * 
    * @param <T>
