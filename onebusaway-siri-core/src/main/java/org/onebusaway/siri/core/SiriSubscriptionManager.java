@@ -365,9 +365,12 @@ public class SiriSubscriptionManager {
     for (T element : responses) {
 
       /**
-       * Make a shallow copy of the module delivery object
+       * Make a DEEP copy of the module delivery, freeing the underlying filters
+       * to make arbitrary data modifications.
+       * 
+       * TODO: Combine common filter operations to reduce necessary work.
        */
-      element = (T) SiriLibrary.copyServiceDelivery(type, element);
+      element = (T) SiriLibrary.deepCopyModuleDelivery(type, element);
 
       /**
        * Set subscriber-specific parameters

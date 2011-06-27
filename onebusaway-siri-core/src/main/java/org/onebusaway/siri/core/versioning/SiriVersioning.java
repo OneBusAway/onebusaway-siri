@@ -10,9 +10,9 @@ import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
 
 public class SiriVersioning {
 
-  private static final String SIRI_1_3_PACKAGE = "uk.org.siri.siri";
+  public static final String SIRI_1_3_PACKAGE = "uk.org.siri.siri";
 
-  private static final String SIRI_1_0_PACKAGE = "uk.org.siri";
+  public static final String SIRI_1_0_PACKAGE = "uk.org.siri";
 
   private static SiriVersioning _instance = new SiriVersioning();
 

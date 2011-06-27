@@ -7,16 +7,18 @@ import java.util.Map;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.onebusaway.collections.PropertyPathExpression;
+import org.onebusaway.siri.core.versioning.IntrospectionVersionConverter;
+import org.onebusaway.siri.core.versioning.PackageBasedTypeMappingStrategy;
+import org.onebusaway.siri.core.versioning.SiriVersioning;
+import org.onebusaway.siri.core.versioning.TypeMappingStrategy;
+import org.onebusaway.siri.core.versioning.VersionConverter;
 
 import uk.org.siri.siri.AbstractServiceDeliveryStructure;
 import uk.org.siri.siri.AbstractServiceRequestStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
-import uk.org.siri.siri.SituationExchangeDeliveryStructure;
-import uk.org.siri.siri.SituationExchangeDeliveryStructure.Situations;
 import uk.org.siri.siri.SubscriptionRequest;
-import uk.org.siri.siri.VehicleMonitoringDeliveryStructure;
 
 /**
  * SIRI utility functions
@@ -24,6 +26,17 @@ import uk.org.siri.siri.VehicleMonitoringDeliveryStructure;
  * @author bdferris
  */
 public class SiriLibrary {
+
+  /**
+   * This is used to make deep copies of SIRI structures
+   */
+  private static VersionConverter _copier;
+
+  static {
+    TypeMappingStrategy selfMapping = new PackageBasedTypeMappingStrategy(
+        SiriVersioning.SIRI_1_3_PACKAGE, SiriVersioning.SIRI_1_3_PACKAGE);
+    _copier = new IntrospectionVersionConverter(selfMapping);
+  }
 
   @SuppressWarnings("unchecked")
   public static <T extends AbstractServiceRequestStructure> List<T> getServiceRequestsForModule(
@@ -87,57 +100,9 @@ public class SiriLibrary {
     return matches;
   }
 
-  /****
-   * Deep Copy Methods
-   ****/
-
-  public static VehicleMonitoringDeliveryStructure copyVehicleMonitoring(
-      VehicleMonitoringDeliveryStructure from,
-      VehicleMonitoringDeliveryStructure to) {
-
-    copyServiceDelivery(from, to);
-
-    copyList(from.getVehicleActivity(), to.getVehicleActivity());
-    copyList(from.getVehicleActivityCancellation(),
-        to.getVehicleActivityCancellation());
-    copyList(from.getVehicleActivityNote(), to.getVehicleActivityNote());
-
-    return to;
-  }
-
-  public static SituationExchangeDeliveryStructure copySituationExchange(
-      SituationExchangeDeliveryStructure from,
-      SituationExchangeDeliveryStructure to) {
-
-    copyServiceDelivery(from, to);
-
-    Situations fromSituations = from.getSituations();
-
-    if (fromSituations != null) {
-      Situations toSituations = new Situations();
-      to.setSituations(toSituations);
-      copyList(fromSituations.getPtSituationElement(),
-          toSituations.getPtSituationElement());
-      copyList(fromSituations.getRoadSituationElement(),
-          toSituations.getRoadSituationElement());
-    }
-
-    return to;
-  }
-
-  public static AbstractServiceDeliveryStructure copyServiceDelivery(
+  public static AbstractServiceDeliveryStructure deepCopyModuleDelivery(
       ESiriModuleType moduleType, AbstractServiceDeliveryStructure from) {
-
-    switch (moduleType) {
-      case VEHICLE_MONITORING:
-        return copyVehicleMonitoring((VehicleMonitoringDeliveryStructure) from,
-            new VehicleMonitoringDeliveryStructure());
-      case SITUATION_EXCHANGE:
-        return copySituationExchange((SituationExchangeDeliveryStructure) from,
-            new SituationExchangeDeliveryStructure());
-      default:
-        throw new UnsupportedOperationException();
-    }
+    return (AbstractServiceDeliveryStructure) _copier.convert(from);
   }
 
   public static void copyServiceDelivery(AbstractServiceDeliveryStructure from,
