@@ -12,7 +12,7 @@ import org.onebusaway.collections.tuple.T2;
 import org.onebusaway.collections.tuple.Tuples;
 import org.onebusaway.siri.core.exceptions.SiriMissingArgumentException;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
-import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterFactory;
+import org.onebusaway.siri.core.filters.ModuleDeliveryFilterFactory;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
 import org.onebusaway.siri.core.handlers.SiriSubscriptionManagerListener;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
@@ -55,7 +55,7 @@ public class SiriSubscriptionManager {
 
   private Map<ESiriModuleType, ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance>> _subscriptionsByModuleType = new HashMap<ESiriModuleType, ConcurrentMap<ServerSubscriptionInstanceId, ServerSubscriptionInstance>>();
 
-  private SiriModuleDeliveryFilterFactory _deliveryFilterFactory = new SiriModuleDeliveryFilterFactory();
+  private ModuleDeliveryFilterFactory _deliveryFilterFactory = new ModuleDeliveryFilterFactory();
 
   private List<T2<SiriModuleDeliveryFilterMatcher, SiriModuleDeliveryFilter>> _filters = new ArrayList<T2<SiriModuleDeliveryFilterMatcher, SiriModuleDeliveryFilter>>();
 

@@ -14,7 +14,7 @@ import uk.org.siri.siri.VehicleMonitoringRequestStructure;
 import uk.org.siri.siri.VehicleMonitoringSubscriptionStructure;
 import uk.org.siri.siri.VehicleRefStructure;
 
-public class SiriModuleDeliveryFilterFactory {
+public class ModuleDeliveryFilterFactory {
   private static final EmptyFilter _emptyFilter = new EmptyFilter();
 
   public SiriModuleDeliveryFilter createFilter(ESiriModuleType moduleType,

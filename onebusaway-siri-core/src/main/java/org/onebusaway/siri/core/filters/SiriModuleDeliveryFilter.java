@@ -10,7 +10,6 @@ import uk.org.siri.siri.VehicleMonitoringDeliveryStructure;
  * {@link ServiceDelivery} container.
  * 
  * @author bdferris
- * @see SiriModuleDeliveryFilterFactory
  */
 public interface SiriModuleDeliveryFilter {
 

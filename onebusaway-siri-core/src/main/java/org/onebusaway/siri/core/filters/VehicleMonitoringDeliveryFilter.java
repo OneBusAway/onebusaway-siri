@@ -9,7 +9,7 @@ import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.VehicleActivityStructure;
 import uk.org.siri.siri.VehicleMonitoringDeliveryStructure;
 
-public class VehicleMonitoringDeliveryFilter implements
+class VehicleMonitoringDeliveryFilter implements
     SiriModuleDeliveryFilter {
 
   private String _directionRef;
