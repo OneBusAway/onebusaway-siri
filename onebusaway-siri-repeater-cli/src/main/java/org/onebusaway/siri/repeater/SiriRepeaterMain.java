@@ -49,6 +49,8 @@ public class SiriRepeaterMain {
 
   private static final String ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT = "requestorConsumerAddressDefault";
 
+  private static final String ARG_LOG_RAW_XML = "logRawXml";
+
   private static final String ARG_DATA_SOURCE = "dataSource";
 
   private static final String CLASSPATH_PREFIX = "classpath:";
@@ -119,7 +121,7 @@ public class SiriRepeaterMain {
       }
 
       SiriClientRequest request = factory.createSubscriptionRequest(subArgs);
-      client.handleRequestWithResponse(request);
+      client.handleRequest(request);
     }
   }
 
@@ -160,6 +162,7 @@ public class SiriRepeaterMain {
     options.addOption(ARG_PRIVATE_CLIENT_URL, true, "private client url");
     options.addOption(ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT, true,
         "consumer address default for requestor");
+    options.addOption(ARG_LOG_RAW_XML, false, "log raw xml");
     options.addOption(ARG_FILTER, true, "filter specification");
     options.addOption(ARG_DATA_SOURCE, true, "Spring data source xml file");
 
@@ -191,6 +194,9 @@ public class SiriRepeaterMain {
       siriServer.setPrivateServerUrl(cli.getOptionValue(ARG_PRIVATE_REPEATER_URL));
 
     addRequestorConsumerAddressDefaults(cli, subscriptionManager);
+
+    if (cli.hasOption(ARG_LOG_RAW_XML))
+      siriClient.setLogRawXml(true);
 
     /**
      * Filters

@@ -1,6 +1,8 @@
 package org.onebusaway.siri.core;
 
+import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -63,6 +65,8 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
   private ScheduledExecutorService _executor;
 
+  private boolean _logRawXml = false;
+
   public SiriClient() {
     _identity = UUID.randomUUID().toString();
     _clientUrl = "http://localhost:8081/";
@@ -107,6 +111,10 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
   public void removeServiceDeliveryHandler(SiriServiceDeliveryHandler handler) {
     _serviceDeliveryHandlers.remove(handler);
+  }
+  
+  public void setLogRawXml(boolean logRawXml) {
+    _logRawXml = logRawXml;
   }
 
   /****
@@ -195,10 +203,31 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     HttpResponse response = sendHttpRequest(targetUrl, payload);
 
     HttpEntity entity = response.getEntity();
+    
+    
 
     Object responseData = null;
     try {
-      responseData = unmarshall(entity.getContent());
+      
+      Reader responseReader = new InputStreamReader(entity.getContent());
+      
+      if( _logRawXml ) {
+        StringBuilder b = new StringBuilder();
+        char[] buffer = new char[1024];
+        while(true) {
+          int rc = responseReader.read(buffer);
+          if( rc == -1)
+            break;
+          b.append(buffer, 0, rc);
+        }
+        
+        System.err.println("rawXml: " + b.toString());
+        responseReader.close();
+        responseReader = new StringReader(b.toString());
+      }
+      
+      
+      responseData = unmarshall(responseReader);
       responseData = versioning.getPayloadAsVersion(responseData,
           versioning.getDefaultVersion());
     } catch (Exception ex) {
