@@ -16,6 +16,21 @@ public class SiriJettyServer extends SiriServer {
 
   private Server _webServer;
 
+  private Context _rootContext;
+
+  public void setWebServer(Server webServer) {
+    _webServer = webServer;
+  }
+
+  public void setRootContext(Context rootContext) {
+    _rootContext = rootContext;
+  }
+
+  /****
+   * {@link SiriServer} Interface
+   ****/
+
+  @Override
   public void start() throws SiriException {
 
     super.start();
@@ -23,15 +38,15 @@ public class SiriJettyServer extends SiriServer {
     SubscriptionServerServlet servlet = new SubscriptionServerServlet();
     servlet.setSiriListener(this);
 
-    String serverUrl = _serverUrl;
-    if (_privateServerUrl != null)
-      serverUrl = _privateServerUrl;
+    URL url = getInternalUrlToBind();
 
-    URL url = url(serverUrl);
+    if (_webServer == null)
+      _webServer = new Server(url.getPort());
 
-    _webServer = new Server(url.getPort());
-    Context root = new Context(_webServer, "/", Context.SESSIONS);
-    root.addServlet(new ServletHolder(servlet), "/*");
+    if (_rootContext == null)
+      _rootContext = new Context(_webServer, "/", Context.SESSIONS);
+
+    _rootContext.addServlet(new ServletHolder(servlet), url.getPath());
 
     try {
       _webServer.start();
@@ -40,9 +55,10 @@ public class SiriJettyServer extends SiriServer {
     }
 
     if (_log.isDebugEnabled())
-      _log.debug("SiriServer started at address " + serverUrl);
+      _log.debug("SiriServer started on port " + url.getPort());
   }
 
+  @Override
   public void stop() {
 
     super.stop();

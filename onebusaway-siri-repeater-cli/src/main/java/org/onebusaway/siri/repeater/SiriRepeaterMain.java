@@ -1,5 +1,6 @@
 package org.onebusaway.siri.repeater;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,6 +11,8 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Parser;
 import org.apache.commons.cli.PosixParser;
+import org.mortbay.jetty.Server;
+import org.mortbay.jetty.servlet.Context;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriClient;
 import org.onebusaway.siri.core.SiriLibrary;
@@ -22,6 +25,8 @@ import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterFactoryImpl;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcherFactoryImpl;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterSource;
+import org.onebusaway.siri.jetty.SiriJettyClient;
+import org.onebusaway.siri.jetty.SiriJettyServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -69,6 +74,11 @@ public class SiriRepeaterMain {
 
   public void run(String[] args) throws Exception {
 
+    if (needsHelp(args)) {
+      printUsage();
+      System.exit(0);
+    }
+
     Options options = new Options();
     buildOptions(options);
 
@@ -96,6 +106,9 @@ public class SiriRepeaterMain {
 
     SiriRepeater siriRepeater = context.getBean(SiriRepeater.class);
     SiriClient client = siriRepeater.getSiriClient();
+    SiriServer server = siriRepeater.getSiriServer();
+
+    jointlyConfigureClientAndServerWebapp(client, server);
 
     /**
      * Register a shutdown hook to clean up the repeater when things shutdown
@@ -123,6 +136,14 @@ public class SiriRepeaterMain {
       SiriClientRequest request = factory.createSubscriptionRequest(subArgs);
       client.handleRequest(request);
     }
+  }
+
+  private boolean needsHelp(String[] args) {
+    for (String arg : args) {
+      if (arg.equals("-h") || arg.equals("--help") || arg.equals("-help"))
+        return true;
+    }
+    return false;
   }
 
   private void printUsage() {
@@ -222,6 +243,38 @@ public class SiriRepeaterMain {
       }
 
       subscriptionManager.addModuleDeliveryFilter(matcher, filter);
+    }
+  }
+
+  protected void jointlyConfigureClientAndServerWebapp(SiriClient client,
+      SiriServer server) {
+
+    if (client instanceof SiriJettyClient && server instanceof SiriJettyServer) {
+
+      SiriJettyClient jettyClient = (SiriJettyClient) client;
+      SiriJettyServer jettyServer = (SiriJettyServer) server;
+
+      URL clientUrl = jettyClient.getInternalUrlToBind();
+      URL serverUrl = jettyServer.getInternalUrlToBind();
+
+      if (clientUrl.getPort() == serverUrl.getPort()) {
+
+        String clientPath = clientUrl.getPath();
+        String serverPath = serverUrl.getPath();
+        if (clientPath.equals(serverPath)) {
+          _log.error("The SIRI repeater client and server are configured to listen to the same url, which is not allowed: "
+              + clientUrl + " vs " + serverUrl);
+          System.exit(-1);
+        }
+
+        Server webServer = new Server(clientUrl.getPort());
+        jettyClient.setWebServer(webServer);
+        jettyServer.setWebServer(webServer);
+
+        Context rootContext = new Context(webServer, "/", Context.SESSIONS);
+        jettyClient.setRootContext(rootContext);
+        jettyServer.setRootContext(rootContext);
+      }
     }
   }
 

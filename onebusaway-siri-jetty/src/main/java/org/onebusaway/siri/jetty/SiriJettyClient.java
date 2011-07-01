@@ -16,23 +16,37 @@ public class SiriJettyClient extends SiriClient {
 
   private Server _webServer;
 
+  private Context _rootContext;
+
+  public void setWebServer(Server webServer) {
+    _webServer = webServer;
+  }
+
+  public void setRootContext(Context rootContext) {
+    _rootContext = rootContext;
+  }
+
+  /****
+   * {@link SiriClient} Interface
+   ****/
+
+  @Override
   public void start() {
-    
+
     super.start();
 
     SubscriptionServerServlet servlet = new SubscriptionServerServlet();
     servlet.setSiriListener(this);
 
-    String clientUrl = _clientUrl;
-    if (_privateClientUrl != null)
-      clientUrl = _privateClientUrl;
+    URL url = getInternalUrlToBind();
 
-    URL url = url(clientUrl);
+    if (_webServer == null)
+      _webServer = new Server(url.getPort());
 
-    _webServer = new Server(url.getPort());
+    if (_rootContext == null)
+      _rootContext = new Context(_webServer, "/", Context.SESSIONS);
 
-    Context root = new Context(_webServer, "/", Context.SESSIONS);
-    root.addServlet(new ServletHolder(servlet), "/*");
+    _rootContext.addServlet(new ServletHolder(servlet), url.getPath());
 
     try {
       _webServer.start();
@@ -41,10 +55,11 @@ public class SiriJettyClient extends SiriClient {
     }
   }
 
+  @Override
   public void stop() {
-    
+
     super.stop();
-    
+
     if (_webServer != null) {
       try {
         _webServer.stop();

@@ -2,6 +2,7 @@ package org.onebusaway.siri.core;
 
 import java.io.Reader;
 import java.io.Writer;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -76,6 +77,16 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
   }
 
   /**
+   * See also {@link #getPrivateServerUrl()}.
+   * 
+   * @return the public url our server will listen to and expose to connecting
+   *         SIRI clients.
+   */
+  public String getServerUrl() {
+    return _serverUrl;
+  }
+
+  /**
    * The public url our server will listen to and expose to connecting SIRI
    * clients. See also {@link #setPrivateServerUrl(String)}.
    * 
@@ -84,6 +95,15 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
    */
   public void setServerUrl(String serverUrl) {
     _serverUrl = serverUrl;
+  }
+
+  /**
+   * See discussion in {@link #setPrivateServerUrl(String)}.
+   * 
+   * @return if set, the internal url our server will actually listen to
+   */
+  public String getPrivateServerUrl() {
+    return _privateServerUrl;
   }
 
   /**
@@ -101,6 +121,20 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
    */
   public void setPrivateServerUrl(String privateServerUrl) {
     _privateServerUrl = privateServerUrl;
+  }
+
+  /**
+   * The internal URL that the server should bind to. This defaults to
+   * {@link #getServerUrl()}, unless {@link #getPrivateServerUrl()} has been
+   * specified.
+   * 
+   * @return
+   */
+  public URL getInternalUrlToBind() {
+    String serverUrl = _serverUrl;
+    if (_privateServerUrl != null)
+      serverUrl = _privateServerUrl;
+    return url(serverUrl);
   }
 
   public void addRequestResponseHandler(SiriRequestResponseHandler handler) {
@@ -156,7 +190,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
       for (ServerSubscriptionEvent event : events)
         _executor.submit(new PublishEventTask(event));
     }
-    
+
     return events.size();
   }
 

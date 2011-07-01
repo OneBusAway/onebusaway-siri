@@ -4,6 +4,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -79,6 +80,17 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
   /**
    * The public url our client will listen to and expose for url callbacks from
    * the SIRI server. Only used when using publish / subscribe methods. See also
+   * {@link #getPrivateClientUrl()}.
+   * 
+   * @return the client url
+   */
+  public String getClientUrl() {
+    return _clientUrl;
+  }
+
+  /**
+   * The public url our client will listen to and expose for url callbacks from
+   * the SIRI server. Only used when using publish / subscribe methods. See also
    * {@link #setPrivateClientUrl(String)}.
    * 
    * @param clientUrl
@@ -86,6 +98,15 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    */
   public void setClientUrl(String clientUrl) {
     _clientUrl = clientUrl;
+  }
+
+  /**
+   * See the discussion for {@link #setPrivateClientUrl(String)}.
+   * 
+   * @return the private client url
+   */
+  public String getPrivateClientUrl() {
+    return _privateClientUrl;
   }
 
   /**
@@ -105,6 +126,22 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     _privateClientUrl = privateClientUrl;
   }
 
+  /**
+   * The internal URL that the client should bind to for incoming pub-sub
+   * connection. This defaults to {@link #getClientUrl()}, unless
+   * {@link #getPrivateClientUrl()} has been specified.
+   * 
+   * @return
+   */
+  public URL getInternalUrlToBind() {
+    String clientUrl = _clientUrl;
+    if (_privateClientUrl != null)
+      clientUrl = _privateClientUrl;
+
+    URL url = url(clientUrl);
+    return url;
+  }
+
   public void addServiceDeliveryHandler(SiriServiceDeliveryHandler handler) {
     _serviceDeliveryHandlers.add(handler);
   }
@@ -112,7 +149,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
   public void removeServiceDeliveryHandler(SiriServiceDeliveryHandler handler) {
     _serviceDeliveryHandlers.remove(handler);
   }
-  
+
   public void setLogRawXml(boolean logRawXml) {
     _logRawXml = logRawXml;
   }
@@ -203,30 +240,27 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     HttpResponse response = sendHttpRequest(targetUrl, payload);
 
     HttpEntity entity = response.getEntity();
-    
-    
 
     Object responseData = null;
     try {
-      
+
       Reader responseReader = new InputStreamReader(entity.getContent());
-      
-      if( _logRawXml ) {
+
+      if (_logRawXml) {
         StringBuilder b = new StringBuilder();
         char[] buffer = new char[1024];
-        while(true) {
+        while (true) {
           int rc = responseReader.read(buffer);
-          if( rc == -1)
+          if (rc == -1)
             break;
           b.append(buffer, 0, rc);
         }
-        
+
         System.err.println("rawXml: " + b.toString());
         responseReader.close();
         responseReader = new StringReader(b.toString());
       }
-      
-      
+
       responseData = unmarshall(responseReader);
       responseData = versioning.getPayloadAsVersion(responseData,
           versioning.getDefaultVersion());
