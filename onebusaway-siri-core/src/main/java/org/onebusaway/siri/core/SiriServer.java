@@ -61,7 +61,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
 
   public SiriServer() {
     _identity = UUID.randomUUID().toString();
-    _serverUrl = "http://localhost:8080";
+    _serverUrl = replaceLocalhostWithPublicHostnameInUrl("http://localhost:8080/server.xml");
   }
 
   public SiriSubscriptionManager getSubscriptionManager() {

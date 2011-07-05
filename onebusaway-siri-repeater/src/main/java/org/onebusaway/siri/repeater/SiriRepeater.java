@@ -1,7 +1,11 @@
 package org.onebusaway.siri.repeater;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClient;
+import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriServer;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
 import org.onebusaway.siri.jetty.SiriJettyClient;
@@ -33,6 +37,8 @@ public class SiriRepeater {
 
   private ClientServiceDeliveryHandler _serviceDeliveryRepeater = new ClientServiceDeliveryHandler();
 
+  private List<SiriClientRequest> _startupRequests = new ArrayList<SiriClientRequest>();
+
   public SiriClient getSiriClient() {
     return _siriClient;
   }
@@ -49,6 +55,10 @@ public class SiriRepeater {
     _siriServer = siriServer;
   }
 
+  public void addStartupRequest(SiriClientRequest request) {
+    _startupRequests.add(request);
+  }
+
   public void start() {
 
     /**
@@ -58,6 +68,9 @@ public class SiriRepeater {
 
     _siriServer.start();
     _siriClient.start();
+
+    for (SiriClientRequest request : _startupRequests)
+      _siriClient.handleRequest(request);
   }
 
   public void stop() {
@@ -85,4 +98,5 @@ public class SiriRepeater {
       _siriServer.publish(serviceDelivery);
     }
   }
+
 }

@@ -8,8 +8,11 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -135,6 +138,17 @@ public class SiriCommon {
       return new URL(url);
     } catch (MalformedURLException ex) {
       throw new SiriException("bad url " + url, ex);
+    }
+  }
+
+  protected String replaceLocalhostWithPublicHostnameInUrl(String url) {
+
+    try {
+      InetAddress address = Inet4Address.getLocalHost();
+      String hostname = address.getHostName();
+      return url.replace("localhost", hostname);
+    } catch (UnknownHostException e) {
+      return url;
     }
   }
 }

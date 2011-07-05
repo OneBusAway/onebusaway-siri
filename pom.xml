@@ -77,7 +77,13 @@
         <artifactId>commons-cli</artifactId>
         <version>1.2</version>
       </dependency>
-
+      
+      <dependency>
+        <groupId>commons-daemon</groupId>
+        <artifactId>commons-daemon</artifactId>
+        <version>1.0.5</version>
+      </dependency>
+  
       <dependency>
         <groupId>commons-lang</groupId>
         <artifactId>commons-lang</artifactId>
