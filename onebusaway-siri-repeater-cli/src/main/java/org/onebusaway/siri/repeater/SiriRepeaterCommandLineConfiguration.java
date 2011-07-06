@@ -235,7 +235,7 @@ public class SiriRepeaterCommandLineConfiguration {
       SiriJettyClient jettyClient = (SiriJettyClient) client;
       SiriJettyServer jettyServer = (SiriJettyServer) server;
 
-      URL clientUrl = jettyClient.getInternalUrlToBind();
+      URL clientUrl = jettyClient.getInternalUrlToBind(true);
       URL serverUrl = jettyServer.getInternalUrlToBind();
 
       if (clientUrl.getPort() == serverUrl.getPort()) {

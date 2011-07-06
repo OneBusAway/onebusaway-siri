@@ -24,8 +24,10 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpParams;
 import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.exceptions.SiriSerializationException;
@@ -38,6 +40,13 @@ public class SiriCommon {
 
   private JAXBContext _jaxbContext;
 
+  /**
+   * If not null, overrides the default local address used by outgoing http
+   * client connections. Useful if the connection needs to appear to come from a
+   * specific port.
+   */
+  private InetAddress _localAddress;
+
   public SiriCommon() {
 
     try {
@@ -45,6 +54,10 @@ public class SiriCommon {
     } catch (JAXBException ex) {
       throw new SiriSerializationException(ex);
     }
+  }
+
+  public void setLocalAddress(InetAddress localAddress) {
+    _localAddress = localAddress;
   }
 
   @SuppressWarnings("unchecked")
@@ -86,6 +99,15 @@ public class SiriCommon {
     marshall(request, writer);
 
     DefaultHttpClient client = new DefaultHttpClient();
+
+    /**
+     * Override the default local address used for outgoing http client
+     * connections, if specified
+     */
+    if (_localAddress != null) {
+      HttpParams params = client.getParams();
+      params.setParameter(ConnRoutePNames.LOCAL_ADDRESS, _localAddress);
+    }
 
     HttpPost post = new HttpPost(url);
 
@@ -151,12 +173,12 @@ public class SiriCommon {
     }
   }
 
-  protected String replaceLocalhostWithPublicHostnameInUrl(String url) {
+  protected String replaceHostnameWildcardWithPublicHostnameInUrl(String url) {
 
     try {
       InetAddress address = Inet4Address.getLocalHost();
       String hostname = address.getHostName();
-      return url.replace("localhost", hostname);
+      return url.replace("*", hostname);
     } catch (UnknownHostException e) {
       return url;
     }

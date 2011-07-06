@@ -4,7 +4,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -56,9 +58,16 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
   private String _identity;
 
-  protected String _clientUrl;
+  private String _clientUrl;
 
-  protected String _privateClientUrl;
+  private String _privateClientUrl;
+
+  /**
+   * This is the _clientUrl with hostname wildcard expansion applied. This is
+   * what should actually be sent as the consumer address in subscription
+   * requests.
+   */
+  private String _expandedClientUrl;
 
   private List<SiriServiceDeliveryHandler> _serviceDeliveryHandlers = new ArrayList<SiriServiceDeliveryHandler>();
 
@@ -70,7 +79,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
   public SiriClient() {
     _identity = UUID.randomUUID().toString();
-    _clientUrl = replaceLocalhostWithPublicHostnameInUrl("http://localhost:8080/client.xml");
+    setClientUrl("http://*:8080/client.xml");
   }
 
   public void setIdentity(String identity) {
@@ -131,15 +140,20 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    * connection. This defaults to {@link #getClientUrl()}, unless
    * {@link #getPrivateClientUrl()} has been specified.
    * 
+   * @param expandHostnameWildcard TODO
+   * 
    * @return
    */
-  public URL getInternalUrlToBind() {
+  public URL getInternalUrlToBind(boolean expandHostnameWildcard) {
+
     String clientUrl = _clientUrl;
     if (_privateClientUrl != null)
       clientUrl = _privateClientUrl;
 
-    URL url = url(clientUrl);
-    return url;
+    if (expandHostnameWildcard)
+      clientUrl = replaceHostnameWildcardWithPublicHostnameInUrl(clientUrl);
+
+    return url(clientUrl);
   }
 
   public void addServiceDeliveryHandler(SiriServiceDeliveryHandler handler) {
@@ -159,8 +173,20 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
    ****/
 
   public void start() {
+
+    /**
+     * Perform wildcard hostname expansion on our consumer address
+     */
+    _expandedClientUrl = replaceHostnameWildcardWithPublicHostnameInUrl(_clientUrl);
+
+    /**
+     * Check to see if we should be binding to a different internal URL
+     */
+    checkLocalAddress();
+
     _executor = Executors.newSingleThreadScheduledExecutor();
   }
+
 
   public void stop() {
     if (_executor != null)
@@ -216,6 +242,24 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
     } else if (data instanceof ServiceDelivery) {
       ServiceDelivery delivery = (ServiceDelivery) data;
       handleServiceDelivery(delivery);
+    }
+  }
+  
+  /****
+   * Protected Methods
+   ****/
+  
+  protected void checkLocalAddress() {
+
+    URL bindUrl = getInternalUrlToBind(false);
+    
+    if (!(bindUrl.getHost().equals("*") || bindUrl.getHost().equals("localhost"))) {
+      try {
+        InetAddress address = InetAddress.getByName(bindUrl.getHost());
+        setLocalAddress(address);
+      } catch (UnknownHostException ex) {
+        _log.warn("error resolving hostname: " + bindUrl.getHost(), ex);
+      }
     }
   }
 
@@ -548,7 +592,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
     request.setRequestorRef(SiriTypeFactory.particpantRef(_identity));
 
-    request.setAddress(_clientUrl);
+    request.setAddress(_expandedClientUrl);
 
     MessageQualifierStructure messageIdentifier = SiriTypeFactory.randomMessageId();
     request.setMessageIdentifier(messageIdentifier);
@@ -569,7 +613,7 @@ public class SiriClient extends SiriCommon implements SiriRawHandler {
 
     request.setRequestorRef(SiriTypeFactory.particpantRef(_identity));
 
-    request.setAddress(_clientUrl);
+    request.setAddress(_expandedClientUrl);
 
     if (request.getRequestTimestamp() == null)
       request.setRequestTimestamp(new Date());
