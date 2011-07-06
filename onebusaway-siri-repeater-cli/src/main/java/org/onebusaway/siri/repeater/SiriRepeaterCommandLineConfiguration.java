@@ -57,6 +57,8 @@ public class SiriRepeaterCommandLineConfiguration {
 
   private static final String ARG_LOG_RAW_XML = "logRawXml";
 
+  private static final String ARG_NO_SUBSCRIPTIONS = "noSubscriptions";
+
   private static final String ARG_DATA_SOURCE = "dataSource";
 
   private static final String CLASSPATH_PREFIX = "classpath:";
@@ -82,7 +84,7 @@ public class SiriRepeaterCommandLineConfiguration {
 
     args = cli.getArgs();
 
-    if (args.length == 0) {
+    if (args.length == 0 && !cli.hasOption(ARG_NO_SUBSCRIPTIONS)) {
       printUsage();
       System.exit(-1);
     }
@@ -162,6 +164,7 @@ public class SiriRepeaterCommandLineConfiguration {
     options.addOption(ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT, true,
         "consumer address default for requestor");
     options.addOption(ARG_LOG_RAW_XML, false, "log raw xml");
+    options.addOption(ARG_NO_SUBSCRIPTIONS, false, "no subscriptions");
     options.addOption(ARG_FILTER, true, "filter specification");
     options.addOption(ARG_DATA_SOURCE, true, "Spring data source xml file");
 
