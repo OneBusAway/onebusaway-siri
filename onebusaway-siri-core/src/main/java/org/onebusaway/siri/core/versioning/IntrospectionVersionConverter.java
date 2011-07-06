@@ -83,7 +83,8 @@ public class IntrospectionVersionConverter implements VersionConverter {
 
   private boolean isPrimitiveType(Class<? extends Object> sourceType) {
     String name = sourceType.getName();
-    return name.startsWith("java") || name.startsWith("com.sun");
+    return sourceType.isPrimitive() || sourceType.isEnum()
+        || name.startsWith("java") || name.startsWith("com.sun");
   }
 
   private Class<?> determineTargetTypeForSourceType(Class<?> sourceType) {
@@ -119,7 +120,7 @@ public class IntrospectionVersionConverter implements VersionConverter {
       if (!toDescs.containsKey(name))
         continue;
 
-      if ("class".equals(name))
+      if ("class".equals(name) || "declaringClass".equals(name))
         continue;
 
       TypeAndPropertyName fromPropertyKey = new TypeAndPropertyName(sourceType,
@@ -184,6 +185,12 @@ public class IntrospectionVersionConverter implements VersionConverter {
           return new ElementToListPropertyConverter(this, readMethod,
               toDesc.getReadMethod());
         }
+      }
+
+      if (writeMethod == null && toPropertyType == Boolean.TYPE) {
+        String setter = "set" + name.substring(0, 1).toUpperCase()
+            + name.substring(1);
+        writeMethod = sourceType.getMethod(setter, Boolean.class);
       }
 
       if (readMethod == null)
