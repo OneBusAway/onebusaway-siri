@@ -89,8 +89,9 @@ public class SiriCommon {
 
     HttpPost post = new HttpPost(url);
 
+    String content = writer.toString();
+
     try {
-      String content = writer.toString();
       post.setEntity(new StringEntity(content));
     } catch (UnsupportedEncodingException ex) {
       throw new SiriSerializationException(ex);
@@ -111,13 +112,22 @@ public class SiriCommon {
           while ((line = reader.readLine()) != null)
             b.append(line).append('\n');
           _log.warn("error connecting to url " + post.getURI() + " statusCode="
-              + statusLine.getStatusCode() + "\n" + b.toString());
+              + statusLine.getStatusCode() + "\nrequestBody=" + content
+              + "\nresponseBody=" + b.toString());
         } catch (IOException ex) {
           _log.warn("error reading http response", ex);
         }
       }
-      throw new SiriConnectionException("error connecting to url "
-          + post.getURI() + " statusCode=" + statusLine.getStatusCode());
+      /**
+       * TODO: This is a temporary hack to keep a bad client from bailing...
+       */
+      if (statusLine.getStatusCode() != HttpStatus.SC_BAD_REQUEST) {
+        throw new SiriConnectionException("error connecting to url "
+            + post.getURI() + " statusCode=" + statusLine.getStatusCode());
+      } else {
+        _log.warn("statusCode=" + statusLine.getStatusCode()
+            + " so ignoring for now");
+      }
     }
 
     return response;
