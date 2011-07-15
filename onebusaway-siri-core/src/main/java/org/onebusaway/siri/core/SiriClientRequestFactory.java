@@ -1,9 +1,15 @@
 package org.onebusaway.siri.core;
 
 import java.math.BigInteger;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
+import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.exceptions.SiriMissingArgumentException;
 import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
@@ -27,6 +33,7 @@ import uk.org.siri.siri.StopTimetableRequestStructure;
 import uk.org.siri.siri.StopTimetableSubscriptionStructure;
 import uk.org.siri.siri.SubscriptionQualifierStructure;
 import uk.org.siri.siri.SubscriptionRequest;
+import uk.org.siri.siri.TerminateSubscriptionRequestStructure;
 import uk.org.siri.siri.VehicleMonitoringRefStructure;
 import uk.org.siri.siri.VehicleMonitoringRequestStructure;
 import uk.org.siri.siri.VehicleMonitoringSubscriptionStructure;
@@ -42,6 +49,7 @@ public class SiriClientRequestFactory {
 
   private static final String ARG_HEARTBEAT_INTERVAL = "HeartbeatInterval";
   private static final String ARG_CHECK_STATUS_INTERVAL = "CheckStatusInterval";
+  private static final String ARG_INITIAL_TERMINATION_TIME = "InitialTerminationTime";
 
   private static final String ARG_MESSAGE_IDENTIFIER = "MessageIdentifier";
   private static final String ARG_MAXIMUM_VEHICLES = "MaximumVehicles";
@@ -87,8 +95,7 @@ public class SiriClientRequestFactory {
     return request;
   }
 
-  public SiriClientRequest createSubscriptionRequest(
-      Map<String, String> args) {
+  public SiriClientRequest createSubscriptionRequest(Map<String, String> args) {
 
     SiriClientRequest request = new SiriClientRequest();
     processCommonArgs(args, request);
@@ -131,6 +138,36 @@ public class SiriClientRequestFactory {
     return request;
   }
 
+  public SiriClientRequest createTerminateSubscriptionRequest(
+      Map<String, String> args) {
+
+    SiriClientRequest request = new SiriClientRequest();
+    processCommonArgs(args, request);
+
+    TerminateSubscriptionRequestStructure terminateRequest = new TerminateSubscriptionRequestStructure();
+    Siri payload = new Siri();
+    payload.setTerminateSubscriptionRequest(terminateRequest);
+    request.setPayload(payload);
+
+    String messageIdentifierValue = args.get(ARG_MESSAGE_IDENTIFIER);
+    if (messageIdentifierValue != null) {
+      MessageQualifierStructure messageIdentifier = new MessageQualifierStructure();
+      messageIdentifier.setValue(messageIdentifierValue);
+      terminateRequest.setMessageIdentifier(messageIdentifier);
+    }
+
+    String subscriptionIdentifierValue = args.get("SubscriptionIdentifier");
+    if (subscriptionIdentifierValue != null) {
+      SubscriptionQualifierStructure value = new SubscriptionQualifierStructure();
+      value.setValue(subscriptionIdentifierValue);
+      terminateRequest.getSubscriptionRef().add(value);
+    } else {
+      terminateRequest.setAll("true");
+    }
+
+    return request;
+  }
+
   /****
    * Private Methods
    ****/
@@ -150,6 +187,28 @@ public class SiriClientRequestFactory {
         throw new SiriUnknownVersionException(versionId);
       }
       request.setTargetVersion(version);
+    }
+
+    String initialTerminationTime = args.get(ARG_INITIAL_TERMINATION_TIME);
+    if (initialTerminationTime != null) {
+      try {
+        /**
+         * TODO: Support duration syntax with "+duration"
+         */
+        Date time = getIso8601StringAsTime(initialTerminationTime,
+            TimeZone.getDefault());
+        request.setInitialTerminationTime(time);
+      } catch (ParseException e) {
+        throw new SiriException(
+            "error parsing initial termination time (ISO 8601)");
+      }
+    } else {
+      /**
+       * By default, expire in 24 hours
+       */
+      Calendar c = Calendar.getInstance();
+      c.add(Calendar.DAY_OF_YEAR, 1);
+      request.setInitialTerminationTime(c.getTime());
     }
 
     String reconnectionAttempts = args.get(ARG_RECONNECTION_ATTEMPTS);
@@ -313,5 +372,23 @@ public class SiriClientRequestFactory {
   private void applyArgsToSituationExchangeRequest(
       SituationExchangeRequestStructure request, Map<String, String> args) {
 
+  }
+
+  private static Date getIso8601StringAsTime(String value, TimeZone timeZone)
+      throws ParseException {
+
+    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    format.setTimeZone(timeZone);
+
+    int n = value.length();
+
+    if (n > 6) {
+      char c1 = value.charAt(n - 6);
+      char c2 = value.charAt(n - 3);
+      if ((c1 == '-' || c1 == '+') && c2 == ':')
+        value = value.substring(0, n - 3) + value.substring(n - 2);
+    }
+
+    return format.parse(value);
   }
 }

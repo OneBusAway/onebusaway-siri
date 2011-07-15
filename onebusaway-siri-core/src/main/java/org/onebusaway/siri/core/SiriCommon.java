@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
@@ -89,14 +90,17 @@ public class SiriCommon {
     }
   }
 
+  public String marshallToString(Object object){
+    StringWriter writer = new StringWriter();
+    marshall(object, writer);
+    return writer.toString();
+  }
+  
   /****
    * Protected Methods
    ****/
 
-  protected HttpResponse sendHttpRequest(String url, Object request) {
-
-    StringWriter writer = new StringWriter();
-    marshall(request, writer);
+  protected HttpResponse sendHttpRequest(String url, String content) {
 
     DefaultHttpClient client = new DefaultHttpClient();
 
@@ -110,8 +114,6 @@ public class SiriCommon {
     }
 
     HttpPost post = new HttpPost(url);
-
-    String content = writer.toString();
 
     try {
       post.setEntity(new StringEntity(content));
@@ -163,6 +165,21 @@ public class SiriCommon {
       throw new SiriConnectionException("error connecting to url "
           + post.getURI(), ex);
     }
+  }
+
+  protected Reader copyReaderToStringBuilder(Reader responseReader,
+      StringBuilder b) throws IOException {
+    char[] buffer = new char[1024];
+    while (true) {
+      int rc = responseReader.read(buffer);
+      if (rc == -1)
+        break;
+      b.append(buffer, 0, rc);
+    }
+
+    responseReader.close();
+    responseReader = new StringReader(b.toString());
+    return responseReader;
   }
 
   protected URL url(String url) {

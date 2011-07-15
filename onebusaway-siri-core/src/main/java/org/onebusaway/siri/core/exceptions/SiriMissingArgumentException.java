@@ -9,6 +9,7 @@ public class SiriMissingArgumentException extends SiriException {
   public SiriMissingArgumentException(String name) {
     super("missing argument: " + name);
     _name = name;
+
   }
 
   public String getName() {

@@ -24,6 +24,7 @@ import org.onebusaway.siri.core.versioning.SiriVersioning;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.CheckStatusRequestStructure;
 import uk.org.siri.siri.CheckStatusResponseStructure;
 import uk.org.siri.siri.HeartbeatNotificationStructure;
@@ -33,6 +34,7 @@ import uk.org.siri.siri.ResponseStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
 import uk.org.siri.siri.Siri;
+import uk.org.siri.siri.StatusResponseStructure;
 import uk.org.siri.siri.SubscriptionContextStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.SubscriptionResponseStructure;
@@ -306,6 +308,30 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
     response.setResponderRef(SiriTypeFactory.particpantRef(_identity));
     response.setServiceStartedTime(new Date(_serviceStartedTimestamp));
 
+    List<StatusResponseStructure> statuses = response.getResponseStatus();
+
+    Date timestamp = new Date();
+
+    /**
+     * TODO : This is default behavior. How do we give users ability to
+     * override?
+     */
+    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
+
+      List<AbstractSubscriptionStructure> requests = SiriLibrary.getSubscriptionRequestsForModule(
+          subscriptionRequest, moduleType);
+
+      for (AbstractSubscriptionStructure moduleRequest : requests) {
+
+        StatusResponseStructure status = new StatusResponseStructure();
+        status.setStatus(Boolean.TRUE);
+        status.setResponseTimestamp(timestamp);
+        status.setSubscriberRef(moduleRequest.getSubscriberRef());
+        status.setSubscriptionRef(moduleRequest.getSubscriptionIdentifier());
+        statuses.add(status);
+      }
+    }
+
     MessageQualifierStructure messageId = subscriptionRequest.getMessageIdentifier();
     response.setRequestMessageRef(messageId);
 
@@ -355,7 +381,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
   }
 
   private CheckStatusResponseStructure handleCheckStatusRequest(
-      CheckStatusRequestStructure checkStatusRequest) {
+      CheckStatusRequestStructure request) {
 
     CheckStatusResponseStructure response = new CheckStatusResponseStructure();
     response.setStatus(Boolean.TRUE);
@@ -363,7 +389,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
     response.setProducerRef(SiriTypeFactory.particpantRef(_identity));
     response.setResponseMessageIdentifier(SiriTypeFactory.randomMessageId());
 
-    MessageQualifierStructure messageId = checkStatusRequest.getMessageIdentifier();
+    MessageQualifierStructure messageId = request.getMessageIdentifier();
     if (messageId != null) {
       MessageRefStructure ref = new MessageRefStructure();
       ref.setValue(messageId.getValue());
@@ -440,7 +466,8 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
     Object data = versioning.getPayloadAsVersion(siri, originalVersion);
 
     try {
-      sendHttpRequest(address, data);
+      String content = marshallToString(data);
+      sendHttpRequest(address, content);
     } catch (SiriConnectionException ex) {
       _log.warn("error connecting to client at " + address);
       terminateSubscriptionInstance(instance);
@@ -535,7 +562,9 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
       try {
 
         _log.debug("publishing heartbeat to " + address);
-        sendHttpRequest(address, siri);
+
+        String content = marshallToString(siri);
+        sendHttpRequest(address, content);
 
       } catch (SiriConnectionException ex) {
         _log.warn("error publishing heartbeat to " + address, ex);

@@ -1,21 +1,19 @@
-package org.onebusaway.siri.core;
+package org.onebusaway.siri.core.subscriptions;
 
 import java.util.Date;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
-public class ClientSubscriptionChannel {
-
-  private final String serverId;
+class ClientSubscriptionChannel {
 
   private final String address;
 
   private final ESiriVersion targetVersion;
 
-  private final ConcurrentMap<String, ClientSubscriptionInstance> _subscriptions = new ConcurrentHashMap<String, ClientSubscriptionInstance>();
+  private final Set<SubscriptionId> _subscriptions = new HashSet<SubscriptionId>();
 
   private Date lastServiceStartedTime = null;
 
@@ -33,15 +31,9 @@ public class ClientSubscriptionChannel {
 
   private Object context;
 
-  public ClientSubscriptionChannel(String serverId, String address,
-      ESiriVersion targetVersion) {
-    this.serverId = serverId;
+  public ClientSubscriptionChannel(String address, ESiriVersion targetVersion) {
     this.address = address;
     this.targetVersion = targetVersion;
-  }
-
-  public String getServerId() {
-    return serverId;
   }
 
   public String getAddress() {
@@ -52,7 +44,7 @@ public class ClientSubscriptionChannel {
     return targetVersion;
   }
 
-  public ConcurrentMap<String, ClientSubscriptionInstance> getSubscriptions() {
+  public Set<SubscriptionId> getSubscriptions() {
     return _subscriptions;
   }
 
@@ -122,7 +114,6 @@ public class ClientSubscriptionChannel {
 
   @Override
   public String toString() {
-    return "ClientSubscriptionChannel(serverId=" + serverId + " address="
-        + address + ")";
+    return "ClientSubscriptionChannel(address=" + address + ")";
   }
 }
