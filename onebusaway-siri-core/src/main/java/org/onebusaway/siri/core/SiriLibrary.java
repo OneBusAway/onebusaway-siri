@@ -18,6 +18,7 @@ import uk.org.siri.siri.AbstractServiceRequestStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
+import uk.org.siri.siri.Siri;
 import uk.org.siri.siri.SubscriptionRequest;
 
 /**
@@ -98,6 +99,10 @@ public class SiriLibrary {
     }
 
     return matches;
+  }
+  
+  public static Siri copy(Siri payload) {
+    return (Siri) _copier.convert(payload);
   }
 
   public static AbstractServiceDeliveryStructure deepCopyModuleDelivery(

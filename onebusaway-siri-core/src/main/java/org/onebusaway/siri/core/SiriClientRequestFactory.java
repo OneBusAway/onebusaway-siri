@@ -9,6 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
+
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.exceptions.SiriMissingArgumentException;
 import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
@@ -57,6 +61,8 @@ public class SiriClientRequestFactory {
   private static final String ARG_LINE_REF = "LineRef";
   private static final String ARG_DIRECTION_REF = "DirectionRef";
   private static final String ARG_VEHICLE_MONITORING_REF = "VehicleMonitoringRef";
+
+  private static final DatatypeFactory _dataTypeFactory = createDataTypeFactory();
 
   public SiriClientRequest createServiceRequest(Map<String, String> args) {
 
@@ -191,16 +197,19 @@ public class SiriClientRequestFactory {
 
     String initialTerminationTime = args.get(ARG_INITIAL_TERMINATION_TIME);
     if (initialTerminationTime != null) {
-      try {
-        /**
-         * TODO: Support duration syntax with "+duration"
-         */
-        Date time = getIso8601StringAsTime(initialTerminationTime,
-            TimeZone.getDefault());
-        request.setInitialTerminationTime(time);
-      } catch (ParseException e) {
-        throw new SiriException(
-            "error parsing initial termination time (ISO 8601)");
+      if (initialTerminationTime.startsWith("P")) {
+        Duration duration = _dataTypeFactory.newDuration(initialTerminationTime);
+        long time = duration.getTimeInMillis(new Date());
+        request.setInitialTerminationTime(new Date(time));
+      } else {
+        try {
+          Date time = getIso8601StringAsTime(initialTerminationTime,
+              TimeZone.getDefault());
+          request.setInitialTerminationTime(time);
+        } catch (ParseException e) {
+          throw new SiriException(
+              "error parsing initial termination time (ISO 8601)");
+        }
       }
     } else {
       /**
@@ -372,6 +381,14 @@ public class SiriClientRequestFactory {
   private void applyArgsToSituationExchangeRequest(
       SituationExchangeRequestStructure request, Map<String, String> args) {
 
+  }
+
+  private static DatatypeFactory createDataTypeFactory() {
+    try {
+      return DatatypeFactory.newInstance();
+    } catch (DatatypeConfigurationException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   private static Date getIso8601StringAsTime(String value, TimeZone timeZone)

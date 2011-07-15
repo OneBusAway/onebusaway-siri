@@ -2,6 +2,7 @@ package org.onebusaway.siri.core;
 
 import java.util.UUID;
 
+import uk.org.siri.siri.ErrorDescriptionStructure;
 import uk.org.siri.siri.MessageQualifierStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
 import uk.org.siri.siri.SubscriptionQualifierStructure;
@@ -33,5 +34,11 @@ public class SiriTypeFactory {
 
   public static SubscriptionQualifierStructure randomSubscriptionId() {
     return subscriptionId(UUID.randomUUID().toString());
+  }
+
+  public static ErrorDescriptionStructure errorDescription(String value) {
+    ErrorDescriptionStructure desc = new ErrorDescriptionStructure();
+    desc.setValue(value);
+    return desc;
   }
 }

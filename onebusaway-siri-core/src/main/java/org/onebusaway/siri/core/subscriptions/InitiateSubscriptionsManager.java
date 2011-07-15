@@ -94,8 +94,8 @@ class InitiateSubscriptionsManager extends AbstractManager {
 
       if (status.isStatus()) {
 
-        _subscriptionManager.upgradePendingSubscription(response, subId,
-            pending);
+        _subscriptionManager.upgradePendingSubscription(response, status,
+            subId, pending);
 
       } else {
         _support.logErrorInSubscriptionResponse(response, status, subId);

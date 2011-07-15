@@ -1,5 +1,7 @@
 package org.onebusaway.siri.core.subscriptions;
 
+import java.util.concurrent.ScheduledFuture;
+
 import org.onebusaway.siri.core.ESiriModuleType;
 import org.onebusaway.siri.core.SiriClientRequest;
 
@@ -23,14 +25,18 @@ class ClientSubscriptionInstance {
 
   private final AbstractSubscriptionStructure moduleRequest;
 
+  private final ScheduledFuture<?> expirationTask;
+
   public ClientSubscriptionInstance(ClientSubscriptionChannel channel,
       SubscriptionId subscriptionId, SiriClientRequest request,
-      ESiriModuleType moduleType, AbstractSubscriptionStructure moduleRequest) {
+      ESiriModuleType moduleType, AbstractSubscriptionStructure moduleRequest,
+      ScheduledFuture<?> expirationTask) {
     this.channel = channel;
     this.subscriptionId = subscriptionId;
     this.request = request;
     this.moduleType = moduleType;
     this.moduleRequest = moduleRequest;
+    this.expirationTask = expirationTask;
   }
 
   public ClientSubscriptionChannel getChannel() {
@@ -51,5 +57,9 @@ class ClientSubscriptionInstance {
 
   public AbstractSubscriptionStructure getModuleRequest() {
     return moduleRequest;
+  }
+
+  public ScheduledFuture<?> getExpirationTask() {
+    return expirationTask;
   }
 }

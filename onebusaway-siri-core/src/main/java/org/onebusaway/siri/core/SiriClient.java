@@ -183,6 +183,10 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
   public void setLogRawXml(boolean logRawXml) {
     _logRawXml = logRawXml;
   }
+  
+  public SiriClientSubscriptionManager getSubscriptionManager() {
+    return _subscriptionManager;
+  }
 
   /****
    * Client Start and Stop Methods
@@ -232,15 +236,11 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
 
   @Override
   public Siri handleRequestWithResponse(SiriClientRequest request) {
-
-    fillAllSiriRequestStructures(request);
     return processRequestWithResponse(request);
   }
 
   @Override
   public void handleRequest(SiriClientRequest request) {
-
-    fillAllSiriRequestStructures(request);
     processRequest(request);
   }
 
@@ -309,6 +309,14 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
     Siri payload = request.getPayload();
 
     /**
+     * We make a deep copy of the SIRI payload so that when we fill in values
+     * for the request, the original is unmodified, making it reusable.
+     */
+    payload = SiriLibrary.copy(payload);
+
+    fillAllSiriRequestStructures(request, payload);
+
+    /**
      * Check to see if we have a subscription request in the payload. If so,
      * register the pending request
      */
@@ -329,7 +337,7 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
      */
     SiriVersioning versioning = SiriVersioning.getInstance();
     Object versionedPayload = versioning.getPayloadAsVersion(
-        request.getPayload(), request.getTargetVersion());
+        payload, request.getTargetVersion());
 
     String content = marshallToString(versionedPayload);
 
@@ -438,9 +446,7 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    * 
    ****/
 
-  private void fillAllSiriRequestStructures(SiriClientRequest request) {
-
-    Siri siri = request.getPayload();
+  private void fillAllSiriRequestStructures(SiriClientRequest request, Siri siri) {
 
     fillRequestStructure(siri.getCapabilitiesRequest());
     fillRequestStructure(siri.getCheckStatusRequest());
@@ -491,6 +497,9 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
 
         if (sub.getInitialTerminationTime() == null) {
           Date initialTerminationTime = request.getInitialTerminationTime();
+          if (initialTerminationTime == null)
+            throw new SiriException(
+                "subscription request is missing a required initial termination time");
           sub.setInitialTerminationTime(initialTerminationTime);
         }
 

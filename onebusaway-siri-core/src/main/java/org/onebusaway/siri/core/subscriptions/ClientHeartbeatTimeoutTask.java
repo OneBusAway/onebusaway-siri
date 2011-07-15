@@ -15,6 +15,7 @@ class ClientHeartbeatTimeoutTask implements Runnable {
   private static final Logger _log = LoggerFactory.getLogger(ClientHeartbeatTimeoutTask.class);
 
   private final SiriClientSubscriptionManager manager;
+  
   private final ClientSubscriptionChannel channel;
 
   public ClientHeartbeatTimeoutTask(SiriClientSubscriptionManager manager,

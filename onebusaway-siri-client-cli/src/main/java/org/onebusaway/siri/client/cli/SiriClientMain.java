@@ -18,6 +18,7 @@ import org.onebusaway.siri.core.SiriClientRequestFactory;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
+import org.onebusaway.siri.core.subscriptions.SiriClientSubscriptionManager;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.onebusaway.siri.jetty.SiriJettyClient;
 
@@ -37,6 +38,8 @@ public class SiriClientMain {
   private static final String ARG_PRIVATE_CLIENT_URL = "privateClientUrl";
 
   private static final String ARG_OUTPUT = "output";
+
+  private static final String ARG_RESPONSE_TIMEOUT = "responseTimeout";
 
   private static final String ARG_NO_SUBSCRIPTIONS = "noSubscriptions";
 
@@ -86,6 +89,12 @@ public class SiriClientMain {
       _output = new PrintWriter(new FileWriter(value));
     } else {
       _output = new PrintWriter(System.out);
+    }
+
+    if (cli.hasOption(ARG_RESPONSE_TIMEOUT)) {
+      int responseTimeout = Integer.parseInt(cli.getOptionValue(ARG_RESPONSE_TIMEOUT));
+      SiriClientSubscriptionManager manager = _client.getSubscriptionManager();
+      manager.setResponseTimeout(responseTimeout);
     }
 
     if (args.length == 0 && !cli.hasOption(ARG_NO_SUBSCRIPTIONS)) {
@@ -220,6 +229,7 @@ public class SiriClientMain {
     options.addOption(ARG_CLIENT_URL, true, "siri client url");
     options.addOption(ARG_PRIVATE_CLIENT_URL, true, "siri private client url");
     options.addOption(ARG_OUTPUT, true, "output");
+    options.addOption(ARG_RESPONSE_TIMEOUT, true, "response timeout");
     options.addOption(ARG_SUBSCRIBE, false, "subscribe (vs one-time request)");
     options.addOption(ARG_TERMINATE_SUBSCRIPTIONS, false,
         "terminate the specified subscriptions");

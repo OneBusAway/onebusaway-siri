@@ -30,16 +30,20 @@ import uk.org.siri.siri.CheckStatusResponseStructure;
 import uk.org.siri.siri.HeartbeatNotificationStructure;
 import uk.org.siri.siri.MessageQualifierStructure;
 import uk.org.siri.siri.MessageRefStructure;
+import uk.org.siri.siri.ParticipantRefStructure;
 import uk.org.siri.siri.ResponseStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
 import uk.org.siri.siri.Siri;
 import uk.org.siri.siri.StatusResponseStructure;
 import uk.org.siri.siri.SubscriptionContextStructure;
+import uk.org.siri.siri.SubscriptionQualifierStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.SubscriptionResponseStructure;
 import uk.org.siri.siri.TerminateSubscriptionRequestStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure;
+import uk.org.siri.siri.TerminateSubscriptionResponseStructure.TerminationResponseStatus;
+import uk.org.siri.siri.UnknownSubscriberErrorStructure;
 
 public class SiriServer extends SiriCommon implements SiriRawHandler {
 
@@ -50,6 +54,8 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
   protected String _serverUrl;
 
   protected String _privateServerUrl;
+
+  private ServerSupport _support = new ServerSupport();
 
   private SiriSubscriptionManager _subscriptionManager = new SiriSubscriptionManager();
 
@@ -407,6 +413,23 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
       TerminateSubscriptionRequestStructure request) {
 
     TerminateSubscriptionResponseStructure response = new TerminateSubscriptionResponseStructure();
+
+    String subscriberId = _support.getSubscriberIdForTerminateSubscriptionRequest(request);
+
+    if (subscriberId == null) {
+      _support.addTerminateSubscriptionStatusForMissingSubscriberRef(request,
+          response);
+      return response;
+    }
+
+    List<SubscriptionQualifierStructure> subscriptionRefs = request.getSubscriptionRef();
+
+    for (SubscriptionQualifierStructure subscriptionRef : subscriptionRefs) {
+      String subscriptionId = subscriptionRef.getValue();
+      if (subscriberId == null)
+        continue;
+      
+    }
 
     return response;
 

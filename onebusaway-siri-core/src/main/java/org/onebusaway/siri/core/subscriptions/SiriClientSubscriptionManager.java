@@ -1,9 +1,7 @@
 package org.onebusaway.siri.core.subscriptions;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -12,7 +10,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.onebusaway.collections.MappingLibrary;
 import org.onebusaway.siri.core.ESiriModuleType;
 import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClientRequest;
@@ -30,6 +27,7 @@ import uk.org.siri.siri.HeartbeatNotificationStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.Siri;
+import uk.org.siri.siri.StatusResponseStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.SubscriptionResponseStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure;
@@ -50,7 +48,7 @@ public class SiriClientSubscriptionManager {
   private ScheduledExecutorService _executor;
 
   private SiriClientHandler _client;
-  
+
   private ClientSupport _support = new ClientSupport();
 
   private InitiateSubscriptionsManager _initiateSubscriptionsManager = new InitiateSubscriptionsManager();
@@ -189,44 +187,8 @@ public class SiriClientSubscriptionManager {
   public void terminateAllSubscriptions(
       boolean waitForTerminateSubscriptionResponseOnExit) {
 
-    List<SubscriptionId> allPendings = new ArrayList<SubscriptionId>();
-
-    /**
-     * First group active subscriptions by channel
-     */
-
-    Map<ClientSubscriptionChannel, List<ClientSubscriptionInstance>> instancesByChannel = MappingLibrary.mapToValueList(
-        _activeSubscriptions.values(), "channel");
-
-    for (Map.Entry<ClientSubscriptionChannel, List<ClientSubscriptionInstance>> channelEntry : instancesByChannel.entrySet()) {
-
-      ClientSubscriptionChannel channel = channelEntry.getKey();
-      List<ClientSubscriptionInstance> channelInstances = channelEntry.getValue();
-
-      /**
-       * Next, group active subscriptions by subscriber id so we can group the
-       * subscription termination messages
-       */
-      Map<String, List<ClientSubscriptionInstance>> instancesBySubscriber = MappingLibrary.mapToValueList(
-          channelInstances, "subscriptionId.subscriberId");
-
-      for (Map.Entry<String, List<ClientSubscriptionInstance>> entry : instancesBySubscriber.entrySet()) {
-
-        String subscriberId = entry.getKey();
-        List<ClientSubscriptionInstance> instances = entry.getValue();
-
-        /**
-         * TODO : Refactor this int terminate subscriptions manager?
-         */
-        SiriClientRequest request = _support.getTerminateSubscriptionRequestForSubscriptions(
-            channel, subscriberId, instances);
-
-        List<SubscriptionId> pendings = requestTerminateForSubscriptions(instances);
-        allPendings.addAll(pendings);
-
-        _client.handleRequest(request);
-      }
-    }
+    List<SubscriptionId> allPendings = _terminateSubscriptionsManager.terminateSubscriptions(
+        _activeSubscriptions.values(), false);
 
     if (waitForTerminateSubscriptionResponseOnExit)
       _terminateSubscriptionsManager.waitForPendingSubscriptionTerminationResponses(
@@ -278,16 +240,40 @@ public class SiriClientSubscriptionManager {
   }
 
   void upgradePendingSubscription(SubscriptionResponseStructure response,
-      SubscriptionId subId, ClientPendingSubscription pending) {
+      StatusResponseStructure status, SubscriptionId subId,
+      ClientPendingSubscription pending) {
 
     SiriClientRequest request = pending.getRequest();
 
     ClientSubscriptionChannel channel = getChannelForServer(
         request.getTargetUrl(), request.getTargetVersion());
 
+    Date validUntil = request.getInitialTerminationTime();
+
+    if (validUntil == null)
+      throw new SiriException("expected an initial termination time");
+
+    if (status.getValidUntil() != null)
+      validUntil = status.getValidUntil();
+
+    _log.debug("subscription is valid until {}", validUntil);
+
+    ScheduledFuture<?> expiration = null;
+
+    long delay = validUntil.getTime() - System.currentTimeMillis();
+    if (delay > 0) {
+      SubscriptionExpirationTask task = new SubscriptionExpirationTask(this,
+          subId);
+      expiration = _executor.schedule(task, delay, TimeUnit.MILLISECONDS);
+    } else {
+      _log.warn(
+          "subscription has already expired before it had a chance to start: id={} validUntil={}",
+          subId, validUntil);
+    }
+
     ClientSubscriptionInstance instance = new ClientSubscriptionInstance(
         channel, subId, request, pending.getModuleType(),
-        pending.getModuleRequest());
+        pending.getModuleRequest(), expiration);
 
     // TODO: Thread safety
     ClientSubscriptionInstance existing = _activeSubscriptions.put(subId,
@@ -312,7 +298,7 @@ public class SiriClientSubscriptionManager {
     return instance.getModuleType();
   }
 
-  void terminateSubscription(SubscriptionId id) {
+  void removeSubscription(SubscriptionId id) {
 
     /**
      * TODO: Thread safety
@@ -321,23 +307,29 @@ public class SiriClientSubscriptionManager {
 
     if (instance == null) {
       _log.warn("subscription has already been removed: {}", id);
-    } else {
-      ClientSubscriptionChannel channel = instance.getChannel();
-      Set<SubscriptionId> subscriptions = channel.getSubscriptions();
-      subscriptions.remove(instance);
-      if (subscriptions.isEmpty()) {
-
-        _channelsByAddress.remove(channel.getAddress());
-
-        ScheduledFuture<?> checkStatusTask = channel.getCheckStatusTask();
-        if (checkStatusTask != null)
-          checkStatusTask.cancel(true);
-
-        ScheduledFuture<?> heartbeatTask = channel.getHeartbeatTask();
-        if (heartbeatTask != null)
-          heartbeatTask.cancel(true);
-      }
+      return;
     }
+
+    ScheduledFuture<?> expirationTask = instance.getExpirationTask();
+    if (expirationTask != null)
+      expirationTask.cancel(true);
+
+    ClientSubscriptionChannel channel = instance.getChannel();
+    Set<SubscriptionId> subscriptions = channel.getSubscriptions();
+    subscriptions.remove(instance);
+    if (subscriptions.isEmpty()) {
+
+      _channelsByAddress.remove(channel.getAddress());
+
+      ScheduledFuture<?> checkStatusTask = channel.getCheckStatusTask();
+      if (checkStatusTask != null)
+        checkStatusTask.cancel(true);
+
+      ScheduledFuture<?> heartbeatTask = channel.getHeartbeatTask();
+      if (heartbeatTask != null)
+        heartbeatTask.cancel(true);
+    }
+
   }
 
   void handleDisconnectAndReconnect(ClientSubscriptionChannel channel) {
@@ -384,6 +376,22 @@ public class SiriClientSubscriptionManager {
     clientRequest.setPayload(payload);
 
     _client.handleRequest(clientRequest);
+  }
+
+  void handleUnsubscribeAndResubscribe(SubscriptionId id) {
+
+    ClientSubscriptionInstance instance = _activeSubscriptions.get(id);
+
+    if (instance == null) {
+      _log.warn("no subscription found to unsubscribe/resubscribe with id={}",
+          id);
+      return;
+    }
+
+    /**
+     * Terminate the subscription, indicating that we want to re-subscribe
+     */
+    _terminateSubscriptionsManager.terminateSubscription(instance, true);
   }
 
   /****
@@ -478,22 +486,5 @@ public class SiriClientSubscriptionManager {
     }
 
     return channel;
-  }
-
-  private List<SubscriptionId> requestTerminateForSubscriptions(
-      List<ClientSubscriptionInstance> instances) {
-
-    /**
-     * TODO: Thread-safety
-     */
-
-    List<SubscriptionId> ids = new ArrayList<SubscriptionId>();
-
-    for (ClientSubscriptionInstance instance : instances) {
-      _terminateSubscriptionsManager.terminateSubscription(instance);
-      ids.add(instance.getSubscriptionId());
-    }
-
-    return ids;
   }
 }
