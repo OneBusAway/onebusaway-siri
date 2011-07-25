@@ -10,6 +10,8 @@ import org.onebusaway.siri.core.SiriServer;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
 import org.onebusaway.siri.jetty.SiriJettyClient;
 import org.onebusaway.siri.jetty.SiriJettyServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.ServiceDelivery;
 
@@ -23,6 +25,9 @@ import uk.org.siri.siri.ServiceDelivery;
  * @author bdferris
  */
 public class SiriRepeater {
+  
+  
+  private static final Logger _log = LoggerFactory.getLogger(SiriRepeater.class);
 
   /**
    * The client is what connects to an existing SIRI data source
@@ -95,6 +100,7 @@ public class SiriRepeater {
     @Override
     public void handleServiceDelivery(SiriChannelInfo channelInfo,
         ServiceDelivery serviceDelivery) {
+      _log.debug("service delivery");
       _siriServer.publish(serviceDelivery);
     }
   }

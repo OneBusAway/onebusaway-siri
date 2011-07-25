@@ -1,10 +1,11 @@
-package org.onebusaway.siri.core.subscriptions;
+package org.onebusaway.siri.core.subscriptions.client;
 
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 
+import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
 class ClientSubscriptionChannel {

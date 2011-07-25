@@ -1,7 +1,8 @@
-package org.onebusaway.siri.core.subscriptions;
+package org.onebusaway.siri.core.subscriptions.client;
 
 import org.onebusaway.siri.core.ESiriModuleType;
 import org.onebusaway.siri.core.SiriClientRequest;
+import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 

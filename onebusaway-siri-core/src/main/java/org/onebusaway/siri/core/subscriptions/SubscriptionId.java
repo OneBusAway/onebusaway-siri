@@ -19,7 +19,7 @@ import uk.org.siri.siri.TerminateSubscriptionRequestStructure;
  * 
  * @author bdferris
  */
-class SubscriptionId {
+public class SubscriptionId {
 
   private final String subscriberId;
 

@@ -1,4 +1,4 @@
-package org.onebusaway.siri.core.subscriptions;
+package org.onebusaway.siri.core.subscriptions.client;
 
 import java.util.Date;
 import java.util.List;
@@ -16,6 +16,7 @@ import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
+import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,13 +125,11 @@ public class SiriClientSubscriptionManager {
    * 
    * @param request
    * @param subscriptionRequest
-   * @return true if the pending subscriptions were properly registered,
-   *         otherwise false
    */
-  public boolean registerPendingSubscription(SiriClientRequest request,
+  public void registerPendingSubscription(SiriClientRequest request,
       SubscriptionRequest subscriptionRequest) {
 
-    return _initiateSubscriptionsManager.registerPendingSubscription(request,
+    _initiateSubscriptionsManager.registerPendingSubscription(request,
         subscriptionRequest);
   }
 

@@ -19,13 +19,13 @@ import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriClientRequestFactory;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.SiriServer;
-import org.onebusaway.siri.core.SiriSubscriptionManager;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterFactoryImpl;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcherFactoryImpl;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterSource;
+import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionManager;
 import org.onebusaway.siri.jetty.SiriJettyClient;
 import org.onebusaway.siri.jetty.SiriJettyServer;
 import org.slf4j.Logger;
@@ -177,7 +177,7 @@ public class SiriRepeaterCommandLineConfiguration {
 
     SiriClient siriClient = siriRepeater.getSiriClient();
     SiriServer siriServer = siriRepeater.getSiriServer();
-    SiriSubscriptionManager subscriptionManager = siriServer.getSubscriptionManager();
+    SiriServerSubscriptionManager subscriptionManager = siriServer.getSubscriptionManager();
 
     /**
      * Handle command line options
@@ -187,13 +187,13 @@ public class SiriRepeaterCommandLineConfiguration {
       siriServer.setIdentity(cli.getOptionValue(ARG_ID));
     }
     if (cli.hasOption(ARG_CLIENT_URL))
-      siriClient.setClientUrl(cli.getOptionValue(ARG_CLIENT_URL));
+      siriClient.setUrl(cli.getOptionValue(ARG_CLIENT_URL));
     if (cli.hasOption(ARG_PRIVATE_CLIENT_URL))
-      siriClient.setPrivateClientUrl(cli.getOptionValue(ARG_PRIVATE_CLIENT_URL));
+      siriClient.setPrivateUrl(cli.getOptionValue(ARG_PRIVATE_CLIENT_URL));
     if (cli.hasOption(ARG_REPEATER_URL))
-      siriServer.setServerUrl(cli.getOptionValue(ARG_REPEATER_URL));
+      siriServer.setUrl(cli.getOptionValue(ARG_REPEATER_URL));
     if (cli.hasOption(ARG_PRIVATE_REPEATER_URL))
-      siriServer.setPrivateServerUrl(cli.getOptionValue(ARG_PRIVATE_REPEATER_URL));
+      siriServer.setPrivateUrl(cli.getOptionValue(ARG_PRIVATE_REPEATER_URL));
 
     addRequestorConsumerAddressDefaults(cli, subscriptionManager);
 
@@ -235,8 +235,8 @@ public class SiriRepeaterCommandLineConfiguration {
       SiriJettyClient jettyClient = (SiriJettyClient) client;
       SiriJettyServer jettyServer = (SiriJettyServer) server;
 
-      URL clientUrl = jettyClient.getInternalUrlToBind(true);
-      URL serverUrl = jettyServer.getInternalUrlToBind();
+      URL clientUrl = jettyClient.getInternalUrlToBind(false);
+      URL serverUrl = jettyServer.getInternalUrlToBind(false);
 
       if (clientUrl.getPort() == serverUrl.getPort()) {
 
@@ -274,7 +274,7 @@ public class SiriRepeaterCommandLineConfiguration {
   }
 
   private void addRequestorConsumerAddressDefaults(CommandLine cli,
-      SiriSubscriptionManager subscriptionManager) {
+      SiriServerSubscriptionManager subscriptionManager) {
 
     if (cli.hasOption(ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT)) {
 

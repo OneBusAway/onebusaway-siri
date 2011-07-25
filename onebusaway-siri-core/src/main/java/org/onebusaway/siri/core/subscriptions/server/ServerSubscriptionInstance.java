@@ -1,18 +1,20 @@
-package org.onebusaway.siri.core;
+package org.onebusaway.siri.core.subscriptions.server;
 
 import java.util.List;
 
+import org.onebusaway.siri.core.ESiriModuleType;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
+import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 
 class ServerSubscriptionInstance {
 
+  private final SubscriptionId id;
+
   private final ServerSubscriptionChannel channel;
 
   private final ESiriModuleType moduleType;
-
-  private final String subscriptionId;
 
   private final String messageId;
 
@@ -20,20 +22,20 @@ class ServerSubscriptionInstance {
 
   private final List<SiriModuleDeliveryFilter> filters;
 
-  public ServerSubscriptionInstance(ServerSubscriptionChannel channel,
-      ESiriModuleType moduleType, String subscriptionId, String messageId,
-      AbstractSubscriptionStructure moduleSubscription,
+  public ServerSubscriptionInstance(SubscriptionId id,
+      ServerSubscriptionChannel channel, ESiriModuleType moduleType,
+      String messageId, AbstractSubscriptionStructure moduleSubscription,
       List<SiriModuleDeliveryFilter> filters) {
+    this.id = id;
     this.channel = channel;
     this.moduleType = moduleType;
-    this.subscriptionId = subscriptionId;
     this.messageId = messageId;
     this.moduleSubscription = moduleSubscription;
     this.filters = filters;
   }
 
-  public ServerSubscriptionInstanceId getId() {
-    return new ServerSubscriptionInstanceId(channel.getId(), subscriptionId);
+  public SubscriptionId getId() {
+    return id;
   }
 
   public ServerSubscriptionChannel getChannel() {
@@ -42,10 +44,6 @@ class ServerSubscriptionInstance {
 
   public ESiriModuleType getModuleType() {
     return moduleType;
-  }
-
-  public String getSubscriptionId() {
-    return subscriptionId;
   }
 
   public String getMessageId() {
@@ -62,10 +60,8 @@ class ServerSubscriptionInstance {
 
   @Override
   public String toString() {
-    ServerSubscriptionChannelId channelId = channel.getId();
-    return "SubscriptionInstance(subscriptionId=" + channelId.getSubscriberId()
-        + " consumerAddress=" + channelId.getAddress() + " subId="
-        + subscriptionId + ")";
+    return "SubscriptionInstance(id=" + id + " address=" + channel.getAddress()
+        + ")";
   }
 
 }

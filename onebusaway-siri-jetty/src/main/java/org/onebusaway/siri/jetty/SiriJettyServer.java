@@ -37,8 +37,8 @@ public class SiriJettyServer extends SiriServer {
 
     SubscriptionServerServlet servlet = new SubscriptionServerServlet();
     servlet.setSiriListener(this);
-
-    URL url = getInternalUrlToBind();
+    
+    URL url = getInternalUrlToBind(false);
 
     if (_webServer == null)
       _webServer = new Server(url.getPort());

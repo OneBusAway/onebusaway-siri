@@ -1,4 +1,4 @@
-package org.onebusaway.siri.core.subscriptions;
+package org.onebusaway.siri.core.subscriptions.client;
 
 import org.onebusaway.siri.core.SiriClient;
 import org.slf4j.Logger;

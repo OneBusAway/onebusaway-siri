@@ -20,6 +20,7 @@ import org.onebusaway.siri.core.versioning.ESiriVersion;
 
 import uk.org.siri.siri.AbstractServiceRequestStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
+import uk.org.siri.siri.CheckStatusRequestStructure;
 import uk.org.siri.siri.DirectionRefStructure;
 import uk.org.siri.siri.EstimatedTimetableRequestStructure;
 import uk.org.siri.siri.EstimatedTimetableSubscriptionStructure;
@@ -141,6 +142,21 @@ public class SiriClientRequestFactory {
 
     }
 
+    return request;
+  }
+  
+  public SiriClientRequest createCheckStatusRequest(
+      Map<String, String> args) {
+
+    SiriClientRequest request = new SiriClientRequest();
+    processCommonArgs(args, request);
+
+    CheckStatusRequestStructure checkStatusRequest = new CheckStatusRequestStructure();
+
+    Siri payload = new Siri();
+    payload.setCheckStatusRequest(checkStatusRequest);
+    request.setPayload(payload);
+    
     return request;
   }
 

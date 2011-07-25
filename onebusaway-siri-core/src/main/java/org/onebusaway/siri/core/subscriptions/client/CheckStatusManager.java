@@ -1,4 +1,4 @@
-package org.onebusaway.siri.core.subscriptions;
+package org.onebusaway.siri.core.subscriptions.client;
 
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;

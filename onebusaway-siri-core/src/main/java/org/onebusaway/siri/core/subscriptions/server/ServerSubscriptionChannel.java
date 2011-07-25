@@ -1,43 +1,43 @@
-package org.onebusaway.siri.core;
+package org.onebusaway.siri.core.subscriptions.server;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 
+import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
-public class ServerSubscriptionChannel {
+class ServerSubscriptionChannel {
 
-  private final ServerSubscriptionChannelId id;
+  /**
+   * This is the address where service deliveries will be sent. It uniquely
+   * identifies the channel.
+   */
+  private final String address;
 
   private final ESiriVersion targetVersion;
 
-  private final ConcurrentMap<String, ServerSubscriptionInstance> _subscriptions = new ConcurrentHashMap<String, ServerSubscriptionInstance>();
+  private final Set<SubscriptionId> subscriptions = new HashSet<SubscriptionId>();
 
   private long heartbeatInterval = 0;
 
   private ScheduledFuture<?> heartbeatTask;
 
-  public ServerSubscriptionChannel(ServerSubscriptionChannelId id,
-      ESiriVersion targetVersion) {
-    this.id = id;
+  public ServerSubscriptionChannel(String address, ESiriVersion targetVersion) {
+    this.address = address;
     this.targetVersion = targetVersion;
   }
 
-  public ServerSubscriptionChannelId getId() {
-    return id;
+  public String getAddress() {
+    return address;
   }
 
   public ESiriVersion getTargetVersion() {
     return targetVersion;
   }
 
-  public String getConsumerAddress() {
-    return id.getAddress();
-  }
-
-  public ConcurrentMap<String, ServerSubscriptionInstance> getSubscriptions() {
-    return _subscriptions;
+  public Set<SubscriptionId> getSubscriptions() {
+    return subscriptions;
   }
 
   public long getHeartbeatInterval() {

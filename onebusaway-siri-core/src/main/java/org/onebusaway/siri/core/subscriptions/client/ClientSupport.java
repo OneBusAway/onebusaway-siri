@@ -1,4 +1,4 @@
-package org.onebusaway.siri.core.subscriptions;
+package org.onebusaway.siri.core.subscriptions.client;
 
 import java.util.List;
 
@@ -7,6 +7,7 @@ import org.onebusaway.siri.core.SiriClient;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriTypeFactory;
 import org.onebusaway.siri.core.exceptions.SiriMissingArgumentException;
+import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -16,9 +16,10 @@ import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriClientRequestFactory;
 import org.onebusaway.siri.core.SiriLibrary;
+import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
-import org.onebusaway.siri.core.subscriptions.SiriClientSubscriptionManager;
+import org.onebusaway.siri.core.subscriptions.client.SiriClientSubscriptionManager;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.onebusaway.siri.jetty.SiriJettyClient;
 
@@ -31,7 +32,9 @@ public class SiriClientMain {
 
   private static final String ARG_SUBSCRIBE = "subscribe";
 
-  private static final String ARG_TERMINATE_SUBSCRIPTIONS = "terminateSubscriptions";
+  private static final String ARG_CHECK_STATUS = "checkStatus";
+
+  private static final String ARG_TERMINATE_SUBSCRIPTION = "terminateSubscription";
 
   private static final String ARG_CLIENT_URL = "clientUrl";
 
@@ -76,10 +79,10 @@ public class SiriClientMain {
       _client.setIdentity(cli.getOptionValue(ARG_ID));
 
     if (cli.hasOption(ARG_CLIENT_URL))
-      _client.setClientUrl(cli.getOptionValue(ARG_CLIENT_URL));
+      _client.setUrl(cli.getOptionValue(ARG_CLIENT_URL));
 
     if (cli.hasOption(ARG_PRIVATE_CLIENT_URL))
-      _client.setPrivateClientUrl(cli.getOptionValue(ARG_PRIVATE_CLIENT_URL));
+      _client.setPrivateUrl(cli.getOptionValue(ARG_PRIVATE_CLIENT_URL));
 
     if (cli.hasOption(ARG_LOG_RAW_XML))
       _client.setLogRawXml(true);
@@ -108,38 +111,18 @@ public class SiriClientMain {
     Thread shutdownHook = new Thread(new ShutdownHookRunnable());
     Runtime.getRuntime().addShutdownHook(shutdownHook);
 
+    _client.addServiceDeliveryHandler(new ServiceDeliveryHandlerImpl());
+
     _client.start();
 
+    ERequestType requestType = getRequestType(cli);
     SiriClientRequestFactory factory = new SiriClientRequestFactory();
 
-    if (cli.hasOption(ARG_TERMINATE_SUBSCRIPTIONS)) {
-
-      _client.addServiceDeliveryHandler(new ServiceDeliveryHandlerImpl());
-
-      for (String arg : args) {
-        SiriClientRequest request = getLineAsTerminateSubscriptionRequest(
-            factory, arg);
-        _client.handleRequest(request);
-      }
-
-    } else if (cli.hasOption(ARG_SUBSCRIBE)) {
-
-      _client.addServiceDeliveryHandler(new ServiceDeliveryHandlerImpl());
-
-      for (String arg : args) {
-        SiriClientRequest request = getLineAsSubscriptionRequest(factory, arg);
-        _client.handleRequest(request);
-      }
-
-    } else {
-
-      for (String arg : args) {
-
-        SiriClientRequest request = getLineAsServiceRequest(factory, arg);
-        Siri delivery = _client.handleRequestWithResponse(request);
-
+    for (String arg : args) {
+      SiriClientRequest request = getLineAsRequest(requestType, factory, arg);
+      Siri delivery = _client.handleRequestWithResponse(request);
+      if (delivery != null)
         printAsXml(delivery);
-      }
     }
   }
 
@@ -147,38 +130,34 @@ public class SiriClientMain {
    * Private Methods
    ****/
 
-  private SiriClientRequest getLineAsSubscriptionRequest(
-      SiriClientRequestFactory factory, String arg) {
-
-    try {
-      Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
-      return factory.createSubscriptionRequest(subArgs);
-    } catch (SiriUnknownVersionException ex) {
-      handleUnknownSiriVersion(arg, ex);
-    }
-
-    return null;
+  private ERequestType getRequestType(CommandLine cli) {
+    if (cli.hasOption(ARG_CHECK_STATUS))
+      return ERequestType.CHECK_STATUS;
+    if (cli.hasOption(ARG_SUBSCRIBE))
+      return ERequestType.SUBSCRIPTION;
+    if (cli.hasOption(ARG_TERMINATE_SUBSCRIPTION))
+      return ERequestType.TERMINATE_SUBSCRIPTION;
+    return ERequestType.SERVICE_REQUEST;
   }
 
-  private SiriClientRequest getLineAsTerminateSubscriptionRequest(
+  private SiriClientRequest getLineAsRequest(ERequestType requestType,
       SiriClientRequestFactory factory, String arg) {
 
     try {
       Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
-      return factory.createTerminateSubscriptionRequest(subArgs);
-    } catch (SiriUnknownVersionException ex) {
-      handleUnknownSiriVersion(arg, ex);
-    }
+      switch (requestType) {
+        case CHECK_STATUS:
+          return factory.createCheckStatusRequest(subArgs);
+        case SERVICE_REQUEST:
+          return factory.createServiceRequest(subArgs);
+        case SUBSCRIPTION:
+          return factory.createSubscriptionRequest(subArgs);
+        case TERMINATE_SUBSCRIPTION:
+          return factory.createTerminateSubscriptionRequest(subArgs);
+        default:
+          throw new SiriException("unknown request type=" + requestType);
+      }
 
-    return null;
-  }
-
-  private SiriClientRequest getLineAsServiceRequest(
-      SiriClientRequestFactory factory, String arg) {
-
-    try {
-      Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
-      return factory.createServiceRequest(subArgs);
     } catch (SiriUnknownVersionException ex) {
       handleUnknownSiriVersion(arg, ex);
     }
@@ -231,8 +210,9 @@ public class SiriClientMain {
     options.addOption(ARG_OUTPUT, true, "output");
     options.addOption(ARG_RESPONSE_TIMEOUT, true, "response timeout");
     options.addOption(ARG_SUBSCRIBE, false, "subscribe (vs one-time request)");
-    options.addOption(ARG_TERMINATE_SUBSCRIPTIONS, false,
+    options.addOption(ARG_TERMINATE_SUBSCRIPTION, false,
         "terminate the specified subscriptions");
+    options.addOption(ARG_CHECK_STATUS, false, "check status");
     options.addOption(ARG_NO_SUBSCRIPTIONS, false, "");
     options.addOption(ARG_LOG_RAW_XML, false, "log raw xml");
   }
@@ -262,4 +242,7 @@ public class SiriClientMain {
     }
   }
 
+  private enum ERequestType {
+    SERVICE_REQUEST, SUBSCRIPTION, CHECK_STATUS, TERMINATE_SUBSCRIPTION
+  }
 }

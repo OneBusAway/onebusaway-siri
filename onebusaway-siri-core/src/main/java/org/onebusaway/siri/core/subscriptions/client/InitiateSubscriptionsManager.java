@@ -1,4 +1,4 @@
-package org.onebusaway.siri.core.subscriptions;
+package org.onebusaway.siri.core.subscriptions.client;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentMap;
 import org.onebusaway.siri.core.ESiriModuleType;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriLibrary;
+import org.onebusaway.siri.core.exceptions.SiriSubscriptionModuleTypeConflictException;
+import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,14 +31,10 @@ class InitiateSubscriptionsManager extends AbstractManager {
    */
   private ConcurrentMap<SubscriptionId, ClientPendingSubscription> _pendingSubscriptionRequests = new ConcurrentHashMap<SubscriptionId, ClientPendingSubscription>();
 
-  public boolean registerPendingSubscription(SiriClientRequest request,
+  public void registerPendingSubscription(SiriClientRequest request,
       SubscriptionRequest subscriptionRequest) {
 
     _log.debug("register pending subscription request");
-
-    /**
-     * TODO : throw exception instead of using true / false return code?
-     */
 
     Map<SubscriptionId, ClientPendingSubscription> pendingSubscriptions = new HashMap<SubscriptionId, ClientPendingSubscription>();
 
@@ -54,8 +52,7 @@ class InitiateSubscriptionsManager extends AbstractManager {
          * Check to make sure that the new subscription doesn't conflict with an
          * existing subscription, either active or pending
          */
-        if (!checkForModuleTypeConflict(subId, moduleType, pendingSubscriptions))
-          return false;
+        checkForModuleTypeConflict(subId, moduleType, pendingSubscriptions);
 
         ClientPendingSubscription pending = new ClientPendingSubscription(
             subId, request, moduleType, subRequest);
@@ -75,8 +72,6 @@ class InitiateSubscriptionsManager extends AbstractManager {
     PendingSubscriptionTimeoutTask task = new PendingSubscriptionTimeoutTask(
         pendingSubscriptions.keySet());
     _subscriptionManager.scheduleResponseTimeoutTask(task);
-
-    return true;
   }
 
   public void handleSubscriptionResponse(SubscriptionResponseStructure response) {
@@ -109,37 +104,40 @@ class InitiateSubscriptionsManager extends AbstractManager {
 
   /**
    * Check to make sure that a new subscription request doesn't conflict with an
-   * existing subscription, either active or pending
+   * existing subscription, either active or pending.
    * 
-   * @return true if there was no conflict, otherwise false
+   * @throws SiriSubscriptionModuleTypeConflictException if an exception is
+   *           found
    */
-  private boolean checkForModuleTypeConflict(SubscriptionId subId,
+  private void checkForModuleTypeConflict(SubscriptionId subId,
       ESiriModuleType moduleType,
-      Map<SubscriptionId, ClientPendingSubscription> pendingSubscriptions) {
+      Map<SubscriptionId, ClientPendingSubscription> pendingSubscriptions)
+      throws SiriSubscriptionModuleTypeConflictException {
 
     ESiriModuleType existingModuleType = _subscriptionManager.getModuleTypeForSubscriptionId(subId);
 
     if (existingModuleType != null && existingModuleType != moduleType) {
       _support.logWarningAboutActiveSubscriptionsWithDifferentModuleTypes(
           subId, moduleType, existingModuleType);
-      return false;
+      throw new SiriSubscriptionModuleTypeConflictException(subId,
+          existingModuleType, moduleType);
     }
 
     ClientPendingSubscription pending = _pendingSubscriptionRequests.get(subId);
     if (pending != null && pending.getModuleType() != moduleType) {
       _support.logWarningAboutPendingSubscriptionsWithDifferentModuleTypes(
           subId, moduleType, pending);
-      return false;
+      throw new SiriSubscriptionModuleTypeConflictException(subId,
+          pending.getModuleType(), moduleType);
     }
 
     pending = pendingSubscriptions.get(subId);
     if (pending != null && pending.getModuleType() != moduleType) {
       _support.logWarningAboutPendingSubscriptionsWithDifferentModuleTypes(
           subId, moduleType, pending);
-      return false;
+      throw new SiriSubscriptionModuleTypeConflictException(subId,
+          pending.getModuleType(), moduleType);
     }
-
-    return true;
   }
 
   /****

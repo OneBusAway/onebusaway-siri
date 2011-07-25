@@ -38,7 +38,7 @@ public class SiriJettyClient extends SiriClient {
     SubscriptionServerServlet servlet = new SubscriptionServerServlet();
     servlet.setSiriListener(this);
 
-    URL url = getInternalUrlToBind(true);
+    URL url = getInternalUrlToBind(false);
 
     if (_webServer == null)
       _webServer = new Server(url.getPort());
@@ -46,6 +46,8 @@ public class SiriJettyClient extends SiriClient {
     if (_rootContext == null)
       _rootContext = new Context(_webServer, "/", Context.SESSIONS);
 
+    _log.debug("adding servlet path: {}", url.getPath());
+    
     _rootContext.addServlet(new ServletHolder(servlet), url.getPath());
 
     try {
