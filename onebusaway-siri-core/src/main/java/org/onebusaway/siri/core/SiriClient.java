@@ -41,8 +41,6 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    */
   private boolean _waitForTerminateSubscriptionResponseOnExit = true;
 
-  private boolean _logRawXml = false;
-
   public SiriClient() {
     setUrl("http://*:8080/client.xml");
   }

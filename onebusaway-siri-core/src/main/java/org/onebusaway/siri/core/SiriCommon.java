@@ -80,7 +80,7 @@ public class SiriCommon {
    */
   private InetAddress _localAddress;
 
-  private boolean _logRawXml = false;
+  protected boolean _logRawXml = false;
 
   protected ScheduledExecutorService _executor;
 
