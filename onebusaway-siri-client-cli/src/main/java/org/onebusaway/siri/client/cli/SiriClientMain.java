@@ -15,6 +15,7 @@ import org.apache.commons.cli.PosixParser;
 import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriClientRequestFactory;
+import org.onebusaway.siri.core.SiriCommon.ELogRawXmlType;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
@@ -30,12 +31,6 @@ public class SiriClientMain {
 
   private static final String ARG_ID = "id";
 
-  private static final String ARG_SUBSCRIBE = "subscribe";
-
-  private static final String ARG_CHECK_STATUS = "checkStatus";
-
-  private static final String ARG_TERMINATE_SUBSCRIPTION = "terminateSubscription";
-
   private static final String ARG_CLIENT_URL = "clientUrl";
 
   private static final String ARG_PRIVATE_CLIENT_URL = "privateClientUrl";
@@ -47,6 +42,12 @@ public class SiriClientMain {
   private static final String ARG_NO_SUBSCRIPTIONS = "noSubscriptions";
 
   private static final String ARG_LOG_RAW_XML = "logRawXml";
+
+  private static final String ARG_SUBSCRIBE = "subscribe";
+
+  private static final String ARG_CHECK_STATUS = "checkStatus";
+
+  private static final String ARG_TERMINATE_SUBSCRIPTION = "terminateSubscription";
 
   private SiriJettyClient _client;
 
@@ -64,6 +65,11 @@ public class SiriClientMain {
   }
 
   public void run(String[] args) throws Exception {
+
+    if (SiriLibrary.needsHelp(args)) {
+      printUsage();
+      System.exit(0);
+    }
 
     Options options = new Options();
     buildOptions(options);
@@ -84,8 +90,11 @@ public class SiriClientMain {
     if (cli.hasOption(ARG_PRIVATE_CLIENT_URL))
       _client.setPrivateUrl(cli.getOptionValue(ARG_PRIVATE_CLIENT_URL));
 
-    if (cli.hasOption(ARG_LOG_RAW_XML))
-      _client.setLogRawXml(true);
+    if (cli.hasOption(ARG_LOG_RAW_XML)) {
+      String value = cli.getOptionValue(ARG_LOG_RAW_XML);
+      ELogRawXmlType type = ELogRawXmlType.valueOf(value.toUpperCase());
+      _client.setLogRawXmlType(type);
+    }
 
     if (cli.hasOption(ARG_OUTPUT)) {
       String value = cli.getOptionValue(ARG_OUTPUT);
@@ -209,12 +218,13 @@ public class SiriClientMain {
     options.addOption(ARG_PRIVATE_CLIENT_URL, true, "siri private client url");
     options.addOption(ARG_OUTPUT, true, "output");
     options.addOption(ARG_RESPONSE_TIMEOUT, true, "response timeout");
+    options.addOption(ARG_LOG_RAW_XML, true, "log raw xml");
+    options.addOption(ARG_NO_SUBSCRIPTIONS, false, "");
+
     options.addOption(ARG_SUBSCRIBE, false, "subscribe (vs one-time request)");
     options.addOption(ARG_TERMINATE_SUBSCRIPTION, false,
         "terminate the specified subscriptions");
     options.addOption(ARG_CHECK_STATUS, false, "check status");
-    options.addOption(ARG_NO_SUBSCRIPTIONS, false, "");
-    options.addOption(ARG_LOG_RAW_XML, false, "log raw xml");
   }
 
   private class ServiceDeliveryHandlerImpl implements

@@ -1,12 +1,28 @@
-usage:
+Usage:
   [-args] request [request ...]
 
-args:
+Args:
   -id=value                       the client's SIRI participant id
-  -subscribe                      indicates that the client should perform a publish/subscribe (default is request/response)
   -clientUrl=url                  the url your client publishes to a server in publish/subscribe
   -privateClientUrl=url           the internal url your client will actually bind to, if specified (default=clientUrl)
+  -output=path                    write SIRI payload output to the specified path
+  -responseTimeout=time           time, in seconds, to wait for a response from a SIRI endpoint after a request
+  -logRawXml=..                   if specified, indicates the raw SIRI request and response XML should be logged to the console
+                                  valid values are "NONE" (the default), "DATA", "CONTROL", and "ALL"
+  
+  -subscribe                      the client should perform a publish/subscribe (default is request/response)
+  -terminateSubscription		  the client should send a TerminateSubscriptionRequest and wait for a response
+  -checkStatus                    the client should send a CheckStatus request and wait for a response
 
-request examples:
-  Url=http://host:port/path,ModuleType=VEHICLE_MONITORING
-  Url=http://host:port/path,ModuleType=VEHICLE_MONITORING,VehicleRef=1234
+Request Examples:
+
+     Requests control the connections that are made to remote SIRI data sources.
+  At a minimum, it includes a url and a SIRI module type.  However, other
+  options are available as well.  Here is a simple example to get you started:
+ 
+    Url=http://host:port/path,ModuleType=VEHICLE_MONITORING
+    Url=http://host:port/path,ModuleType=VEHICLE_MONITORING,VehicleRef=1234
+  
+  For more info on requests, see:
+  
+    http://developer.onebusaway.org/modules/onebusaway-siri/${project.version}/cli-request-spec.html 

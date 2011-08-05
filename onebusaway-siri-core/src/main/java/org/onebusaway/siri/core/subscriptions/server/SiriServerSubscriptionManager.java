@@ -231,7 +231,12 @@ public class SiriServerSubscriptionManager {
     for (SubscriptionId id : idsToTerminate) {
 
       TerminationResponseStatus status = new TerminationResponseStatus();
-      status.setRequestMessageRef(request.getMessageIdentifier());
+      
+      /**
+       * Though we can technically set this here, I think it makes more sense in the parent response structure
+       */
+      // status.setRequestMessageRef(request.getMessageIdentifier());
+      
       status.setResponseTimestamp(timestamp);
       status.setStatus(Boolean.TRUE);
       status.setSubscriberRef(subscriberRef);

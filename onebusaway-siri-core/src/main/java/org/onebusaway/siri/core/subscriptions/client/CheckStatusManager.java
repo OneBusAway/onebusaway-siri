@@ -104,9 +104,13 @@ class CheckStatusManager extends AbstractManager {
 
     Siri siri = new Siri();
     siri.setCheckStatusRequest(checkStatus);
+    
+    String url = channel.getCheckStatusUrl();
+    if( url == null)
+      url = channel.getAddress();
 
     SiriClientRequest request = new SiriClientRequest();
-    request.setTargetUrl(channel.getAddress());
+    request.setTargetUrl(url);
     request.setTargetVersion(channel.getTargetVersion());
     request.setPayload(siri);
 

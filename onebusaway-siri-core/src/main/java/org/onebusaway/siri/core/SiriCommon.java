@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -61,6 +62,10 @@ import uk.org.siri.siri.VehicleMonitoringSubscriptionStructure;
 
 public class SiriCommon {
 
+  public enum ELogRawXmlType {
+    NONE, CONTROL, DATA, ALL
+  }
+
   private static Logger _log = LoggerFactory.getLogger(SiriCommon.class);
 
   private JAXBContext _jaxbContext;
@@ -80,7 +85,7 @@ public class SiriCommon {
    */
   private InetAddress _localAddress;
 
-  protected boolean _logRawXml = false;
+  protected ELogRawXmlType _logRawXmlType = ELogRawXmlType.NONE;
 
   protected ScheduledExecutorService _executor;
 
@@ -188,12 +193,12 @@ public class SiriCommon {
     _localAddress = localAddress;
   }
 
-  public boolean isLogRawXml() {
-    return _logRawXml;
+  public ELogRawXmlType getLogRawXmlType() {
+    return _logRawXmlType;
   }
 
-  public void setLogRawXml(boolean logRawXml) {
-    _logRawXml = logRawXml;
+  public void setLogRawXmlType(ELogRawXmlType logRawXmlType) {
+    _logRawXmlType = logRawXmlType;
   }
 
   public ScheduledExecutorService getExecutor() {
@@ -247,26 +252,37 @@ public class SiriCommon {
 
     String content = marshallToString(versionedPayload);
 
-    if (_logRawXml)
+    if (isRawDataLogged(payload)) {
       _log.info("logging raw xml request:\n=== REQUEST BEGIN ===\n" + content
           + "\n=== REQUEST END ===");
+    }
 
-    HttpResponse response = sendHttpRequest(request.getTargetUrl(), content);
+    HttpResponse response = processRawContentRequestWithResponse(request,
+        content);
+
+    if (response == null)
+      return null;
 
     HttpEntity entity = response.getEntity();
 
+    String responseContent = null;
     Object responseData = null;
+
     try {
 
       Reader responseReader = new InputStreamReader(entity.getContent());
 
       _log.debug("response content length: {}", entity.getContentLength());
 
-      if (_logRawXml) {
+      /**
+       * Opportunistically skip capturing the response in an intermediate string
+       * if we don't have to
+       */
+      if (_logRawXmlType != ELogRawXmlType.NONE) {
         StringBuilder b = new StringBuilder();
         responseReader = copyReaderToStringBuilder(responseReader, b);
-        _log.info("logging raw xml response:\n=== RESPONSE BEGIN ===\n"
-            + b.toString() + "\n=== RESPONSE END ===");
+        responseContent = b.toString();
+
       }
 
       if (entity.getContentLength() != 0) {
@@ -279,14 +295,27 @@ public class SiriCommon {
       throw new SiriSerializationException(ex);
     }
 
-    if (responseData != null) {
-      if (responseData instanceof Siri) {
-        Siri siri = (Siri) responseData;
-        handleSiriResponse(siri, false);
+    if (responseData != null && responseData instanceof Siri) {
+
+      Siri siri = (Siri) responseData;
+
+      if (isRawDataLogged(siri)) {
+        _log.info("logging raw xml response:\n=== RESPONSE BEGIN ===\n"
+            + responseContent + "\n=== RESPONSE END ===");
       }
+
+      handleSiriResponse(siri, false);
     }
 
     return (T) responseData;
+  }
+
+  protected void processRequestWithAsynchronousResponse(
+      SiriClientRequest request) {
+
+    AsynchronousClientConnectionAttempt attempt = new AsynchronousClientConnectionAttempt(
+        request);
+    _executor.execute(attempt);
   }
 
   protected void handleSiriResponse(Siri siri, boolean asynchronousResponse) {
@@ -495,6 +524,26 @@ public class SiriCommon {
    * 
    ****/
 
+  protected boolean isRawDataLogged(Siri payload) {
+    switch (_logRawXmlType) {
+      case NONE:
+        return false;
+      case ALL:
+        return true;
+      case DATA:
+        return payload.getServiceDelivery() != null;
+      case CONTROL:
+        return payload.getServiceDelivery() == null;
+      default:
+        throw new IllegalStateException("unknown ELogRawXmlType="
+            + _logRawXmlType);
+    }
+  }
+
+  /****
+   * 
+   ****/
+
   @SuppressWarnings("unchecked")
   public <T> T unmarshall(InputStream in) {
     try {
@@ -536,6 +585,95 @@ public class SiriCommon {
 
   protected ScheduledExecutorService createExecutor() {
     return Executors.newSingleThreadScheduledExecutor();
+  }
+
+  /**
+   * This method encapsulates our reconnection behavior.
+   * 
+   * @param request
+   * @param content
+   * @return
+   */
+  protected HttpResponse processRawContentRequestWithResponse(
+      SiriClientRequest request, String content) {
+
+    String url = getUrlForRequest(request);
+
+    if (request.getReconnectionAttempts() != 0) {
+
+      try {
+
+        HttpResponse response = sendHttpRequest(url, content);
+
+        /**
+         * Reset our connection error count and note that we've successfully
+         * reconnected if the we've had problems before
+         */
+        if (request.getConnectionErrorCount() > 0)
+          _log.info("successfully reconnected to " + url);
+        request.resetConnectionErrorCount();
+
+        return response;
+
+      } catch (SiriConnectionException ex) {
+
+        String message = "error connecting to " + url
+            + " (remainingConnectionAttempts="
+            + request.getRemainingReconnectionAttempts()
+            + " connectionErrorCount=" + request.getConnectionErrorCount()
+            + ")";
+
+        /**
+         * We display the full exception on the first connection error, but hide
+         * it on recurring errors
+         */
+        if (request.getConnectionErrorCount() == 0) {
+          _log.warn(message, ex);
+        } else {
+          _log.warn(message);
+        }
+
+        request.incrementConnectionErrorCount();
+
+        if (request.getRemainingReconnectionAttempts() == 0) {
+          return null;
+        }
+
+        /**
+         * We have some reconnection attempts remaining, so we schedule another
+         * connection attempt
+         */
+        request.decrementRemainingReconnctionAttempts();
+
+        AsynchronousClientConnectionAttempt asyncAttempt = new AsynchronousClientConnectionAttempt(
+            request);
+        _executor.schedule(asyncAttempt, request.getReconnectionInterval(),
+            TimeUnit.SECONDS);
+
+        /**
+         * Note: we swallow up the exception here, meaning the client won't know
+         * there is an error. Might there be situations where the client wants
+         * to know it was an error, even if they've specified reconnection
+         * semantics?
+         */
+        return null;
+      }
+
+    } else {
+
+      return sendHttpRequest(url, content);
+    }
+  }
+
+  protected String getUrlForRequest(SiriClientRequest request) {
+    Siri payload = request.getPayload();
+    if (payload.getCheckStatusRequest() != null
+        && request.getCheckStatusUrl() != null)
+      return request.getCheckStatusUrl();
+    if (payload.getTerminateSubscriptionRequest() != null
+        && request.getManageSubscriptionUrl() != null)
+      return request.getManageSubscriptionUrl();
+    return request.getTargetUrl();
   }
 
   protected HttpResponse sendHttpRequest(String url, String content) {
@@ -665,6 +803,31 @@ public class SiriCommon {
       return DatatypeFactory.newInstance();
     } catch (DatatypeConfigurationException e) {
       throw new IllegalStateException(e);
+    }
+  }
+
+  /**
+   * A runnable task that attempts a connection from a SIRI client to a SIRI
+   * server. Handles reconnection semantics.
+   * 
+   * @author bdferris
+   */
+  private class AsynchronousClientConnectionAttempt implements Runnable {
+
+    private final SiriClientRequest request;
+
+    public AsynchronousClientConnectionAttempt(SiriClientRequest request) {
+      this.request = request;
+    }
+
+    @Override
+    public void run() {
+
+      try {
+        processRequestWithResponse(request);
+      } catch (Throwable ex) {
+        _log.error("error executing asynchronous client request", ex);
+      }
     }
   }
 }

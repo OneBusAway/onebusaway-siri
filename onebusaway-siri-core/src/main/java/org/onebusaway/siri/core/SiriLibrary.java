@@ -145,4 +145,12 @@ public class SiriLibrary {
     }
     return subArgs;
   }
+  
+  public static boolean needsHelp(String[] args) {
+    for (String arg : args) {
+      if (arg.equals("-h") || arg.equals("--help") || arg.equals("-help"))
+        return true;
+    }
+    return false;
+  }
 }

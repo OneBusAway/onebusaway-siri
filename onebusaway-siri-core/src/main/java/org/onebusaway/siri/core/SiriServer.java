@@ -235,6 +235,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
       TerminateSubscriptionRequestStructure request) {
 
     TerminateSubscriptionResponseStructure response = new TerminateSubscriptionResponseStructure();
+    response.setRequestMessageRef(request.getMessageIdentifier());
 
     List<TerminationResponseStatus> statuses = response.getTerminationResponseStatus();
 

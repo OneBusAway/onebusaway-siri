@@ -13,8 +13,10 @@ import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.AbstractServiceDeliveryStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
+import uk.org.siri.siri.CheckStatusResponseBodyStructure.ErrorCondition;
 import uk.org.siri.siri.CheckStatusResponseStructure;
 import uk.org.siri.siri.ErrorCodeStructure;
+import uk.org.siri.siri.MessageQualifierStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
 import uk.org.siri.siri.ServiceDeliveryErrorConditionStructure;
 import uk.org.siri.siri.Siri;
@@ -24,7 +26,6 @@ import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.SubscriptionResponseStructure;
 import uk.org.siri.siri.TerminateSubscriptionRequestStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure;
-import uk.org.siri.siri.CheckStatusResponseBodyStructure.ErrorCondition;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure.TerminationResponseStatus;
 
 /**
@@ -58,10 +59,17 @@ class ClientSupport {
   }
 
   public SubscriptionId getSubscriptionIdForTerminationStatusResponse(
-      TerminationResponseStatus status) {
+      TerminationResponseStatus status, String subscriberId) {
 
     ParticipantRefStructure subscriberRef = status.getSubscriberRef();
     SubscriptionQualifierStructure subscriptionRef = status.getSubscriptionRef();
+
+    /**
+     * TODO: If the subscriberRef has been specified directly, do we allow it to
+     * override?
+     */
+    if (subscriberRef == null || subscriberRef.getValue() == null)
+      subscriberRef = SiriTypeFactory.particpantRef(subscriberId);
 
     return getSubscriptionId(subscriberRef, subscriptionRef);
   }
@@ -90,10 +98,13 @@ class ClientSupport {
   }
 
   public SiriClientRequest getTerminateSubscriptionRequestForSubscriptions(
-      ClientSubscriptionChannel channel, String subscriberId,
+      ClientSubscriptionChannel channel, MessageQualifierStructure messageId,
+      String subscriberId,
       List<ClientSubscriptionInstance> subscriptionInstances) {
 
     TerminateSubscriptionRequestStructure terminateRequest = new TerminateSubscriptionRequestStructure();
+
+    terminateRequest.setMessageIdentifier(messageId);
 
     ParticipantRefStructure subscriberRef = SiriTypeFactory.particpantRef(subscriberId);
     terminateRequest.setSubscriberRef(subscriberRef);
@@ -110,8 +121,12 @@ class ClientSupport {
     Siri payload = new Siri();
     payload.setTerminateSubscriptionRequest(terminateRequest);
 
+    String url = channel.getManageSubscriptionUrl();
+    if (url == null)
+      url = channel.getAddress();
+
     SiriClientRequest request = new SiriClientRequest();
-    request.setTargetUrl(channel.getAddress());
+    request.setTargetUrl(url);
     request.setTargetVersion(channel.getTargetVersion());
     request.setPayload(payload);
     return request;
@@ -198,16 +213,31 @@ class ClientSupport {
     _log.warn(b.toString());
   }
 
+  public void logTerminateSubscriptionResponseWithoutRequestMessageRef(
+      TerminateSubscriptionResponseStructure response) {
+    StringBuilder b = new StringBuilder();
+    b.append("A <TerminateSubscriptionResponse/> was received with no <RequestMessageRef/> value: ");
+    if (response.getAddress() != null)
+      b.append(" address=").append(response.getAddress());
+    if (response.getResponderRef() != null
+        && response.getResponderRef().getValue() != null)
+      b.append(" responderRef=").append(response.getResponderRef().getValue());
+    _log.warn(b.toString());
+  }
+
   public void logUnknownTerminateSubscriptionResponse(
-      TerminateSubscriptionResponseStructure response, SubscriptionId subId) {
+      TerminateSubscriptionResponseStructure response) {
     StringBuilder b = new StringBuilder();
     b.append("A <TerminateSubscriptionResponse/> was received with no pending <TerminateSubscriptionRequest/> having been sent:");
     if (response.getAddress() != null)
       b.append(" address=").append(response.getAddress());
     if (response.getResponderRef() != null
         && response.getResponderRef().getValue() != null)
-      b.append(" responderRef=" + response.getResponderRef().getValue());
-    b.append(" subscriptionId=" + subId);
+      b.append(" responderRef=").append(response.getResponderRef().getValue());
+    if (response.getRequestMessageRef() != null
+        && response.getRequestMessageRef().getValue() != null)
+      b.append(" requestMessageRef=").append(
+          response.getRequestMessageRef().getValue());
     _log.warn(b.toString());
   }
 

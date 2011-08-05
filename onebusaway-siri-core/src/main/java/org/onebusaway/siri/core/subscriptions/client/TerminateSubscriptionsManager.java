@@ -12,10 +12,12 @@ import java.util.concurrent.TimeUnit;
 
 import org.onebusaway.collections.MappingLibrary;
 import org.onebusaway.siri.core.SiriClientRequest;
+import org.onebusaway.siri.core.SiriTypeFactory;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.org.siri.siri.MessageQualifierStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure.TerminationResponseStatus;
 
@@ -24,9 +26,10 @@ class TerminateSubscriptionsManager extends AbstractManager {
   private static final Logger _log = LoggerFactory.getLogger(TerminateSubscriptionsManager.class);
 
   /**
-   * This map contains pending subscription termination information
+   * This map contains pending subscription termination information by message
+   * id
    */
-  private ConcurrentMap<SubscriptionId, PendingTermination> _pendingSubscriptionTerminations = new ConcurrentHashMap<SubscriptionId, PendingTermination>();
+  private ConcurrentMap<String, PendingTermination> _pendingSubscriptionTerminations = new ConcurrentHashMap<String, PendingTermination>();
 
   public void setSubscriptionManager(
       SiriClientSubscriptionManager subscriptionManager) {
@@ -40,24 +43,40 @@ class TerminateSubscriptionsManager extends AbstractManager {
   public void handleTerminateSubscriptionResponse(
       TerminateSubscriptionResponseStructure response) {
 
+    MessageQualifierStructure messageIdRef = response.getRequestMessageRef();
+    if (messageIdRef == null || messageIdRef.getValue() == null) {
+      _support.logTerminateSubscriptionResponseWithoutRequestMessageRef(response);
+      return;
+    }
+
+    String messageId = messageIdRef.getValue();
+
+    PendingTermination pending = _pendingSubscriptionTerminations.remove(messageId);
+
+    if (pending == null) {
+      _support.logUnknownTerminateSubscriptionResponse(response);
+      return;
+    }
+
+    ScheduledFuture<?> timeoutTask = pending.getTimeoutTask();
+    timeoutTask.cancel(false);
+    
+    String subscriberId = pending.getSubscriberId();
+
     for (TerminationResponseStatus status : response.getTerminationResponseStatus()) {
 
-      SubscriptionId id = _support.getSubscriptionIdForTerminationStatusResponse(status);
-
-      PendingTermination pending = _pendingSubscriptionTerminations.remove(id);
-
-      if (pending == null) {
-        _support.logUnknownTerminateSubscriptionResponse(response, id);
-        continue;
-      }
+      /**
+       * We need to figure out which subscription this 'status' message belongs
+       * to, but it's tricky, because things can be optional.
+       */
+      
+      SubscriptionId id = _support.getSubscriptionIdForTerminationStatusResponse(status,subscriberId);
 
       if (status.isStatus()) {
 
         /**
          * Cancel the timeout task
          */
-        ScheduledFuture<?> timeoutTask = pending.getTimeoutTask();
-        timeoutTask.cancel(false);
 
         _subscriptionManager.removeSubscription(id);
 
@@ -65,12 +84,15 @@ class TerminateSubscriptionsManager extends AbstractManager {
         _support.logErrorInTerminateSubscriptionResponse(response, status, id);
       }
 
-      /**
-       * If a re-subscription has been requested, we just send the original
-       * subscription request
-       */
-      if (pending.isResubscribe())
-        _client.handleRequest(pending.getSubscriptionRequest());
+    }
+
+    /**
+     * If a re-subscription has been requested, we just send the original
+     * subscription request
+     */
+    if (pending.isResubscribe()) {
+      for (SiriClientRequest request : pending.getSubscriptionRequests())
+        _client.handleRequest(request);
     }
   }
 
@@ -79,11 +101,11 @@ class TerminateSubscriptionsManager extends AbstractManager {
     terminateSubscriptions(Arrays.asList(instance), resubscribeAfterTermination);
   }
 
-  public List<SubscriptionId> terminateSubscriptions(
+  public List<String> terminateSubscriptions(
       Collection<ClientSubscriptionInstance> instances,
       boolean resubscribeAfterTermination) {
 
-    List<SubscriptionId> pendingTermination = new ArrayList<SubscriptionId>();
+    List<String> pendingTerminationMessageIds = new ArrayList<String>();
 
     /**
      * First group active subscriptions by channel
@@ -108,48 +130,35 @@ class TerminateSubscriptionsManager extends AbstractManager {
         String subscriberId = entry.getKey();
         List<ClientSubscriptionInstance> subscriberInstances = entry.getValue();
 
-        /**
-         * TODO : Refactor this into terminate subscriptions manager?
-         */
+        MessageQualifierStructure messageId = SiriTypeFactory.randomMessageId();
+
         SiriClientRequest request = _support.getTerminateSubscriptionRequestForSubscriptions(
-            channel, subscriberId, subscriberInstances);
+            channel, messageId, subscriberId, subscriberInstances);
 
-        /**
-         * TODO: Thread-safety
-         */
+        List<SiriClientRequest> originalSubscriptionRequests = new ArrayList<SiriClientRequest>();
 
-        for (ClientSubscriptionInstance instance : subscriberInstances) {
+        for (ClientSubscriptionInstance instance : subscriberInstances)
+          originalSubscriptionRequests.add(instance.getRequest());
 
-          SubscriptionId id = instance.getSubscriptionId();
-          pendingTermination.add(id);
+        PendingSubscriptionTerminationTimeoutTask timeoutTask = new PendingSubscriptionTerminationTimeoutTask(
+            messageId.getValue());
+        ScheduledFuture<?> scheduled = _subscriptionManager.scheduleResponseTimeoutTask(timeoutTask);
 
-          PendingSubscriptionTerminationTimeoutTask timeoutTask = new PendingSubscriptionTerminationTimeoutTask(
-              id);
-          ScheduledFuture<?> scheduled = _subscriptionManager.scheduleResponseTimeoutTask(timeoutTask);
+        PendingTermination pending = new PendingTermination(scheduled,subscriberId,
+            resubscribeAfterTermination, originalSubscriptionRequests);
 
-          PendingTermination pending = new PendingTermination(scheduled,
-              resubscribeAfterTermination, instance.getRequest());
-
-          PendingTermination existing = _pendingSubscriptionTerminations.put(
-              id, pending);
-
-          if (existing != null) {
-            _log.warn("overwriting existing pending subscription termination request: "
-                + id);
-            ScheduledFuture<?> existingTask = existing.getTimeoutTask();
-            existingTask.cancel(false);
-          }
-        }
+        _pendingSubscriptionTerminations.put(messageId.getValue(), pending);
+        pendingTerminationMessageIds.add(messageId.getValue());
 
         _client.handleRequest(request);
       }
     }
 
-    return pendingTermination;
+    return pendingTerminationMessageIds;
   }
 
   public void waitForPendingSubscriptionTerminationResponses(
-      List<SubscriptionId> subscriptionIds, int responseTimeout) {
+      List<String> messageIds, int responseTimeout) {
 
     // We add a little buffer (500ms) just in case
     long waitUntil = System.currentTimeMillis() + responseTimeout * 1000 + 500;
@@ -157,7 +166,7 @@ class TerminateSubscriptionsManager extends AbstractManager {
     /**
      * TODO : Is there a better way to wait on a group of tasks?
      */
-    for (SubscriptionId id : subscriptionIds) {
+    for (String id : messageIds) {
 
       PendingTermination pending = _pendingSubscriptionTerminations.get(id);
 
@@ -183,27 +192,29 @@ class TerminateSubscriptionsManager extends AbstractManager {
 
   private class PendingSubscriptionTerminationTimeoutTask implements Runnable {
 
-    private final SubscriptionId _subscriptionId;
+    private final String _messageId;
 
-    public PendingSubscriptionTerminationTimeoutTask(
-        SubscriptionId subscriptionId) {
-      _subscriptionId = subscriptionId;
+    public PendingSubscriptionTerminationTimeoutTask(String messageId) {
+      _messageId = messageId;
     }
 
     @Override
     public void run() {
 
-      PendingTermination pending = _pendingSubscriptionTerminations.remove(_subscriptionId);
+      PendingTermination pending = _pendingSubscriptionTerminations.remove(_messageId);
+
       if (pending != null) {
         _log.warn("pending subscription termination expired before receiving a subscription termination response from server: "
-            + _subscriptionId);
+            + _messageId);
 
         /**
          * Even if the termination failed, attempt to resubscribe if it's been
          * requested.
          */
-        if (pending.isResubscribe())
-          _client.handleRequest(pending.getSubscriptionRequest());
+        if (pending.isResubscribe()) {
+          for (SiriClientRequest request : pending.getSubscriptionRequests())
+            _client.handleRequest(request);
+        }
       }
     }
   }
@@ -211,28 +222,35 @@ class TerminateSubscriptionsManager extends AbstractManager {
   private static class PendingTermination {
 
     private final ScheduledFuture<?> _timeoutTask;
+    
+    private final String _subscriberId;
 
     private final boolean _resubscribe;
 
-    private final SiriClientRequest _subscriptionRequest;
+    private final List<SiriClientRequest> _subscriptionRequests;
 
     public PendingTermination(ScheduledFuture<?> timeoutTask,
-        boolean resubscribe, SiriClientRequest subscriptionRequest) {
+        String subscriberId, boolean resubscribe, List<SiriClientRequest> subscriptionRequests) {
       _timeoutTask = timeoutTask;
+      _subscriberId = subscriberId;
       _resubscribe = resubscribe;
-      _subscriptionRequest = subscriptionRequest;
+      _subscriptionRequests = subscriptionRequests;
     }
 
     public ScheduledFuture<?> getTimeoutTask() {
       return _timeoutTask;
+    }
+    
+    public String getSubscriberId() {
+      return _subscriberId;
     }
 
     public boolean isResubscribe() {
       return _resubscribe;
     }
 
-    public SiriClientRequest getSubscriptionRequest() {
-      return _subscriptionRequest;
+    public List<SiriClientRequest> getSubscriptionRequests() {
+      return _subscriptionRequests;
     }
   }
 }

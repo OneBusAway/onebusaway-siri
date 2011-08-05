@@ -18,6 +18,10 @@ class ClientSubscriptionChannel {
 
   private Date lastServiceStartedTime = null;
 
+  private String manageSubscriptionUrl = null;
+
+  private String checkStatusUrl;
+
   private long checkStatusInterval = 0;
 
   private ScheduledFuture<?> checkStatusTask;
@@ -55,6 +59,22 @@ class ClientSubscriptionChannel {
 
   public void setLastServiceStartedTime(Date lastServiceStartedTime) {
     this.lastServiceStartedTime = lastServiceStartedTime;
+  }
+
+  public String getManageSubscriptionUrl() {
+    return manageSubscriptionUrl;
+  }
+
+  public void setManageSubscriptionUrl(String manageSubscriptionUrl) {
+    this.manageSubscriptionUrl = manageSubscriptionUrl;
+  }
+
+  public String getCheckStatusUrl() {
+    return checkStatusUrl;
+  }
+
+  public void setCheckStatusUrl(String checkStatusUrl) {
+    this.checkStatusUrl = checkStatusUrl;
   }
 
   public long getCheckStatusInterval() {

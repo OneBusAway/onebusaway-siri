@@ -47,8 +47,12 @@ import uk.org.siri.siri.VehicleRefStructure;
 public class SiriClientRequestFactory {
 
   private static final String ARG_URL = "Url";
+  private static final String ARG_MANAGE_SUBSCRIPTION_URL = "ManageSubscriptionUrl";
+  private static final String ARG_CHECK_STATUS_URL = "CheckStatusUrl";
+
   private static final String ARG_VERSION = "Version";
   private static final String ARG_MODULE_TYPE = "ModuleType";
+
   private static final String ARG_RECONNECTION_ATTEMPTS = "ReconnectionAttempts";
   private static final String ARG_RECONNECTION_INTERVAL = "ReconnectionInterval";
 
@@ -57,6 +61,7 @@ public class SiriClientRequestFactory {
   private static final String ARG_INITIAL_TERMINATION_TIME = "InitialTerminationTime";
 
   private static final String ARG_MESSAGE_IDENTIFIER = "MessageIdentifier";
+  private static final String ARG_SUBSCRIPTION_IDENTIFIER = "SubscriptionIdentifier";
   private static final String ARG_MAXIMUM_VEHICLES = "MaximumVehicles";
   private static final String ARG_VEHICLE_REF = "VehicleRef";
   private static final String ARG_LINE_REF = "LineRef";
@@ -126,7 +131,7 @@ public class SiriClientRequestFactory {
       ESiriModuleType moduleType = ESiriModuleType.valueOf(moduleTypeValue.toUpperCase());
       AbstractSubscriptionStructure moduleSubscription = createSubscriptionForModuleType(moduleType);
 
-      String subscriptionIdentifierValue = args.get("SubscriptionIdentifier");
+      String subscriptionIdentifierValue = args.get(ARG_SUBSCRIPTION_IDENTIFIER);
       if (subscriptionIdentifierValue != null) {
         SubscriptionQualifierStructure value = new SubscriptionQualifierStructure();
         value.setValue(subscriptionIdentifierValue);
@@ -139,14 +144,12 @@ public class SiriClientRequestFactory {
       List<AbstractSubscriptionStructure> moduleSubscriptions = SiriLibrary.getSubscriptionRequestsForModule(
           subscriptionRequest, moduleType);
       moduleSubscriptions.add(moduleSubscription);
-
     }
 
     return request;
   }
-  
-  public SiriClientRequest createCheckStatusRequest(
-      Map<String, String> args) {
+
+  public SiriClientRequest createCheckStatusRequest(Map<String, String> args) {
 
     SiriClientRequest request = new SiriClientRequest();
     processCommonArgs(args, request);
@@ -156,7 +159,7 @@ public class SiriClientRequestFactory {
     Siri payload = new Siri();
     payload.setCheckStatusRequest(checkStatusRequest);
     request.setPayload(payload);
-    
+
     return request;
   }
 
@@ -201,6 +204,12 @@ public class SiriClientRequestFactory {
     if (url == null)
       throw new SiriMissingArgumentException(ARG_URL);
     request.setTargetUrl(url);
+
+    String manageSubscriptionUrl = args.get(ARG_MANAGE_SUBSCRIPTION_URL);
+    request.setManageSubscriptionUrl(manageSubscriptionUrl);
+
+    String checkStatusUrl = args.get(ARG_CHECK_STATUS_URL);
+    request.setCheckStatusUrl(checkStatusUrl);
 
     String versionId = args.get(ARG_VERSION);
     if (versionId != null) {

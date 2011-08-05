@@ -6,9 +6,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
@@ -105,14 +103,21 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    * {@link SiriClientHandler} Interface
    ****/
 
+  /**
+   * See {@link SiriClientHandler#handleRequestWithResponse(SiriClientRequest)}.
+   */
   @Override
   public Siri handleRequestWithResponse(SiriClientRequest request) {
+    request.resetConnectionStatistics();
     return processRequestWithResponse(request);
   }
 
+  /**
+   * See {@link SiriClientHandler#handleRequest(SiriClientRequest)}.
+   */
   @Override
   public void handleRequest(SiriClientRequest request) {
-    processRequest(request);
+    processRequestWithAsynchronousResponse(request);
   }
 
   /*****
@@ -122,12 +127,13 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
   @Override
   public void handleRawRequest(Reader reader, Writer writer) {
 
-    if (_logRawXml) {
+    String responseContent = null;
+
+    if (_logRawXmlType != ELogRawXmlType.NONE) {
       try {
         StringBuilder b = new StringBuilder();
         reader = copyReaderToStringBuilder(reader, b);
-        _log.info("logging raw xml response:\n=== PUBLISHED BEGIN ===\n"
-            + b.toString() + "\n=== PUBLISHED END ===");
+        responseContent = b.toString();
       } catch (IOException ex) {
         throw new SiriException("error reading incoming request", ex);
       }
@@ -145,10 +151,11 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
 
     if (data instanceof Siri) {
       Siri siri = (Siri) data;
+      if (isRawDataLogged(siri)) {
+        _log.info("logging raw xml response:\n=== PUBLISHED BEGIN ===\n"
+            + responseContent + "\n=== PUBLISHED END ===");
+      }
       handleSiriResponse(siri, true);
-    } else if (data instanceof ServiceDelivery) {
-      ServiceDelivery delivery = (ServiceDelivery) data;
-      handleServiceDelivery(delivery);
     }
   }
 
@@ -156,21 +163,10 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    * Protected Methods
    ****/
 
-  /****
-   * Private Methods
-   ****/
-
-  private void processRequest(SiriClientRequest request) {
-
-    AsynchronousClientConnectionAttempt attempt = new AsynchronousClientConnectionAttempt(
-        request);
-    _executor.execute(attempt);
-  }
-
-  /****
-   * 
-   ****/
-
+  /**
+   * We override the common method to add custom subscription-management
+   * behavior
+   */
   @Override
   protected void fillSubscriptionRequestStructure(SiriClientRequest request,
       SubscriptionRequest subscriptionRequest) {
@@ -208,7 +204,7 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
   }
 
   /****
-   *
+   * Private Methods
    ****/
 
   private void handleServiceDelivery(ServiceDelivery serviceDelivery) {
@@ -244,80 +240,4 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
       }
     }
   }
-
-  /**
-   * A runnable task that attempts a connection from a SIRI client to a SIRI
-   * server. Handles reconnection semantics.
-   * 
-   * @author bdferris
-   */
-  private class AsynchronousClientConnectionAttempt implements Runnable {
-
-    private final SiriClientRequest request;
-
-    private int remainingReconnectionAttempts = 0;
-    private int reconnectionInterval = 60;
-    private int connectionErrorCount = 0;
-
-    public AsynchronousClientConnectionAttempt(SiriClientRequest request) {
-      this.request = request;
-      this.remainingReconnectionAttempts = request.getReconnectionAttempts();
-      this.reconnectionInterval = request.getReconnectionInterval();
-    }
-
-    @Override
-    public void run() {
-
-      try {
-        try {
-
-          processRequestWithResponse(request);
-
-          /**
-           * Reset our connection error count and note that we've successfully
-           * reconnected if the we've had problems before
-           */
-          if (connectionErrorCount > 0)
-            _log.info("successfully reconnected to " + request.getTargetUrl());
-          connectionErrorCount = 0;
-
-        } catch (SiriConnectionException ex) {
-
-          String message = "error connecting to " + request.getTargetUrl()
-              + " (remainingConnectionAttempts="
-              + this.remainingReconnectionAttempts + " connectionErrorCount="
-              + connectionErrorCount + ")";
-
-          /**
-           * We display the full exception on the first connection error, but
-           * hide it on recurring errors
-           */
-          if (connectionErrorCount == 0) {
-            _log.warn(message, ex);
-          } else {
-            _log.warn(message);
-          }
-
-          connectionErrorCount++;
-
-          if (this.remainingReconnectionAttempts == 0) {
-            return;
-          }
-
-          /**
-           * We have some reconnection attempts remaining, so we schedule
-           * another connection attempt
-           */
-          if (this.remainingReconnectionAttempts > 0)
-            this.remainingReconnectionAttempts--;
-
-          _executor.schedule(this, reconnectionInterval, TimeUnit.SECONDS);
-        }
-
-      } catch (Throwable ex) {
-        _log.error("error executing asynchronous client request", ex);
-      }
-    }
-  }
-
 }

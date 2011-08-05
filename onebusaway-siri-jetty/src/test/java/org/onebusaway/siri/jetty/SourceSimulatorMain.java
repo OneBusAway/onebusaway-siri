@@ -7,7 +7,6 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 
 import org.onebusaway.siri.core.ESiriModuleType;
-import org.onebusaway.siri.core.SiriServer;
 
 import uk.org.siri.siri.BlockRefStructure;
 import uk.org.siri.siri.ServiceDelivery;

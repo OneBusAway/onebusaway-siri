@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.versioning.PropertyConverterSupport;
 
@@ -143,8 +144,12 @@ public class ElementPathModuleDeliveryFilter implements
     Method writeMethod = propertyDescriptor.getWriteMethod();
 
     if (writeMethod != null) {
+
+      Class<?>[] parameterTypes = writeMethod.getParameterTypes();
+      Class<?> parameterType = parameterTypes[0];
+      Object value = convertValue(_value, parameterType);
       PropertyConverterSupport.setTargetPropertyValue(parent, writeMethod,
-          _value);
+          value);
     } else if (Collection.class.isAssignableFrom(propertyDescriptor.getPropertyType())
         && (_value == null || _value instanceof Collection)) {
       Collection<?> values = (Collection<?>) _value;
@@ -156,5 +161,14 @@ public class ElementPathModuleDeliveryFilter implements
       throw new SiriException("no write method for property \""
           + propertyDescriptor.getName() + " on " + parent);
     }
+  }
+
+  private Object convertValue(Object value, Class<?> targetType) {
+    if (value == null)
+      return value;
+    Class<? extends Object> existingType = value.getClass();
+    if (targetType.isAssignableFrom(existingType))
+      return value;
+    return ConvertUtils.convert(value, targetType);
   }
 }

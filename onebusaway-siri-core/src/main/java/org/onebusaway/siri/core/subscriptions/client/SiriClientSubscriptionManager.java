@@ -186,7 +186,7 @@ public class SiriClientSubscriptionManager {
   public void terminateAllSubscriptions(
       boolean waitForTerminateSubscriptionResponseOnExit) {
 
-    List<SubscriptionId> allPendings = _terminateSubscriptionsManager.terminateSubscriptions(
+    List<String> allPendings = _terminateSubscriptionsManager.terminateSubscriptions(
         _activeSubscriptions.values(), false);
 
     if (waitForTerminateSubscriptionResponseOnExit)
@@ -423,6 +423,9 @@ public class SiriClientSubscriptionManager {
       Date serviceStartedTime = response.getServiceStartedTime();
       if (serviceStartedTime != null)
         channel.setLastServiceStartedTime(serviceStartedTime);
+      
+      channel.setManageSubscriptionUrl(request.getManageSubscriptionUrl());
+      channel.setCheckStatusUrl(request.getCheckStatusUrl());
 
       channel.setReconnectionAttempts(request.getReconnectionAttempts());
       channel.setReconnectionInterval(request.getReconnectionInterval());
@@ -436,11 +439,8 @@ public class SiriClientSubscriptionManager {
       }
 
       long checkStatusInterval = request.getCheckStatusInterval();
-
-      if (checkStatusInterval > 0) {
-        channel.setCheckStatusInterval(checkStatusInterval);
-        _checkStatusManager.resetCheckStatusTask(channel, checkStatusInterval);
-      }
+      channel.setCheckStatusInterval(checkStatusInterval);
+      _checkStatusManager.resetCheckStatusTask(channel, checkStatusInterval);
     }
   }
 

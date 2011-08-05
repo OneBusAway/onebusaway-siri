@@ -1,5 +1,9 @@
 package org.onebusaway.siri.repeater;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +21,7 @@ import org.onebusaway.cli.Daemonizer;
 import org.onebusaway.siri.core.SiriClient;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriClientRequestFactory;
+import org.onebusaway.siri.core.SiriCommon.ELogRawXmlType;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.SiriServer;
 import org.onebusaway.siri.core.exceptions.SiriException;
@@ -49,9 +54,9 @@ public class SiriRepeaterCommandLineConfiguration {
 
   private static final String ARG_CLIENT_URL = "clientUrl";
 
-  private static final String ARG_FILTER = "filter";
-
   private static final String ARG_PRIVATE_CLIENT_URL = "privateClientUrl";
+  
+  private static final String ARG_FILTER = "filter";
 
   private static final String ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT = "requestorConsumerAddressDefault";
 
@@ -127,32 +132,25 @@ public class SiriRepeaterCommandLineConfiguration {
   }
 
   private void printUsage() {
-    System.err.println("usage:");
-    System.err.println("  [-args] request [request ...]");
-    System.err.println();
-    System.err.println("args:");
-    System.err.println("  -"
-        + ARG_ID
-        + "=id                          the SIRI participant id used by your client and server");
-    System.err.println("  -"
-        + ARG_CLIENT_URL
-        + "=url                  the url your repeater client binds to and uses in publish/subscribe with your SIRI source");
-    System.err.println("  -"
-        + ARG_PRIVATE_CLIENT_URL
-        + "=url           the internal url your repeater client will actually bind to, if specifed (default=clientUrl)");
-    System.err.println("  -"
-        + ARG_REPEATER_URL
-        + "=url                the url your repeater server binds to and listens to incoming client requests");
-    System.err.println("  -"
-        + ARG_PRIVATE_REPEATER_URL
-        + "=url         the internal url your repeater server will actually bind to, if specified (default=repeaterUrl)");
-    System.err.println("  -"
-        + ARG_DATA_SOURCE
-        + "=path                a Spring context.xml file containing additional bean defs");
-    System.err.println();
-    System.err.println("request examples:");
-    System.err.println("  Url=http://host:port/path,ModuleType=VEHICLE_MONITORING");
-    System.err.println("  Url=http://host:port/path,ModuleType=VEHICLE_MONITORING,VehicleRef=1234");
+    
+    InputStream is = getClass().getResourceAsStream("usage.txt");
+    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+    String line = null;
+    try {
+      while ((line = reader.readLine()) != null) {
+        System.err.println(line);
+      }
+    } catch (IOException ex) {
+
+    } finally {
+      if (reader != null) {
+        try {
+          reader.close();
+        } catch (IOException ex) {
+
+        }
+      }
+    }
   }
 
   protected void buildOptions(Options options) {
@@ -163,7 +161,7 @@ public class SiriRepeaterCommandLineConfiguration {
     options.addOption(ARG_PRIVATE_CLIENT_URL, true, "private client url");
     options.addOption(ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT, true,
         "consumer address default for requestor");
-    options.addOption(ARG_LOG_RAW_XML, false, "log raw xml");
+    options.addOption(ARG_LOG_RAW_XML, true, "log raw xml");
     options.addOption(ARG_NO_SUBSCRIPTIONS, false, "no subscriptions");
     options.addOption(ARG_FILTER, true, "filter specification");
     options.addOption(ARG_DATA_SOURCE, true, "Spring data source xml file");
@@ -197,8 +195,11 @@ public class SiriRepeaterCommandLineConfiguration {
 
     addRequestorConsumerAddressDefaults(cli, subscriptionManager);
 
-    if (cli.hasOption(ARG_LOG_RAW_XML))
-      siriClient.setLogRawXml(true);
+    if (cli.hasOption(ARG_LOG_RAW_XML)) {
+      String value = cli.getOptionValue(ARG_LOG_RAW_XML);
+      ELogRawXmlType type = ELogRawXmlType.valueOf(value.toUpperCase());
+      siriClient.setLogRawXmlType(type);
+    }
 
     /**
      * Filters
