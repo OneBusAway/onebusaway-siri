@@ -92,7 +92,9 @@ public class SiriCommon {
   public SiriCommon() {
 
     try {
+      _log.info("Loading JAXB context.  This may take a few seconds...");
       _jaxbContext = JAXBContext.newInstance("uk.org.siri:org.onebusaway.siri:uk.org.siri.siri");
+      _log.info("Loading JAXB context complete.");
     } catch (JAXBException ex) {
       throw new SiriSerializationException(ex);
     }

@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Date;
 import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
@@ -23,11 +24,15 @@ import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
 import org.onebusaway.siri.core.subscriptions.client.SiriClientSubscriptionManager;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.onebusaway.siri.jetty.SiriJettyClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.Siri;
 
 public class SiriClientMain {
+
+  private static final Logger _log = LoggerFactory.getLogger(SiriClientMain.class);
 
   private static final String ARG_ID = "id";
 
@@ -50,6 +55,10 @@ public class SiriClientMain {
   private static final String ARG_TERMINATE_SUBSCRIPTION = "terminateSubscription";
 
   private SiriJettyClient _client;
+
+  private String _outputFormat;
+
+  private String _outputName;
 
   private PrintWriter _output;
 
@@ -97,8 +106,7 @@ public class SiriClientMain {
     }
 
     if (cli.hasOption(ARG_OUTPUT)) {
-      String value = cli.getOptionValue(ARG_OUTPUT);
-      _output = new PrintWriter(new FileWriter(value));
+      _outputFormat = cli.getOptionValue(ARG_OUTPUT);
     } else {
       _output = new PrintWriter(System.out);
     }
@@ -184,9 +192,22 @@ public class SiriClientMain {
     System.exit(-1);
   }
 
-  private void printAsXml(Object object) {
+  private synchronized void printAsXml(Object object) throws IOException {
+
     StringWriter out = new StringWriter();
     _client.marshall(object, out);
+
+    if (_outputFormat != null) {
+      String outputName = String.format(_outputFormat, new Date());
+      if (_outputName == null || !_outputName.equals(outputName)) {
+        _outputName = outputName;
+        if (_output != null) {
+          _output.close();
+        }
+        _output = new PrintWriter(new FileWriter(_outputName));
+      }
+    }
+
     _output.println(out.toString());
   }
 
@@ -235,7 +256,11 @@ public class SiriClientMain {
         ServiceDelivery serviceDelivery) {
       Siri siri = new Siri();
       siri.setServiceDelivery(serviceDelivery);
-      printAsXml(siri);
+      try {
+        printAsXml(siri);
+      } catch (IOException ex) {
+        _log.warn("error writing output", ex);
+      }
     }
   }
 
