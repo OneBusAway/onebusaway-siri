@@ -545,7 +545,7 @@ public class SiriServerSubscriptionManager {
     ConcurrentMap<SubscriptionId, ServerSubscriptionInstance> subscriptionsById = _subscriptionsByModuleType.get(moduleType);
 
     for (ServerSubscriptionInstance instance : subscriptionsById.values()) {
-
+      
       ServiceDelivery updatedDelivery = copyDeliveryShallow(delivery);
 
       List<T> applicableResponses = getApplicableResponses(updatedDelivery,

@@ -61,6 +61,10 @@ Url=http://host:port/path,ModuleType=VEHICLE_MONITORING
     * <<<FACILITY_MONITORING>>>
 
     * <<<SITUATION_EXCHANGE>>>
+  
+  * <<<ManageSubscriptionUrl>>> - Specify a custom url for subscription management requests (ex. TerminateSubscriptionRequest) if different than the primary Url
+  
+  * <<<CheckStatusUrl>>> - Specify a custom url for check status requests if different than the primary Url
    
   * <<<ReconnectionAttempts>>> - The number of times we will attempt to reconnect to a SIRI resource on connection error.  A value of 0 will mean no reconnections, while a value of -1 means we will never stop trying to reconnect. 
 

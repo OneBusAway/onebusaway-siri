@@ -35,11 +35,19 @@ java -jar onebusaway-siri-client-cli.jar [-args] request [request ...]
   
   * <<<-privateClientUrl url>>> : the internal url your client will actually bind to, if specified (default=clientUrl)
 
-  * <<<-output path>>> : write SIRI payload output to the specified path
+  * <<<-output path>>> : write SIRI payload output to the specified path.  See details below.
   
   * <<<-responseTimeout time>>> : time, in seconds, to wait for a response from a SIRI endpoint after a request
   
-  * <<<-logRawXml>>> : if specified, indicates the raw SIRI request and response XML should be logged to the console
+  * <<<-logRawXml ...>>> : if specified, indicates how raw SIRI XML should be logged to the console.  Valid values include:
+  
+    * NONE - nothing is logged (the default)
+    
+    * DATA - only ServiceDelivery data messages are logged
+    
+    * CONTROL - only non-ServiceDelivery control messages are logged
+    
+    * ALL - everything is logged
   
 * Specific Request Types
 
@@ -71,6 +79,33 @@ Url=http://host:port/path,ModuleType=VEHICLE_MONITORING,VehicleRef=1234
 
   For more details, see the full {{{./cli-request-spec.html}command-line request spec}} documentation.
 
+
+* Output
+
+  By default, data received from a remote SIRI data-source will be output to
+the console.  However, with the -output argument, it is possible to write
+output to disk as well.  You can specify a single file, such as:
+  
++---+
+-output /tmp/siri-output
++---+
+    
+  And all output will go to the file, appending new XML messages as they are
+received.  We also support simple variable substitution of the file name,
+using the same syntax as java.util.Formatter.  We pass a java.util.Date
+object as the first argument to the formatter, which means you can do complex
+time-based naming of the output files.  For example, the following:
+
++---+
+-output /tmp/siri-%1$tFT%1$tT.%1$tL.xml
++---+
+     
+  will write each received XML message to a separate file with a filename that
+looks like:
+
++---+   
+/tmp/siri-2011-08-07T13:45:23.023.xml
++---+
 
 * Examples
 
