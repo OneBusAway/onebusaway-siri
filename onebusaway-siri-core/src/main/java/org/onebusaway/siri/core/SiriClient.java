@@ -117,6 +117,7 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    */
   @Override
   public void handleRequest(SiriClientRequest request) {
+    request.resetConnectionStatistics();
     processRequestWithAsynchronousResponse(request);
   }
 
