@@ -87,7 +87,7 @@ class CheckStatusManager extends AbstractManager {
     _support.logErrorInCheckStatusResponse(channel, response, isNewer,
         isInError);
 
-    _subscriptionManager.handleDisconnectAndReconnect(channel);
+    _subscriptionManager.handleChannelDisconnectAndReconnect(channel);
   }
 
   /****
@@ -206,7 +206,7 @@ class CheckStatusManager extends AbstractManager {
        * channel
        */
       _log.warn("check status failed: address=" + _channel.getAddress());
-      _subscriptionManager.handleDisconnectAndReconnect(_channel);
+      _subscriptionManager.handleChannelDisconnectAndReconnect(_channel);
     }
   }
 

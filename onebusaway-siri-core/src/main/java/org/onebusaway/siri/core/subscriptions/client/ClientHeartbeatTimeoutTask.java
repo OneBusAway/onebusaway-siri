@@ -27,6 +27,6 @@ class ClientHeartbeatTimeoutTask implements Runnable {
   @Override
   public void run() {
     _log.warn("heartbeat interval timeout: " + channel.getAddress());
-    manager.handleDisconnectAndReconnect(channel);
+    manager.handleChannelDisconnectAndReconnect(channel);
   }
 }

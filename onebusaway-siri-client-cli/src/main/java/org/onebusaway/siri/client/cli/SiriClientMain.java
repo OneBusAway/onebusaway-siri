@@ -209,6 +209,7 @@ public class SiriClientMain {
     }
 
     _output.println(out.toString());
+    _output.flush();
   }
 
   private void printUsage() {

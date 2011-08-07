@@ -199,6 +199,7 @@ public class SiriRepeaterCommandLineConfiguration {
       String value = cli.getOptionValue(ARG_LOG_RAW_XML);
       ELogRawXmlType type = ELogRawXmlType.valueOf(value.toUpperCase());
       siriClient.setLogRawXmlType(type);
+      siriServer.setLogRawXmlType(type);
     }
 
     /**
