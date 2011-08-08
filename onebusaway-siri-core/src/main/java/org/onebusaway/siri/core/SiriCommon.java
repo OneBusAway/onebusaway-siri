@@ -383,10 +383,8 @@ public class SiriCommon {
           sub.setSubscriptionIdentifier(SiriTypeFactory.randomSubscriptionId());
 
         if (sub.getInitialTerminationTime() == null) {
-          Date initialTerminationTime = request.getInitialTerminationTime();
-          if (initialTerminationTime == null)
-            throw new SiriException(
-                "subscription request is missing a required initial termination time");
+          Date initialTerminationTime = new Date(System.currentTimeMillis()
+              + request.getInitialTerminationDuration());
           sub.setInitialTerminationTime(initialTerminationTime);
         }
 

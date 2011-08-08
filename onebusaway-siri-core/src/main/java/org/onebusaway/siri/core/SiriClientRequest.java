@@ -1,7 +1,5 @@
 package org.onebusaway.siri.core;
 
-import java.util.Date;
-
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
@@ -47,7 +45,7 @@ public class SiriClientRequest {
 
   private int heartbeatInterval = 0;
 
-  private Date initialTerminationTime;
+  private long initialTerminationDuration;
 
   private Object channelContext;
 
@@ -66,7 +64,7 @@ public class SiriClientRequest {
     this.reconnectionInterval = request.reconnectionInterval;
     this.checkStatusInterval = request.checkStatusInterval;
     this.heartbeatInterval = request.heartbeatInterval;
-    this.initialTerminationTime = request.initialTerminationTime;
+    this.initialTerminationDuration = request.initialTerminationDuration;
   }
 
   public String getTargetUrl() {
@@ -185,12 +183,12 @@ public class SiriClientRequest {
     this.heartbeatInterval = heartbeatInterval;
   }
 
-  public Date getInitialTerminationTime() {
-    return initialTerminationTime;
+  public long getInitialTerminationDuration() {
+    return initialTerminationDuration;
   }
 
-  public void setInitialTerminationTime(Date initialTerminationTime) {
-    this.initialTerminationTime = initialTerminationTime;
+  public void setInitialTerminationDuration(long initialTerminationDuration) {
+    this.initialTerminationDuration = initialTerminationDuration;
   }
 
   /**

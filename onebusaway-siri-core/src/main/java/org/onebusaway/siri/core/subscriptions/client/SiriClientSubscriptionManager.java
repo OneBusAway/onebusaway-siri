@@ -520,7 +520,7 @@ public class SiriClientSubscriptionManager {
    * When a subscription is updated to active, we register an expiration task
    * that will terminate and reestablish a subscription when its expiration time
    * is reached, based on either the
-   * {@link SiriClientRequest#getInitialTerminationTime()} or the
+   * {@link SiriClientRequest#getInitialTerminationDuration()} or the
    * {@link StatusResponseStructure#getValidUntil()} timestamp, if present.
    */
   private ScheduledFuture<?> registerSubscriptionExpirationTask(
@@ -531,10 +531,7 @@ public class SiriClientSubscriptionManager {
      * No matter what, the original subscription request should have included an
      * initial termination time.
      */
-    Date validUntil = originalSubscriptionRequest.getInitialTerminationTime();
-
-    if (validUntil == null)
-      throw new SiriException("expected an initial termination time");
+    Date validUntil = new Date(System.currentTimeMillis() + originalSubscriptionRequest.getInitialTerminationDuration());
 
     /**
      * If the subscription response status included a "validUntil" timestamp, we

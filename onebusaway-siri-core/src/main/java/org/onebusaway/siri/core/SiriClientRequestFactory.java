@@ -224,13 +224,12 @@ public class SiriClientRequestFactory {
     if (initialTerminationTime != null) {
       if (initialTerminationTime.startsWith("P")) {
         Duration duration = _dataTypeFactory.newDuration(initialTerminationTime);
-        long time = duration.getTimeInMillis(new Date());
-        request.setInitialTerminationTime(new Date(time));
+        request.setInitialTerminationDuration(duration.getTimeInMillis(new Date()));
       } else {
         try {
           Date time = getIso8601StringAsTime(initialTerminationTime,
               TimeZone.getDefault());
-          request.setInitialTerminationTime(time);
+          request.setInitialTerminationDuration(time.getTime() - System.currentTimeMillis());
         } catch (ParseException e) {
           throw new SiriException(
               "error parsing initial termination time (ISO 8601)");
@@ -242,7 +241,7 @@ public class SiriClientRequestFactory {
        */
       Calendar c = Calendar.getInstance();
       c.add(Calendar.DAY_OF_YEAR, 1);
-      request.setInitialTerminationTime(c.getTime());
+      request.setInitialTerminationDuration(c.getTimeInMillis() - System.currentTimeMillis());
     }
 
     String reconnectionAttempts = args.get(ARG_RECONNECTION_ATTEMPTS);
