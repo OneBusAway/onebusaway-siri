@@ -39,11 +39,23 @@ class ClientSupport {
 
   private static final Logger _log = LoggerFactory.getLogger(ClientSupport.class);
 
+  public ParticipantRefStructure getBestSubscriberRef(
+      ParticipantRefStructure... refs) {
+    for (ParticipantRefStructure ref : refs) {
+      if (ref != null && ref.getValue() != null)
+        return ref;
+    }
+    return null;
+  }
+
   public SubscriptionId getSubscriptionIdForSubscriptionRequest(
       SubscriptionRequest subscriptionRequest,
       AbstractSubscriptionStructure functionalSubscriptionRequest) {
 
-    ParticipantRefStructure subscriberRef = subscriptionRequest.getRequestorRef();
+    ParticipantRefStructure subscriberRef = getBestSubscriberRef(
+        functionalSubscriptionRequest.getSubscriberRef(),
+        subscriptionRequest.getRequestorRef());
+
     SubscriptionQualifierStructure subscriptionRef = functionalSubscriptionRequest.getSubscriptionIdentifier();
 
     return getSubscriptionId(subscriberRef, subscriptionRef);

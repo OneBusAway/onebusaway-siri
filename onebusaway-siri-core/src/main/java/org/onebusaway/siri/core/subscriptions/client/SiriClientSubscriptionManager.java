@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.AbstractServiceDeliveryStructure;
+import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.CheckStatusResponseStructure;
 import uk.org.siri.siri.HeartbeatNotificationStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
@@ -143,6 +144,13 @@ public class SiriClientSubscriptionManager {
       SubscriptionRequest subscriptionRequest) {
 
     _initiateSubscriptionsManager.registerPendingSubscription(request,
+        subscriptionRequest);
+  }
+
+  public void clearPendingSubscription(SiriClientRequest request,
+      SubscriptionRequest subscriptionRequest) {
+
+    _initiateSubscriptionsManager.clearPendingSubscription(request,
         subscriptionRequest);
   }
 
@@ -267,27 +275,27 @@ public class SiriClientSubscriptionManager {
    * @param status the specific subscription response status message for the
    *          specific subscription
    * @param subscriptionId the subscription id
-   * @param pending the pending subscription data structure
+   * @param moduleType
+   * @param moduleRequest
+   * @param originalSubscriptionRequest
    */
   synchronized void upgradePendingSubscription(
       SubscriptionResponseStructure response, StatusResponseStructure status,
-      SubscriptionId subscriptionId, ClientPendingSubscription pending) {
-
-    SiriClientRequest request = pending.getRequest();
+      SubscriptionId subscriptionId, ESiriModuleType moduleType,
+      AbstractSubscriptionStructure moduleRequest, SiriClientRequest originalSubscriptionRequest) {
 
     ClientSubscriptionChannel channel = getChannelForServer(
-        request.getTargetUrl(), request.getTargetVersion());
+        originalSubscriptionRequest.getTargetUrl(), originalSubscriptionRequest.getTargetVersion());
 
     ScheduledFuture<?> expiration = registerSubscriptionExpirationTask(
-        subscriptionId, status, request);
+        subscriptionId, status, originalSubscriptionRequest);
 
     /**
      * Create the actual subscription instance
      */
 
     ClientSubscriptionInstance instance = new ClientSubscriptionInstance(
-        channel, subscriptionId, request, pending.getModuleType(),
-        pending.getModuleRequest(), expiration);
+        channel, subscriptionId, originalSubscriptionRequest, moduleType, moduleRequest, expiration);
 
     ClientSubscriptionInstance existing = _activeSubscriptions.put(
         subscriptionId, instance);
@@ -299,7 +307,7 @@ public class SiriClientSubscriptionManager {
     Set<SubscriptionId> channelSubscriptions = channel.getSubscriptions();
     channelSubscriptions.add(subscriptionId);
 
-    updateChannelWithClientRequest(channel, request, response);
+    updateChannelWithClientRequest(channel, originalSubscriptionRequest, response);
   }
 
   ESiriModuleType getModuleTypeForSubscriptionId(SubscriptionId subId) {
@@ -368,12 +376,12 @@ public class SiriClientSubscriptionManager {
     subscriptions.remove(instance.getSubscriptionId());
 
     if (subscriptions.isEmpty()) {
-      
+
       _log.debug("channel has no more subscriptions: {}", channel.getAddress());
 
       _checkStatusManager.resetCheckStatusTask(channel, 0);
       resetHeartbeat(channel, 0);
-      
+
       _activeChannels.remove(channel.getAddress());
     }
   }
@@ -492,8 +500,8 @@ public class SiriClientSubscriptionManager {
     }
   }
 
-  private synchronized ClientSubscriptionChannel getChannelForServer(String address,
-      ESiriVersion targetVersion) {
+  private synchronized ClientSubscriptionChannel getChannelForServer(
+      String address, ESiriVersion targetVersion) {
 
     ClientSubscriptionChannel channel = _activeChannels.get(address);
 
@@ -531,7 +539,8 @@ public class SiriClientSubscriptionManager {
      * No matter what, the original subscription request should have included an
      * initial termination time.
      */
-    Date validUntil = new Date(System.currentTimeMillis() + originalSubscriptionRequest.getInitialTerminationDuration());
+    Date validUntil = new Date(System.currentTimeMillis()
+        + originalSubscriptionRequest.getInitialTerminationDuration());
 
     /**
      * If the subscription response status included a "validUntil" timestamp, we

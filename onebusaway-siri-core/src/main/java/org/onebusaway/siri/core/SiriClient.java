@@ -121,6 +121,19 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
     processRequestWithAsynchronousResponse(request);
   }
 
+  /**
+   * See
+   * {@link SiriClientHandler#handleRequestReconnectIfApplicable(SiriClientRequest)}
+   */
+  @Override
+  public void handleRequestReconnectIfApplicable(SiriClientRequest request) {
+    /**
+     * Note that we DON'T reset connection statistics on the request, because
+     * this is a reconnect, as opposed to an initial attempt
+     */
+    reattemptRequestIfApplicable(request);
+  }
+
   /*****
    * {@link SiriRawHandler} Interface
    ****/
@@ -176,6 +189,21 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
 
     _subscriptionManager.registerPendingSubscription(request,
         subscriptionRequest);
+  }
+
+  @Override
+  protected void reattemptRequestIfApplicable(SiriClientRequest request) {
+
+    Siri payload = request.getPayload();
+
+    /**
+     * If we are reattempting a subscription request, we need to make sure to
+     * clean up an existing request data
+     */
+    if (payload.getSubscriptionRequest() != null)
+      _subscriptionManager.clearPendingSubscription(request,payload.getSubscriptionRequest());
+
+    super.reattemptRequestIfApplicable(request);
   }
 
   @Override

@@ -74,6 +74,24 @@ class InitiateSubscriptionsManager extends AbstractManager {
     _subscriptionManager.scheduleResponseTimeoutTask(task);
   }
 
+  public void clearPendingSubscription(SiriClientRequest request,
+      SubscriptionRequest subscriptionRequest) {
+
+    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
+
+      List<AbstractSubscriptionStructure> requests = SiriLibrary.getSubscriptionRequestsForModule(
+          subscriptionRequest, moduleType);
+
+      for (AbstractSubscriptionStructure subRequest : requests) {
+
+        SubscriptionId subId = _support.getSubscriptionIdForSubscriptionRequest(
+            subscriptionRequest, subRequest);
+
+        _pendingSubscriptionRequests.remove(subId);
+      }
+    }
+  }
+
   public void handleSubscriptionResponse(SubscriptionResponseStructure response) {
 
     for (StatusResponseStructure status : response.getResponseStatus()) {
@@ -90,7 +108,8 @@ class InitiateSubscriptionsManager extends AbstractManager {
       if (status.isStatus()) {
 
         _subscriptionManager.upgradePendingSubscription(response, status,
-            subId, pending);
+            subId, pending.getModuleType(), pending.getModuleRequest(),
+            pending.getRequest());
 
       } else {
         _support.logErrorInSubscriptionResponse(response, status, subId);
@@ -159,6 +178,11 @@ class InitiateSubscriptionsManager extends AbstractManager {
         if (pending != null) {
           _log.warn("pending subscription expired before receiving a subscription response from server: "
               + subscriptionId);
+
+          // TODO : Attempt reconnect if needed
+
+          SiriClientRequest request = pending.getRequest();
+          _client.handleRequestReconnectIfApplicable(request);
         }
       }
     }

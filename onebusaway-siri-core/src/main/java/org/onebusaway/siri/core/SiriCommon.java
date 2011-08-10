@@ -635,20 +635,7 @@ public class SiriCommon {
 
         request.incrementConnectionErrorCount();
 
-        if (request.getRemainingReconnectionAttempts() == 0) {
-          return null;
-        }
-
-        /**
-         * We have some reconnection attempts remaining, so we schedule another
-         * connection attempt
-         */
-        request.decrementRemainingReconnctionAttempts();
-
-        AsynchronousClientConnectionAttempt asyncAttempt = new AsynchronousClientConnectionAttempt(
-            request);
-        _executor.schedule(asyncAttempt, request.getReconnectionInterval(),
-            TimeUnit.SECONDS);
+        reattemptRequestIfApplicable(request);
 
         /**
          * Note: we swallow up the exception here, meaning the client won't know
@@ -741,6 +728,35 @@ public class SiriCommon {
       throw new SiriConnectionException("error connecting to url "
           + post.getURI(), ex);
     }
+  }
+
+  /**
+   * In an instance where a {@link SiriClientRequest} has a connection error, or
+   * perhaps when an appropriate response is not received before a timeout, this
+   * method will attempt to resend the request based on the
+   * {@link SiriClientRequest#getRemainingReconnectionAttempts()} behavior.
+   * 
+   * The reconnect will be attempted asynchronously after the
+   * {@link SiriClientRequest#getReconnectionInterval()} has passed.
+   * 
+   * @param request the client request to potentially reconnect
+   */
+  protected void reattemptRequestIfApplicable(
+      SiriClientRequest request) {
+
+    if (request.getRemainingReconnectionAttempts() == 0)
+      return;
+
+    /**
+     * We have some reconnection attempts remaining, so we schedule another
+     * connection attempt
+     */
+    request.decrementRemainingReconnctionAttempts();
+
+    AsynchronousClientConnectionAttempt asyncAttempt = new AsynchronousClientConnectionAttempt(
+        request);
+    _executor.schedule(asyncAttempt, request.getReconnectionInterval(),
+        TimeUnit.SECONDS);
   }
 
   protected Reader copyReaderToStringBuilder(Reader responseReader,

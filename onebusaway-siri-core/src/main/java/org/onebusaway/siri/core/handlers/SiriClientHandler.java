@@ -15,4 +15,6 @@ public interface SiriClientHandler {
   public Siri handleRequestWithResponse(SiriClientRequest request) throws SiriException;
 
   public void handleRequest(SiriClientRequest request);
+  
+  public void handleRequestReconnectIfApplicable(SiriClientRequest request);
 }
