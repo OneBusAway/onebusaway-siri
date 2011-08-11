@@ -7,6 +7,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.annotation.PreDestroy;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
@@ -21,6 +25,7 @@ import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.Siri;
 import uk.org.siri.siri.SubscriptionRequest;
 
+@Singleton
 public class SiriClient extends SiriCommon implements SiriClientHandler,
     SiriRawHandler {
 
@@ -41,6 +46,12 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
 
   public SiriClient() {
     setUrl("http://*:8080/client.xml");
+  }
+
+  @Inject
+  public void setSubscriptionManager(
+      SiriClientSubscriptionManager subscriptionManager) {
+    _subscriptionManager = subscriptionManager;
   }
 
   public void addServiceDeliveryHandler(SiriServiceDeliveryHandler handler) {
@@ -67,36 +78,9 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
     return _subscriptionManager;
   }
 
-  /****
-   * Client Start and Stop Methods
-   ****/
-
-  /**
-   * 
-   */
-  @Override
-  public void start() {
-
-    _log.debug("starting siri client");
-
-    super.start();
-
-    _subscriptionManager.setSiriClientHandler(this);
-    _subscriptionManager.start();
-  }
-
-  /**
-   * 
-   */
-  @Override
+  @PreDestroy
   public void stop() {
-
-    _log.debug("stopping siri client");
-
     _subscriptionManager.terminateAllSubscriptions(_waitForTerminateSubscriptionResponseOnExit);
-    _subscriptionManager.stop();
-
-    super.stop();
   }
 
   /****
@@ -201,7 +185,8 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
      * clean up an existing request data
      */
     if (payload.getSubscriptionRequest() != null)
-      _subscriptionManager.clearPendingSubscription(request,payload.getSubscriptionRequest());
+      _subscriptionManager.clearPendingSubscription(request,
+          payload.getSubscriptionRequest());
 
     super.reattemptRequestIfApplicable(request);
   }

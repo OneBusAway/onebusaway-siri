@@ -3,13 +3,15 @@ package org.onebusaway.siri.repeater;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.inject.Inject;
+
 import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClient;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriServer;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
-import org.onebusaway.siri.jetty.SiriJettyClient;
-import org.onebusaway.siri.jetty.SiriJettyServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,31 +34,25 @@ public class SiriRepeater {
   /**
    * The client is what connects to an existing SIRI data source
    */
-  private SiriClient _siriClient = new SiriJettyClient();
+  private SiriClient _siriClient;
 
   /**
    * The server is what repeats the incoming SIRI data from the source client to
    * other listening clients
    */
-  private SiriServer _siriServer = new SiriJettyServer();
+  private SiriServer _siriServer;
 
   private ClientServiceDeliveryHandler _serviceDeliveryRepeater = new ClientServiceDeliveryHandler();
 
   private List<SiriClientRequest> _startupRequests = new ArrayList<SiriClientRequest>();
 
-  public SiriClient getSiriClient() {
-    return _siriClient;
-  }
-
-  public void setSiriClient(SiriClient siriClient) {
+  @Inject
+  public void setClient(SiriClient siriClient) {
     _siriClient = siriClient;
   }
 
-  public SiriServer getSiriServer() {
-    return _siriServer;
-  }
-
-  public void setSiriServer(SiriServer siriServer) {
+  @Inject
+  public void setServer(SiriServer siriServer) {
     _siriServer = siriServer;
   }
 
@@ -64,6 +60,7 @@ public class SiriRepeater {
     _startupRequests.add(request);
   }
 
+  @PostConstruct
   public void start() {
 
     /**
@@ -71,17 +68,15 @@ public class SiriRepeater {
      */
     _siriClient.addServiceDeliveryHandler(_serviceDeliveryRepeater);
 
-    _siriServer.start();
-    _siriClient.start();
-
+    /**
+     * Fire off our client requests
+     */
     for (SiriClientRequest request : _startupRequests)
       _siriClient.handleRequest(request);
   }
 
+  @PreDestroy
   public void stop() {
-
-    _siriServer.stop();
-    _siriClient.stop();
 
     /**
      * Unregister our ServiceDelivery repeater handler

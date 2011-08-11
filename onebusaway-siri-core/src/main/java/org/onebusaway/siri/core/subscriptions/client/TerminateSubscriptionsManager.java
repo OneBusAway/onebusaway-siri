@@ -1,5 +1,7 @@
 package org.onebusaway.siri.core.subscriptions.client;
 
+import static org.onebusaway.siri.core.subscriptions.client.ClientSupport.appendError;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -10,18 +12,28 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import org.onebusaway.collections.MappingLibrary;
+import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriTypeFactory;
+import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.MessageQualifierStructure;
+import uk.org.siri.siri.ParticipantRefStructure;
+import uk.org.siri.siri.Siri;
+import uk.org.siri.siri.SubscriptionQualifierStructure;
+import uk.org.siri.siri.TerminateSubscriptionRequestStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure.TerminationResponseStatus;
 
-class TerminateSubscriptionsManager extends AbstractManager {
+@Singleton
+class TerminateSubscriptionsManager {
 
   private static final Logger _log = LoggerFactory.getLogger(TerminateSubscriptionsManager.class);
 
@@ -31,13 +43,26 @@ class TerminateSubscriptionsManager extends AbstractManager {
    */
   private ConcurrentMap<String, PendingTermination> _pendingSubscriptionTerminations = new ConcurrentHashMap<String, PendingTermination>();
 
+  private SiriClientSubscriptionManager _subscriptionManager;
+
+  private SiriClientHandler _client;
+
+  private SchedulingService _schedulingService;
+
+  @Inject
   public void setSubscriptionManager(
       SiriClientSubscriptionManager subscriptionManager) {
     _subscriptionManager = subscriptionManager;
   }
 
-  public void setSupport(ClientSupport support) {
-    _support = support;
+  @Inject
+  public void setClient(SiriClientHandler client) {
+    _client = client;
+  }
+
+  @Inject
+  public void setScheduleService(SchedulingService schedulingService) {
+    _schedulingService = schedulingService;
   }
 
   /****
@@ -81,7 +106,7 @@ class TerminateSubscriptionsManager extends AbstractManager {
 
         MessageQualifierStructure messageId = SiriTypeFactory.randomMessageId();
 
-        SiriClientRequest request = _support.getTerminateSubscriptionRequestForSubscriptions(
+        SiriClientRequest request = getTerminateSubscriptionRequestForSubscriptions(
             channel, messageId, subscriberId, subscriberInstances);
 
         List<SiriClientRequest> originalSubscriptionRequests = new ArrayList<SiriClientRequest>();
@@ -91,7 +116,7 @@ class TerminateSubscriptionsManager extends AbstractManager {
 
         PendingSubscriptionTerminationTimeoutTask timeoutTask = new PendingSubscriptionTerminationTimeoutTask(
             messageId.getValue());
-        ScheduledFuture<?> scheduled = _subscriptionManager.scheduleResponseTimeoutTask(timeoutTask);
+        ScheduledFuture<?> scheduled = _schedulingService.scheduleResponseTimeoutTask(timeoutTask);
 
         PendingTermination pending = new PendingTermination(scheduled,
             subscriberId, resubscribeAfterTermination,
@@ -141,7 +166,7 @@ class TerminateSubscriptionsManager extends AbstractManager {
 
     MessageQualifierStructure messageIdRef = response.getRequestMessageRef();
     if (messageIdRef == null || messageIdRef.getValue() == null) {
-      _support.logTerminateSubscriptionResponseWithoutRequestMessageRef(response);
+      logTerminateSubscriptionResponseWithoutRequestMessageRef(response);
       return;
     }
 
@@ -150,7 +175,7 @@ class TerminateSubscriptionsManager extends AbstractManager {
     PendingTermination pending = _pendingSubscriptionTerminations.remove(messageId);
 
     if (pending == null) {
-      _support.logUnknownTerminateSubscriptionResponse(response);
+      logUnknownTerminateSubscriptionResponse(response);
       return;
     }
 
@@ -164,15 +189,15 @@ class TerminateSubscriptionsManager extends AbstractManager {
 
     for (TerminationResponseStatus status : response.getTerminationResponseStatus()) {
 
-      SubscriptionId id = _support.getSubscriptionIdForTerminationStatusResponse(
-          status, subscriberId);
+      SubscriptionId id = getSubscriptionIdForTerminationStatusResponse(status,
+          subscriberId);
 
       if (status.isStatus()) {
 
         _subscriptionManager.removeSubscription(id);
 
       } else {
-        _support.logErrorInTerminateSubscriptionResponse(response, status, id);
+        logErrorInTerminateSubscriptionResponse(response, status, id);
       }
     }
 
@@ -184,6 +209,117 @@ class TerminateSubscriptionsManager extends AbstractManager {
       for (SiriClientRequest request : pending.getSubscriptionRequests())
         _client.handleRequest(request);
     }
+  }
+
+  /****
+   * Private Methods
+   ****/
+
+  public SubscriptionId getSubscriptionIdForTerminationStatusResponse(
+      TerminationResponseStatus status, String subscriberId) {
+
+    ParticipantRefStructure subscriberRef = status.getSubscriberRef();
+    SubscriptionQualifierStructure subscriptionRef = status.getSubscriptionRef();
+
+    /**
+     * TODO: If the subscriberRef has been specified directly, do we allow it to
+     * override?
+     */
+    if (subscriberRef == null || subscriberRef.getValue() == null)
+      subscriberRef = SiriTypeFactory.particpantRef(subscriberId);
+
+    return ClientSupport.getSubscriptionId(subscriberRef, subscriptionRef);
+  }
+
+  public SiriClientRequest getTerminateSubscriptionRequestForSubscriptions(
+      ClientSubscriptionChannel channel, MessageQualifierStructure messageId,
+      String subscriberId,
+      List<ClientSubscriptionInstance> subscriptionInstances) {
+
+    TerminateSubscriptionRequestStructure terminateRequest = new TerminateSubscriptionRequestStructure();
+
+    terminateRequest.setMessageIdentifier(messageId);
+
+    ParticipantRefStructure subscriberRef = SiriTypeFactory.particpantRef(subscriberId);
+    terminateRequest.setSubscriberRef(subscriberRef);
+
+    for (ClientSubscriptionInstance instance : subscriptionInstances) {
+
+      SubscriptionId id = instance.getSubscriptionId();
+
+      SubscriptionQualifierStructure value = new SubscriptionQualifierStructure();
+      value.setValue(id.getSubscriptionId());
+      terminateRequest.getSubscriptionRef().add(value);
+    }
+
+    Siri payload = new Siri();
+    payload.setTerminateSubscriptionRequest(terminateRequest);
+
+    String url = channel.getManageSubscriptionUrl();
+    if (url == null)
+      url = channel.getAddress();
+
+    SiriClientRequest request = new SiriClientRequest();
+    request.setTargetUrl(url);
+    request.setTargetVersion(channel.getTargetVersion());
+    request.setPayload(payload);
+    return request;
+  }
+
+  public void logTerminateSubscriptionResponseWithoutRequestMessageRef(
+      TerminateSubscriptionResponseStructure response) {
+    StringBuilder b = new StringBuilder();
+    b.append("A <TerminateSubscriptionResponse/> was received with no <RequestMessageRef/> value: ");
+    if (response.getAddress() != null)
+      b.append(" address=").append(response.getAddress());
+    if (response.getResponderRef() != null
+        && response.getResponderRef().getValue() != null)
+      b.append(" responderRef=").append(response.getResponderRef().getValue());
+    _log.warn(b.toString());
+  }
+
+  public void logUnknownTerminateSubscriptionResponse(
+      TerminateSubscriptionResponseStructure response) {
+    StringBuilder b = new StringBuilder();
+    b.append("A <TerminateSubscriptionResponse/> was received with no pending <TerminateSubscriptionRequest/> having been sent:");
+    if (response.getAddress() != null)
+      b.append(" address=").append(response.getAddress());
+    if (response.getResponderRef() != null
+        && response.getResponderRef().getValue() != null)
+      b.append(" responderRef=").append(response.getResponderRef().getValue());
+    if (response.getRequestMessageRef() != null
+        && response.getRequestMessageRef().getValue() != null)
+      b.append(" requestMessageRef=").append(
+          response.getRequestMessageRef().getValue());
+    _log.warn(b.toString());
+  }
+
+  private void logErrorInTerminateSubscriptionResponse(
+      TerminateSubscriptionResponseStructure response,
+      TerminationResponseStatus status, SubscriptionId subId) {
+
+    StringBuilder b = new StringBuilder();
+    b.append("We received an error response for a subscription request:");
+    if (response.getAddress() != null)
+      b.append(" address=").append(response.getAddress());
+    if (response.getResponderRef() != null
+        && response.getResponderRef().getValue() != null)
+      b.append(" responderRef=" + response.getResponderRef().getValue());
+    b.append(" subscriptionId=" + subId);
+    TerminationResponseStatus.ErrorCondition error = status.getErrorCondition();
+
+    if (error != null) {
+      appendError(error.getCapabilityNotSupportedError(), b);
+      appendError(error.getUnknownSubscriberError(), b);
+      appendError(error.getUnknownSubscriptionError(), b);
+      appendError(error.getOtherError(), b);
+
+      if (error.getDescription() != null
+          && error.getDescription().getValue() != null)
+        b.append(" errorDescription=").append(error.getDescription().getValue());
+    }
+
+    _log.warn(b.toString());
   }
 
   /****

@@ -6,9 +6,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriTypeFactory;
 import org.onebusaway.siri.core.exceptions.SiriMissingArgumentException;
+import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,12 +22,36 @@ import uk.org.siri.siri.CheckStatusResponseStructure;
 import uk.org.siri.siri.MessageQualifierStructure;
 import uk.org.siri.siri.MessageRefStructure;
 import uk.org.siri.siri.Siri;
+import uk.org.siri.siri.CheckStatusResponseBodyStructure.ErrorCondition;
 
-class CheckStatusManager extends AbstractManager {
+@Singleton
+class CheckStatusManager {
 
   private static final Logger _log = LoggerFactory.getLogger(CheckStatusManager.class);
 
   private ConcurrentMap<String, PendingCheckStatusRequest> _pendingCheckStatusRequests = new ConcurrentHashMap<String, PendingCheckStatusRequest>();
+
+  private SiriClientSubscriptionManager _subscriptionManager;
+
+  private SiriClientHandler _client;
+
+  private SchedulingService _schedulingService;
+
+  @Inject
+  public void setSubscriptionManager(
+      SiriClientSubscriptionManager subscriptionManager) {
+    _subscriptionManager = subscriptionManager;
+  }
+
+  @Inject
+  public void setClient(SiriClientHandler client) {
+    _client = client;
+  }
+
+  @Inject
+  public void setScheduleService(SchedulingService schedulingService) {
+    _schedulingService = schedulingService;
+  }
 
   /****
    * 
@@ -43,7 +72,7 @@ class CheckStatusManager extends AbstractManager {
     if (checkStatusInterval > 0) {
       CheckStatusTask task = new CheckStatusTask(channel);
 
-      checkStatusTask = _subscriptionManager.scheduleAtFixedRate(task,
+      checkStatusTask = _schedulingService.scheduleAtFixedRate(task,
           checkStatusInterval, checkStatusInterval, TimeUnit.SECONDS);
       channel.setCheckStatusTask(checkStatusTask);
     }
@@ -84,8 +113,7 @@ class CheckStatusManager extends AbstractManager {
     if (!(isNewer || isInError))
       return;
 
-    _support.logErrorInCheckStatusResponse(channel, response, isNewer,
-        isInError);
+    logErrorInCheckStatusResponse(channel, response, isNewer, isInError);
 
     _subscriptionManager.handleChannelDisconnectAndReconnect(channel);
   }
@@ -104,9 +132,9 @@ class CheckStatusManager extends AbstractManager {
 
     Siri siri = new Siri();
     siri.setCheckStatusRequest(checkStatus);
-    
+
     String url = channel.getCheckStatusUrl();
-    if( url == null)
+    if (url == null)
       url = channel.getAddress();
 
     SiriClientRequest request = new SiriClientRequest();
@@ -116,7 +144,7 @@ class CheckStatusManager extends AbstractManager {
 
     PendingCheckStatusTimeoutTask timeoutTask = new PendingCheckStatusTimeoutTask(
         channel, messageId.getValue());
-    ScheduledFuture<?> future = _subscriptionManager.scheduleResponseTimeoutTask(timeoutTask);
+    ScheduledFuture<?> future = _schedulingService.scheduleResponseTimeoutTask(timeoutTask);
 
     /**
      * 
@@ -155,6 +183,32 @@ class CheckStatusManager extends AbstractManager {
     }
 
     return false;
+  }
+
+  public void logErrorInCheckStatusResponse(ClientSubscriptionChannel channel,
+      CheckStatusResponseStructure response, boolean isNewer, boolean isInError) {
+
+    StringBuilder b = new StringBuilder();
+    b.append("check status failed for channel:");
+    b.append(" address=").append(channel.getAddress());
+
+    if (isNewer) {
+      b.append(" prevServiceStartedTime=");
+      b.append(channel.getLastServiceStartedTime());
+      b.append(" newServiceStartedTime=");
+      b.append(response.getServiceStartedTime());
+    }
+
+    ErrorCondition error = response.getErrorCondition();
+    if (isInError && error != null) {
+      ClientSupport.appendError(error.getServiceNotAvailableError(), b);
+      ClientSupport.appendError(error.getOtherError(), b);
+      if (error.getDescription() != null
+          && error.getDescription().getValue() != null)
+        b.append(" errorDescription=" + error.getDescription().getValue());
+    }
+
+    _log.warn(b.toString());
   }
 
   /****

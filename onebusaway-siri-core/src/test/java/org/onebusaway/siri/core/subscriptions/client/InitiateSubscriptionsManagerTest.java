@@ -4,8 +4,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.onebusaway.siri.core.ESiriModuleType;
+import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriTypeFactory;
+import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 
 import uk.org.siri.siri.StatusResponseStructure;
@@ -17,24 +19,29 @@ public class InitiateSubscriptionsManagerTest {
 
   private InitiateSubscriptionsManager _manager;
 
+  private SiriClientHandler _client;
+
   private SiriClientSubscriptionManager _subscriptionManager;
+
+  private SchedulingService _schedulingService;
 
   @Before
   public void setup() {
+
     _manager = new InitiateSubscriptionsManager();
+
+    _client = Mockito.mock(SiriClientHandler.class);
+    _manager.setClient(_client);
 
     _subscriptionManager = Mockito.mock(SiriClientSubscriptionManager.class);
     _manager.setSubscriptionManager(_subscriptionManager);
 
-    _manager.setSupport(new ClientSupport());
+    _schedulingService = Mockito.mock(SchedulingService.class);
+    _manager.setScheduleService(_schedulingService);
   }
 
-  /**
-   * Test that the subscriberId is properly pulled from the "requestorRef" field
-   * of the SubscriptionRequest.
-   */
   @Test
-  public void testSubscriptionRequestAndResponseWithGeneralSubscriberRef() {
+  public void testSubscriptionRequestAndResponse() {
 
     SiriClientRequest request = new SiriClientRequest();
     SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
@@ -45,6 +52,9 @@ public class InitiateSubscriptionsManagerTest {
     subscriptionRequest.getVehicleMonitoringSubscriptionRequest().add(vmRequest);
 
     _manager.registerPendingSubscription(request, subscriptionRequest);
+
+    Mockito.verify(_schedulingService).scheduleResponseTimeoutTask(
+        Mockito.any(Runnable.class));
 
     SubscriptionResponseStructure response = new SubscriptionResponseStructure();
 
@@ -126,10 +136,10 @@ public class InitiateSubscriptionsManagerTest {
     Mockito.verify(_subscriptionManager).upgradePendingSubscription(response,
         status, subId, ESiriModuleType.VEHICLE_MONITORING, vmRequest, request);
   }
-  
+
   @Test
   public void testTimeout() throws InterruptedException {
-    
+
     SiriClientRequest request = new SiriClientRequest();
     SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
     subscriptionRequest.setRequestorRef(SiriTypeFactory.particpantRef("userA"));
@@ -140,6 +150,5 @@ public class InitiateSubscriptionsManagerTest {
 
     _manager.registerPendingSubscription(request, subscriptionRequest);
 
-    
   }
 }

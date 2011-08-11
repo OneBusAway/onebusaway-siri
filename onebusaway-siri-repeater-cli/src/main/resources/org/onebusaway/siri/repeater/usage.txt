@@ -7,7 +7,6 @@ Args:
   -privateClientUrl=url           internal url your repeater client will actually bind to, if specifed (default=clientUrl)
   -repeaterUrl=url                url your repeater server binds to and listens to for incoming client requests
   -privateRepeaterUrl=url         internal url your repeater server will actually bind to, if specified (default=repeaterUrl)
-  -dataSource=path                a Spring context.xml file containing additional bean defs
   -responseTimeout=time           time, in seconds, to wait for a response from a SIRI endpoint after a request
   -logRawXml=..                   if specified, indicates the raw SIRI request and response XML should be logged to the console
                                   valid values are "NONE" (the default), "DATA", "CONTROL", and "ALL"

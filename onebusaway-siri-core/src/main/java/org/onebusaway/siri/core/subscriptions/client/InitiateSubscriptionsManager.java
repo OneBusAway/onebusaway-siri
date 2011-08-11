@@ -1,5 +1,7 @@
 package org.onebusaway.siri.core.subscriptions.client;
 
+import static org.onebusaway.siri.core.subscriptions.client.ClientSupport.appendError;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,20 +10,29 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import org.onebusaway.siri.core.ESiriModuleType;
+import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.exceptions.SiriSubscriptionModuleTypeConflictException;
+import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.AbstractSubscriptionStructure;
+import uk.org.siri.siri.ParticipantRefStructure;
+import uk.org.siri.siri.ServiceDeliveryErrorConditionStructure;
 import uk.org.siri.siri.StatusResponseStructure;
+import uk.org.siri.siri.SubscriptionQualifierStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.SubscriptionResponseStructure;
 
-class InitiateSubscriptionsManager extends AbstractManager {
+@Singleton
+class InitiateSubscriptionsManager {
 
   private static final Logger _log = LoggerFactory.getLogger(InitiateSubscriptionsManager.class);
 
@@ -30,6 +41,28 @@ class InitiateSubscriptionsManager extends AbstractManager {
    * the server
    */
   private ConcurrentMap<SubscriptionId, ClientPendingSubscription> _pendingSubscriptionRequests = new ConcurrentHashMap<SubscriptionId, ClientPendingSubscription>();
+
+  private SiriClientSubscriptionManager _subscriptionManager;
+
+  private SiriClientHandler _client;
+
+  private SchedulingService _schedulingService;
+
+  @Inject
+  public void setSubscriptionManager(
+      SiriClientSubscriptionManager subscriptionManager) {
+    _subscriptionManager = subscriptionManager;
+  }
+
+  @Inject
+  public void setClient(SiriClientHandler client) {
+    _client = client;
+  }
+  
+  @Inject
+  public void setScheduleService(SchedulingService schedulingService) {
+    _schedulingService = schedulingService;
+  }
 
   public void registerPendingSubscription(SiriClientRequest request,
       SubscriptionRequest subscriptionRequest) {
@@ -45,7 +78,7 @@ class InitiateSubscriptionsManager extends AbstractManager {
 
       for (AbstractSubscriptionStructure subRequest : requests) {
 
-        SubscriptionId subId = _support.getSubscriptionIdForSubscriptionRequest(
+        SubscriptionId subId = getSubscriptionIdForSubscriptionRequest(
             subscriptionRequest, subRequest);
 
         /**
@@ -71,7 +104,7 @@ class InitiateSubscriptionsManager extends AbstractManager {
      */
     PendingSubscriptionTimeoutTask task = new PendingSubscriptionTimeoutTask(
         pendingSubscriptions.keySet());
-    _subscriptionManager.scheduleResponseTimeoutTask(task);
+    _schedulingService.scheduleResponseTimeoutTask(task);
   }
 
   public void clearPendingSubscription(SiriClientRequest request,
@@ -84,7 +117,7 @@ class InitiateSubscriptionsManager extends AbstractManager {
 
       for (AbstractSubscriptionStructure subRequest : requests) {
 
-        SubscriptionId subId = _support.getSubscriptionIdForSubscriptionRequest(
+        SubscriptionId subId = getSubscriptionIdForSubscriptionRequest(
             subscriptionRequest, subRequest);
 
         _pendingSubscriptionRequests.remove(subId);
@@ -96,12 +129,12 @@ class InitiateSubscriptionsManager extends AbstractManager {
 
     for (StatusResponseStructure status : response.getResponseStatus()) {
 
-      SubscriptionId subId = _support.getSubscriptionIdForStatusResponse(status);
+      SubscriptionId subId = getSubscriptionIdForStatusResponse(status);
 
       ClientPendingSubscription pending = _pendingSubscriptionRequests.remove(subId);
 
       if (pending == null) {
-        _support.logUnknownSubscriptionResponse(response, subId);
+        logUnknownSubscriptionResponse(response, subId);
         continue;
       }
 
@@ -112,7 +145,7 @@ class InitiateSubscriptionsManager extends AbstractManager {
             pending.getRequest());
 
       } else {
-        _support.logErrorInSubscriptionResponse(response, status, subId);
+        logErrorInSubscriptionResponse(response, status, subId);
       }
     }
   }
@@ -136,27 +169,132 @@ class InitiateSubscriptionsManager extends AbstractManager {
     ESiriModuleType existingModuleType = _subscriptionManager.getModuleTypeForSubscriptionId(subId);
 
     if (existingModuleType != null && existingModuleType != moduleType) {
-      _support.logWarningAboutActiveSubscriptionsWithDifferentModuleTypes(
-          subId, moduleType, existingModuleType);
+      logWarningAboutActiveSubscriptionsWithDifferentModuleTypes(subId,
+          moduleType, existingModuleType);
       throw new SiriSubscriptionModuleTypeConflictException(subId,
           existingModuleType, moduleType);
     }
 
     ClientPendingSubscription pending = _pendingSubscriptionRequests.get(subId);
     if (pending != null && pending.getModuleType() != moduleType) {
-      _support.logWarningAboutPendingSubscriptionsWithDifferentModuleTypes(
-          subId, moduleType, pending);
+      logWarningAboutPendingSubscriptionsWithDifferentModuleTypes(subId,
+          moduleType, pending);
       throw new SiriSubscriptionModuleTypeConflictException(subId,
           pending.getModuleType(), moduleType);
     }
 
     pending = pendingSubscriptions.get(subId);
     if (pending != null && pending.getModuleType() != moduleType) {
-      _support.logWarningAboutPendingSubscriptionsWithDifferentModuleTypes(
-          subId, moduleType, pending);
+      logWarningAboutPendingSubscriptionsWithDifferentModuleTypes(subId,
+          moduleType, pending);
       throw new SiriSubscriptionModuleTypeConflictException(subId,
           pending.getModuleType(), moduleType);
     }
+  }
+
+  private SubscriptionId getSubscriptionIdForSubscriptionRequest(
+      SubscriptionRequest subscriptionRequest,
+      AbstractSubscriptionStructure functionalSubscriptionRequest) {
+
+    ParticipantRefStructure subscriberRef = getBestSubscriberRef(
+        functionalSubscriptionRequest.getSubscriberRef(),
+        subscriptionRequest.getRequestorRef());
+
+    SubscriptionQualifierStructure subscriptionRef = functionalSubscriptionRequest.getSubscriptionIdentifier();
+
+    return ClientSupport.getSubscriptionId(subscriberRef, subscriptionRef);
+  }
+
+  private ParticipantRefStructure getBestSubscriberRef(
+      ParticipantRefStructure... refs) {
+    for (ParticipantRefStructure ref : refs) {
+      if (ref != null && ref.getValue() != null)
+        return ref;
+    }
+    return null;
+  }
+
+  private SubscriptionId getSubscriptionIdForStatusResponse(
+      StatusResponseStructure status) {
+
+    ParticipantRefStructure subscriberRef = status.getSubscriberRef();
+    SubscriptionQualifierStructure subscriptionRef = status.getSubscriptionRef();
+
+    return ClientSupport.getSubscriptionId(subscriberRef, subscriptionRef);
+  }
+
+  private void logUnknownSubscriptionResponse(
+      SubscriptionResponseStructure response, SubscriptionId subId) {
+    StringBuilder b = new StringBuilder();
+    b.append("A <SubscriptionResponse/ResponseStatus/> was received with no pending <SubscriptionRequest/> having been sent:");
+    if (response.getAddress() != null)
+      b.append(" address=").append(response.getAddress());
+    if (response.getSubscriptionManagerAddress() != null)
+      b.append(" subscriptionManagerAddress=").append(
+          response.getSubscriptionManagerAddress());
+    if (response.getResponderRef() != null
+        && response.getResponderRef().getValue() != null)
+      b.append(" responderRef=" + response.getResponderRef().getValue());
+    b.append(" subscriptionId=" + subId);
+    _log.warn(b.toString());
+  }
+
+  private void logErrorInSubscriptionResponse(
+      SubscriptionResponseStructure response, StatusResponseStructure status,
+      SubscriptionId subId) {
+
+    StringBuilder b = new StringBuilder();
+    b.append("We received an error response for a subscription request:");
+    if (response.getAddress() != null)
+      b.append(" address=").append(response.getAddress());
+    if (response.getSubscriptionManagerAddress() != null)
+      b.append(" subscriptionManagerAddress=").append(
+          response.getSubscriptionManagerAddress());
+    if (response.getResponderRef() != null
+        && response.getResponderRef().getValue() != null)
+      b.append(" responderRef=" + response.getResponderRef().getValue());
+    b.append(" subscriptionId=" + subId);
+    ServiceDeliveryErrorConditionStructure error = status.getErrorCondition();
+
+    if (error != null) {
+      appendError(error.getAccessNotAllowedError(), b);
+      appendError(error.getAllowedResourceUsageExceededError(), b);
+      appendError(error.getCapabilityNotSupportedError(), b);
+      appendError(error.getNoInfoForTopicError(), b);
+      appendError(error.getOtherError(), b);
+
+      if (error.getDescription() != null
+          && error.getDescription().getValue() != null)
+        b.append(" errorDescription=").append(error.getDescription().getValue());
+    }
+
+    _log.warn(b.toString());
+  }
+
+  private void logWarningAboutActiveSubscriptionsWithDifferentModuleTypes(
+      SubscriptionId subId, ESiriModuleType newModuleType,
+      ESiriModuleType existingModuleType) {
+
+    _log.warn("An existing subscription ("
+        + subId
+        + ") already exists for module type "
+        + existingModuleType
+        + " but a new subscription has been requested for module type "
+        + newModuleType
+        + ".  Reuse of the same subscription id across different module types is not supported.");
+  }
+
+  private void logWarningAboutPendingSubscriptionsWithDifferentModuleTypes(
+      SubscriptionId subId, ESiriModuleType moduleType,
+      ClientPendingSubscription pending) {
+
+    _log.warn("An existing pending subscription ("
+        + subId
+        + ") already exists for module type "
+        + pending.getModuleType()
+        + " but a new subscription has been requested for module type "
+        + moduleType
+        + ".  Reuse of the same subscription id across different module types is not supported.");
   }
 
   /****
@@ -178,8 +316,6 @@ class InitiateSubscriptionsManager extends AbstractManager {
         if (pending != null) {
           _log.warn("pending subscription expired before receiving a subscription response from server: "
               + subscriptionId);
-
-          // TODO : Attempt reconnect if needed
 
           SiriClientRequest request = pending.getRequest();
           _client.handleRequestReconnectIfApplicable(request);

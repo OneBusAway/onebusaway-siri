@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
@@ -34,6 +38,7 @@ import uk.org.siri.siri.TerminateSubscriptionRequestStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure.TerminationResponseStatus;
 
+@Singleton
 public class SiriServer extends SiriCommon implements SiriRawHandler {
 
   private static Logger _log = LoggerFactory.getLogger(SiriServer.class);
@@ -50,10 +55,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
     setUrl("http://*:8080/server.xml");
   }
 
-  public SiriServerSubscriptionManager getSubscriptionManager() {
-    return _subscriptionManager;
-  }
-
+  @Inject
   public void setSubscriptionManager(
       SiriServerSubscriptionManager subscriptionManager) {
     _subscriptionManager = subscriptionManager;
@@ -81,9 +83,12 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
     _subscriptionRequestHandlers.remove(handler);
   }
 
-  @Override
-  public void start() throws SiriException {
-    super.start();
+  /****
+   * 
+   ****/
+
+  @PostConstruct
+  public void start() {
     _serviceStartedTimestamp = System.currentTimeMillis();
   }
 
@@ -103,7 +108,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
         _log.debug("SiriPublishEvents=" + events.size());
 
       for (SiriServerSubscriptionEvent event : events)
-        _executor.submit(new PublishEventTask(event));
+        _schedulingService.submit(new PublishEventTask(event));
     }
 
     return events.size();

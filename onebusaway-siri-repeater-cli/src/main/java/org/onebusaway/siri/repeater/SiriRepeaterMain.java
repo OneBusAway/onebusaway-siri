@@ -1,5 +1,9 @@
 package org.onebusaway.siri.repeater;
 
+import org.onebusaway.siri.core.guice.LifecycleService;
+
+import com.google.inject.Injector;
+
 
 public class SiriRepeaterMain {
 
@@ -8,34 +12,15 @@ public class SiriRepeaterMain {
     try {
 
       SiriRepeaterCommandLineConfiguration config = new SiriRepeaterCommandLineConfiguration();
-      SiriRepeater repeater = config.configure(args);
+      Injector injector = config.configure(args);
 
-      /**
-       * Register a shutdown hook to clean up the repeater when things shutdown
-       */
-      Thread shutdownHook = new Thread(new ShutdownHookRunnable(repeater));
-      Runtime.getRuntime().addShutdownHook(shutdownHook);
-
-      repeater.start();
+      LifecycleService service = injector.getInstance(LifecycleService.class);
+      service.start();
 
     } catch (Exception ex) {
       System.err.println("error running the SIRI repeater application");
       ex.printStackTrace();
       System.exit(-1);
-    }
-  }
-
-  private static class ShutdownHookRunnable implements Runnable {
-
-    private final SiriRepeater _repeater;
-
-    public ShutdownHookRunnable(SiriRepeater repeater) {
-      _repeater = repeater;
-    }
-
-    @Override
-    public void run() {
-      _repeater.stop();
     }
   }
 }

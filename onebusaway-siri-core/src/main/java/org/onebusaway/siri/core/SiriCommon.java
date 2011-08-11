@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -41,6 +42,7 @@ import org.apache.http.params.HttpParams;
 import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.exceptions.SiriSerializationException;
+import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.versioning.SiriVersioning;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +62,7 @@ import uk.org.siri.siri.SubscriptionContextStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.VehicleMonitoringSubscriptionStructure;
 
-public class SiriCommon {
+public class SiriCommon implements SiriRawHandler {
 
   public enum ELogRawXmlType {
     NONE, CONTROL, DATA, ALL
@@ -69,6 +71,8 @@ public class SiriCommon {
   private static Logger _log = LoggerFactory.getLogger(SiriCommon.class);
 
   private JAXBContext _jaxbContext;
+
+  protected SchedulingService _schedulingService;
 
   private String _identity;
 
@@ -87,8 +91,6 @@ public class SiriCommon {
 
   protected ELogRawXmlType _logRawXmlType = ELogRawXmlType.NONE;
 
-  protected ScheduledExecutorService _executor;
-
   public SiriCommon() {
 
     try {
@@ -101,6 +103,11 @@ public class SiriCommon {
 
     _identity = UUID.randomUUID().toString();
 
+  }
+
+  @Inject
+  public void setSchedulingService(SchedulingService schedulingService) {
+    _schedulingService = schedulingService;
   }
 
   public String getIdentity() {
@@ -203,28 +210,18 @@ public class SiriCommon {
     _logRawXmlType = logRawXmlType;
   }
 
-  public ScheduledExecutorService getExecutor() {
-    return _executor;
+  /**
+   * It's up to sub-classes to implement this properly. We just provide it here
+   * to make {@link SiriCommon} appropriate as for exporting, as opposed to
+   * working with SiriClient and SiriServer by themselves.
+   */
+  @Override
+  public void handleRawRequest(Reader reader, Writer writer) {
+
   }
 
   /****
    * 
-   ****/
-
-  public void start() {
-    _executor = createExecutor();
-  }
-
-  public void stop() {
-    if (_executor != null)
-      _executor.shutdownNow();
-  }
-
-  /****
-   * 
-   * @param <T>
-   * @param in
-   * @return
    ****/
 
   @SuppressWarnings("unchecked")
@@ -317,7 +314,7 @@ public class SiriCommon {
 
     AsynchronousClientConnectionAttempt attempt = new AsynchronousClientConnectionAttempt(
         request);
-    _executor.execute(attempt);
+    _schedulingService.submit(attempt);
   }
 
   protected void handleSiriResponse(Siri siri, boolean asynchronousResponse) {
@@ -741,8 +738,7 @@ public class SiriCommon {
    * 
    * @param request the client request to potentially reconnect
    */
-  protected void reattemptRequestIfApplicable(
-      SiriClientRequest request) {
+  protected void reattemptRequestIfApplicable(SiriClientRequest request) {
 
     if (request.getRemainingReconnectionAttempts() == 0)
       return;
@@ -755,8 +751,8 @@ public class SiriCommon {
 
     AsynchronousClientConnectionAttempt asyncAttempt = new AsynchronousClientConnectionAttempt(
         request);
-    _executor.schedule(asyncAttempt, request.getReconnectionInterval(),
-        TimeUnit.SECONDS);
+    _schedulingService.schedule(asyncAttempt,
+        request.getReconnectionInterval(), TimeUnit.SECONDS);
   }
 
   protected Reader copyReaderToStringBuilder(Reader responseReader,

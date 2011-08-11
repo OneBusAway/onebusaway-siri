@@ -9,15 +9,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
 import javax.xml.datatype.Duration;
 
 import org.onebusaway.collections.tuple.T2;
 import org.onebusaway.collections.tuple.Tuples;
 import org.onebusaway.siri.core.ESiriModuleType;
+import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.SiriServer;
@@ -72,6 +73,8 @@ public class SiriServerSubscriptionManager {
 
   private static Logger _log = LoggerFactory.getLogger(SiriServerSubscriptionManager.class);
 
+  private SchedulingService _schedulingService;
+
   private ServerSupport _support = new ServerSupport();
 
   private SiriClientHandler _client;
@@ -101,6 +104,11 @@ public class SiriServerSubscriptionManager {
       ConcurrentHashMap<SubscriptionId, ServerSubscriptionInstance> m = new ConcurrentHashMap<SubscriptionId, ServerSubscriptionInstance>();
       _subscriptionsByModuleType.put(moduleType, m);
     }
+  }
+
+  @Inject
+  public void setSchedulingService(SchedulingService schedulingService) {
+    _schedulingService = schedulingService;
   }
 
   public void addListener(SiriSubscriptionManagerListener listener) {
@@ -231,12 +239,13 @@ public class SiriServerSubscriptionManager {
     for (SubscriptionId id : idsToTerminate) {
 
       TerminationResponseStatus status = new TerminationResponseStatus();
-      
+
       /**
-       * Though we can technically set this here, I think it makes more sense in the parent response structure
+       * Though we can technically set this here, I think it makes more sense in
+       * the parent response structure
        */
       // status.setRequestMessageRef(request.getMessageIdentifier());
-      
+
       status.setResponseTimestamp(timestamp);
       status.setStatus(Boolean.TRUE);
       status.setSubscriberRef(subscriberRef);
@@ -526,9 +535,8 @@ public class SiriServerSubscriptionManager {
 
         if (heartbeatInterval > 0) {
           HeartbeatTask heartbeatTask = new HeartbeatTask(channel);
-          ScheduledExecutorService executor = _server.getExecutor();
-          task = executor.scheduleAtFixedRate(heartbeatTask, heartbeatInterval,
-              heartbeatInterval, TimeUnit.MILLISECONDS);
+          task = _schedulingService.scheduleAtFixedRate(heartbeatTask,
+              heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
           channel.setHeartbeatTask(task);
         }
       }
@@ -545,7 +553,7 @@ public class SiriServerSubscriptionManager {
     ConcurrentMap<SubscriptionId, ServerSubscriptionInstance> subscriptionsById = _subscriptionsByModuleType.get(moduleType);
 
     for (ServerSubscriptionInstance instance : subscriptionsById.values()) {
-      
+
       ServiceDelivery updatedDelivery = copyDeliveryShallow(delivery);
 
       List<T> applicableResponses = getApplicableResponses(updatedDelivery,

@@ -7,28 +7,37 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
+import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriChannelInfo;
+import org.onebusaway.siri.core.SiriClient;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriClientRequestFactory;
 import org.onebusaway.siri.core.SiriCommon.ELogRawXmlType;
+import org.onebusaway.siri.core.SiriCoreModule;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
+import org.onebusaway.siri.core.guice.LifecycleService;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
-import org.onebusaway.siri.core.subscriptions.client.SiriClientSubscriptionManager;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
-import org.onebusaway.siri.jetty.SiriJettyClient;
+import org.onebusaway.siri.jetty.SiriJettyModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.Siri;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
 
 public class SiriClientMain {
 
@@ -54,7 +63,7 @@ public class SiriClientMain {
 
   private static final String ARG_TERMINATE_SUBSCRIPTION = "terminateSubscription";
 
-  private SiriJettyClient _client;
+  private SiriClient _client;
 
   private String _outputFormat;
 
@@ -88,7 +97,12 @@ public class SiriClientMain {
 
     args = cli.getArgs();
 
-    _client = new SiriJettyClient();
+    List<Module> modules = new ArrayList<Module>();
+    modules.addAll(SiriCoreModule.getModules());
+    modules.add(new SiriJettyModule());
+    Injector injector = Guice.createInjector(modules);
+
+    _client = injector.getInstance(SiriClient.class);
 
     if (cli.hasOption(ARG_ID))
       _client.setIdentity(cli.getOptionValue(ARG_ID));
@@ -113,9 +127,11 @@ public class SiriClientMain {
 
     if (cli.hasOption(ARG_RESPONSE_TIMEOUT)) {
       int responseTimeout = Integer.parseInt(cli.getOptionValue(ARG_RESPONSE_TIMEOUT));
-      SiriClientSubscriptionManager manager = _client.getSubscriptionManager();
-      manager.setResponseTimeout(responseTimeout);
+      SchedulingService schedulingService = injector.getInstance(SchedulingService.class);
+      schedulingService.setResponseTimeout(responseTimeout);
     }
+
+    _client.addServiceDeliveryHandler(new ServiceDeliveryHandlerImpl());
 
     if (args.length == 0 && !cli.hasOption(ARG_NO_SUBSCRIPTIONS)) {
       printUsage();
@@ -123,14 +139,12 @@ public class SiriClientMain {
     }
 
     /**
-     * Register a shutdown hook to clean up the client when things shutdown
+     * Need to make sure that we fire off all the @PostConstruct service
+     * annotations. The @PreDestroy annotations are automatically included in a
+     * shutdown hook.
      */
-    Thread shutdownHook = new Thread(new ShutdownHookRunnable());
-    Runtime.getRuntime().addShutdownHook(shutdownHook);
-
-    _client.addServiceDeliveryHandler(new ServiceDeliveryHandlerImpl());
-
-    _client.start();
+    LifecycleService lifecycleService = injector.getInstance(LifecycleService.class);
+    lifecycleService.start();
 
     ERequestType requestType = getRequestType(cli);
     SiriClientRequestFactory factory = new SiriClientRequestFactory();
@@ -261,19 +275,6 @@ public class SiriClientMain {
         printAsXml(siri);
       } catch (IOException ex) {
         _log.warn("error writing output", ex);
-      }
-    }
-  }
-
-  private class ShutdownHookRunnable implements Runnable {
-
-    @Override
-    public void run() {
-      _client.stop();
-
-      if (_output != null) {
-        _output.close();
-        _output = null;
       }
     }
   }

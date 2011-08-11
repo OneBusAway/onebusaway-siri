@@ -7,12 +7,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import org.onebusaway.siri.core.ESiriModuleType;
+import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.exceptions.SiriException;
@@ -37,6 +39,7 @@ import uk.org.siri.siri.TerminateSubscriptionResponseStructure;
  * 
  * @author bdferris
  */
+@Singleton
 public class SiriClientSubscriptionManager {
 
   private static Logger _log = LoggerFactory.getLogger(SiriClientSubscriptionManager.class);
@@ -59,77 +62,46 @@ public class SiriClientSubscriptionManager {
    */
   private ConcurrentMap<SubscriptionId, ClientSubscriptionInstance> _activeSubscriptions = new ConcurrentHashMap<SubscriptionId, ClientSubscriptionInstance>();
 
-  private ScheduledExecutorService _executor;
-
   private SiriClientHandler _client;
 
-  private ClientSupport _support = new ClientSupport();
+  private SchedulingService _schedulingService;
 
-  private InitiateSubscriptionsManager _initiateSubscriptionsManager = new InitiateSubscriptionsManager();
+  private InitiateSubscriptionsManager _initiateSubscriptionsManager;
 
-  private CheckStatusManager _checkStatusManager = new CheckStatusManager();
+  private CheckStatusManager _checkStatusManager;
 
-  private TerminateSubscriptionsManager _terminateSubscriptionsManager = new TerminateSubscriptionsManager();
+  private TerminateSubscriptionsManager _terminateSubscriptionsManager;
 
-  /**
-   * Timeout, in seconds, in which we expect to receive a response for a pending
-   * request if it's received asynchronously (ex SubscriptionRequest =>
-   * SubscriptionResponse).
-   */
-  private int _responseTimeout = 10;
-
-  /**
-   * Timeout, in seconds, in which we expect to receive a response for a pending
-   * request if it's received asynchronously (ex SubscriptionRequest =>
-   * SubscriptionResponse).
-   * 
-   * @param responseTimeout timeout, in seconds
-   */
-  public void setResponseTimeout(int responseTimeout) {
-    _responseTimeout = responseTimeout;
-  }
-
-  /**
-   * Timeout, in seconds, in which we expect to receive a response for a pending
-   * request if it's received asynchronously (ex SubscriptionRequest =>
-   * SubscriptionResponse).
-   */
-  public int getResponseTimeout() {
-    return _responseTimeout;
-  }
-
-  public void setSiriClientHandler(SiriClientHandler client) {
+  @Inject
+  void setClient(SiriClientHandler client) {
     _client = client;
   }
 
+  @Inject
+  public void setSchedulingService(SchedulingService schedulingService) {
+    _schedulingService = schedulingService;
+  }
+
+  @Inject
+  void setInitiateSubscriptionManager(
+      InitiateSubscriptionsManager initiateSubscriptionsManager) {
+    _initiateSubscriptionsManager = initiateSubscriptionsManager;
+  }
+
+  @Inject
+  void setCheckStatusManager(CheckStatusManager checkStatusManager) {
+    _checkStatusManager = checkStatusManager;
+  }
+
+  @Inject
+  void setTerminateSubscriptionsManager(
+      TerminateSubscriptionsManager terminateSubscriptionsManager) {
+    _terminateSubscriptionsManager = terminateSubscriptionsManager;
+  }
+
   /****
-   * Client Start and Stop Methods
-   ****/
-
-  /**
-   * 
-   */
-  public void start() {
-
-    _log.debug("starting client subscription manager");
-
-    _executor = Executors.newSingleThreadScheduledExecutor();
-
-    wireManager(_initiateSubscriptionsManager);
-    wireManager(_checkStatusManager);
-    wireManager(_terminateSubscriptionsManager);
-  }
-
-  /**
-   * 
-   */
-  public void stop() {
-
-    _log.debug("stopping client subscription manager");
-
-    if (_executor != null)
-      _executor.shutdownNow();
-  }
+   * Public Methods
+   *****/
 
   /**
    * Register a pending subscription request. We don't actually consider a
@@ -172,7 +144,7 @@ public class SiriClientSubscriptionManager {
   public boolean isSubscriptionActiveForModuleDelivery(
       AbstractServiceDeliveryStructure moduleDelivery) {
 
-    SubscriptionId id = _support.getSubscriptionIdForModuleDelivery(moduleDelivery);
+    SubscriptionId id = ClientSupport.getSubscriptionIdForModuleDelivery(moduleDelivery);
     return _activeSubscriptions.containsKey(id);
   }
 
@@ -214,7 +186,7 @@ public class SiriClientSubscriptionManager {
 
     if (waitForTerminateSubscriptionResponseOnExit)
       _terminateSubscriptionsManager.waitForPendingSubscriptionTerminationResponses(
-          allPendings, _responseTimeout);
+          allPendings, _schedulingService.getResponseTimeout());
   }
 
   public void handleCheckStatusNotification(
@@ -255,15 +227,6 @@ public class SiriClientSubscriptionManager {
    * but that should not be exposed publically.
    ****/
 
-  ScheduledFuture<?> scheduleResponseTimeoutTask(Runnable timeoutTask) {
-    return _executor.schedule(timeoutTask, _responseTimeout, TimeUnit.SECONDS);
-  }
-
-  ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay,
-      long period, TimeUnit unit) {
-    return _executor.scheduleAtFixedRate(command, initialDelay, period, unit);
-  }
-
   /**
    * After receiving a valid SubscriptionResponse to a SubscriptionRequest, this
    * method updates the pending subscription to 'active' status.
@@ -282,10 +245,12 @@ public class SiriClientSubscriptionManager {
   synchronized void upgradePendingSubscription(
       SubscriptionResponseStructure response, StatusResponseStructure status,
       SubscriptionId subscriptionId, ESiriModuleType moduleType,
-      AbstractSubscriptionStructure moduleRequest, SiriClientRequest originalSubscriptionRequest) {
+      AbstractSubscriptionStructure moduleRequest,
+      SiriClientRequest originalSubscriptionRequest) {
 
     ClientSubscriptionChannel channel = getChannelForServer(
-        originalSubscriptionRequest.getTargetUrl(), originalSubscriptionRequest.getTargetVersion());
+        originalSubscriptionRequest.getTargetUrl(),
+        originalSubscriptionRequest.getTargetVersion());
 
     ScheduledFuture<?> expiration = registerSubscriptionExpirationTask(
         subscriptionId, status, originalSubscriptionRequest);
@@ -295,7 +260,8 @@ public class SiriClientSubscriptionManager {
      */
 
     ClientSubscriptionInstance instance = new ClientSubscriptionInstance(
-        channel, subscriptionId, originalSubscriptionRequest, moduleType, moduleRequest, expiration);
+        channel, subscriptionId, originalSubscriptionRequest, moduleType,
+        moduleRequest, expiration);
 
     ClientSubscriptionInstance existing = _activeSubscriptions.put(
         subscriptionId, instance);
@@ -307,7 +273,8 @@ public class SiriClientSubscriptionManager {
     Set<SubscriptionId> channelSubscriptions = channel.getSubscriptions();
     channelSubscriptions.add(subscriptionId);
 
-    updateChannelWithClientRequest(channel, originalSubscriptionRequest, response);
+    updateChannelWithClientRequest(channel, originalSubscriptionRequest,
+        response);
   }
 
   ESiriModuleType getModuleTypeForSubscriptionId(SubscriptionId subId) {
@@ -432,15 +399,6 @@ public class SiriClientSubscriptionManager {
    * Private Methods
    ****/
 
-  private void wireManager(AbstractManager manager) {
-    /**
-     * TODO: Maybe it's time for a IOC Dependency Injection library?
-     */
-    manager.setClient(_client);
-    manager.setSubscriptionManager(this);
-    manager.setSupport(_support);
-  }
-
   /**
    * Here we register CheckStatus and Heartbeat tasks for a particular channel
    * if a client has requested it.
@@ -494,7 +452,7 @@ public class SiriClientSubscriptionManager {
 
       // Why is this * 2? We want to give the heartbeat a little slack time.
       // Could be better...
-      heartbeatTask = _executor.schedule(task, heartbeatInterval * 2,
+      heartbeatTask = _schedulingService.schedule(task, heartbeatInterval * 2,
           TimeUnit.SECONDS);
       channel.setHeartbeatTask(heartbeatTask);
     }
@@ -559,7 +517,8 @@ public class SiriClientSubscriptionManager {
     if (delay > 0) {
       SubscriptionExpirationTask task = new SubscriptionExpirationTask(this,
           subscriptionId);
-      expiration = _executor.schedule(task, delay, TimeUnit.MILLISECONDS);
+      expiration = _schedulingService.schedule(task, delay,
+          TimeUnit.MILLISECONDS);
     } else {
       _log.warn(
           "subscription has already expired before it had a chance to start: id={} validUntil={}",

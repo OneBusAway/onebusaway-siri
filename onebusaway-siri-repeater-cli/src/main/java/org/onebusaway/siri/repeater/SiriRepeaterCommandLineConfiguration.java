@@ -4,10 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,13 +13,12 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Parser;
 import org.apache.commons.cli.PosixParser;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.servlet.Context;
 import org.onebusaway.cli.Daemonizer;
 import org.onebusaway.siri.core.SiriClient;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriClientRequestFactory;
 import org.onebusaway.siri.core.SiriCommon.ELogRawXmlType;
+import org.onebusaway.siri.core.SiriCoreModule;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.SiriServer;
 import org.onebusaway.siri.core.exceptions.SiriException;
@@ -29,22 +26,13 @@ import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterFactoryImpl;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcherFactoryImpl;
-import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterSource;
 import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionManager;
-import org.onebusaway.siri.jetty.SiriJettyClient;
-import org.onebusaway.siri.jetty.SiriJettyServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.FileSystemResource;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
 
 public class SiriRepeaterCommandLineConfiguration {
-
-  private static final Logger _log = LoggerFactory.getLogger(SiriRepeaterCommandLineConfiguration.class);
 
   private static final String ARG_ID = "id";
 
@@ -55,7 +43,7 @@ public class SiriRepeaterCommandLineConfiguration {
   private static final String ARG_CLIENT_URL = "clientUrl";
 
   private static final String ARG_PRIVATE_CLIENT_URL = "privateClientUrl";
-  
+
   private static final String ARG_FILTER = "filter";
 
   private static final String ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT = "requestorConsumerAddressDefault";
@@ -64,13 +52,7 @@ public class SiriRepeaterCommandLineConfiguration {
 
   private static final String ARG_NO_SUBSCRIPTIONS = "noSubscriptions";
 
-  private static final String ARG_DATA_SOURCE = "dataSource";
-
-  private static final String CLASSPATH_PREFIX = "classpath:";
-
-  private static final String FILE_PREFIX = "file:";
-
-  public SiriRepeater configure(String[] args) throws Exception {
+  public Injector configure(String[] args) throws Exception {
 
     if (needsHelp(args)) {
       printUsage();
@@ -94,33 +76,13 @@ public class SiriRepeaterCommandLineConfiguration {
       System.exit(-1);
     }
 
-    List<String> paths = new ArrayList<String>();
+    List<Module> modules = new ArrayList<Module>();
+    modules.addAll(SiriCoreModule.getModules());
+    Injector injector = Guice.createInjector(modules);
 
-    if (cli.hasOption(ARG_DATA_SOURCE))
-      paths.add(cli.getOptionValue(ARG_DATA_SOURCE));
+    handleCommandLineOptions(cli, injector);
 
-    paths.add(CLASSPATH_PREFIX
-        + "org/onebusaway/siri/repeater/application-context.xml");
-
-    ConfigurableApplicationContext context = createContext(cli, paths);
-
-    handleCommandLineOptions(cli, context);
-
-    SiriRepeater siriRepeater = context.getBean(SiriRepeater.class);
-    SiriClient client = siriRepeater.getSiriClient();
-    SiriServer server = siriRepeater.getSiriServer();
-
-    jointlyConfigureClientAndServerWebapp(client, server);
-
-    SiriClientRequestFactory factory = new SiriClientRequestFactory();
-
-    for (String arg : args) {
-      Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
-      SiriClientRequest request = factory.createSubscriptionRequest(subArgs);
-      siriRepeater.addStartupRequest(request);
-    }
-
-    return siriRepeater;
+    return injector;
   }
 
   private boolean needsHelp(String[] args) {
@@ -132,7 +94,7 @@ public class SiriRepeaterCommandLineConfiguration {
   }
 
   private void printUsage() {
-    
+
     InputStream is = getClass().getResourceAsStream("usage.txt");
     BufferedReader reader = new BufferedReader(new InputStreamReader(is));
     String line = null;
@@ -164,18 +126,14 @@ public class SiriRepeaterCommandLineConfiguration {
     options.addOption(ARG_LOG_RAW_XML, true, "log raw xml");
     options.addOption(ARG_NO_SUBSCRIPTIONS, false, "no subscriptions");
     options.addOption(ARG_FILTER, true, "filter specification");
-    options.addOption(ARG_DATA_SOURCE, true, "Spring data source xml file");
-
   }
 
-  protected void handleCommandLineOptions(CommandLine cli,
-      ConfigurableApplicationContext context) {
+  protected void handleCommandLineOptions(CommandLine cli, Injector injector) {
 
-    SiriRepeater siriRepeater = context.getBean(SiriRepeater.class);
-
-    SiriClient siriClient = siriRepeater.getSiriClient();
-    SiriServer siriServer = siriRepeater.getSiriServer();
-    SiriServerSubscriptionManager subscriptionManager = siriServer.getSubscriptionManager();
+    SiriRepeater siriRepeater = injector.getInstance(SiriRepeater.class);
+    SiriClient siriClient = injector.getInstance(SiriClient.class);
+    SiriServer siriServer = injector.getInstance(SiriServer.class);
+    SiriServerSubscriptionManager subscriptionManager = injector.getInstance(SiriServerSubscriptionManager.class);
 
     /**
      * Handle command line options
@@ -205,11 +163,6 @@ public class SiriRepeaterCommandLineConfiguration {
     /**
      * Filters
      */
-    Map<String, SiriModuleDeliveryFilterSource> filterSources = context.getBeansOfType(SiriModuleDeliveryFilterSource.class);
-    for (SiriModuleDeliveryFilterSource filterSource : filterSources.values())
-      subscriptionManager.addModuleDeliveryFilter(filterSource.getMatcher(),
-          filterSource.getFilter());
-
     if (cli.hasOption(ARG_FILTER)) {
 
       String filterSpec = cli.getOptionValue(ARG_FILTER);
@@ -227,37 +180,13 @@ public class SiriRepeaterCommandLineConfiguration {
 
       subscriptionManager.addModuleDeliveryFilter(matcher, filter);
     }
-  }
 
-  protected void jointlyConfigureClientAndServerWebapp(SiriClient client,
-      SiriServer server) {
+    SiriClientRequestFactory factory = new SiriClientRequestFactory();
 
-    if (client instanceof SiriJettyClient && server instanceof SiriJettyServer) {
-
-      SiriJettyClient jettyClient = (SiriJettyClient) client;
-      SiriJettyServer jettyServer = (SiriJettyServer) server;
-
-      URL clientUrl = jettyClient.getInternalUrlToBind(false);
-      URL serverUrl = jettyServer.getInternalUrlToBind(false);
-
-      if (clientUrl.getPort() == serverUrl.getPort()) {
-
-        String clientPath = clientUrl.getPath();
-        String serverPath = serverUrl.getPath();
-        if (clientPath.equals(serverPath)) {
-          _log.error("The SIRI repeater client and server are configured to listen to the same url, which is not allowed: "
-              + clientUrl + " vs " + serverUrl);
-          System.exit(-1);
-        }
-
-        Server webServer = new Server(clientUrl.getPort());
-        jettyClient.setWebServer(webServer);
-        jettyServer.setWebServer(webServer);
-
-        Context rootContext = new Context(webServer, "/", Context.SESSIONS);
-        jettyClient.setRootContext(rootContext);
-        jettyServer.setRootContext(rootContext);
-      }
+    for (String arg : cli.getArgs()) {
+      Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
+      SiriClientRequest request = factory.createSubscriptionRequest(subArgs);
+      siriRepeater.addStartupRequest(request);
     }
   }
 
@@ -299,33 +228,5 @@ public class SiriRepeaterCommandLineConfiguration {
             requestorRef, consumerAddressDefault);
       }
     }
-  }
-
-  protected ConfigurableApplicationContext createContext(CommandLine cli,
-      Iterable<String> paths) {
-
-    Map<String, BeanDefinition> additionalBeans = new HashMap<String, BeanDefinition>();
-
-    GenericApplicationContext ctx = new GenericApplicationContext();
-    XmlBeanDefinitionReader xmlReader = new XmlBeanDefinitionReader(ctx);
-
-    for (String path : paths) {
-      if (path.startsWith(CLASSPATH_PREFIX)) {
-        path = path.substring(CLASSPATH_PREFIX.length());
-        xmlReader.loadBeanDefinitions(new ClassPathResource(path));
-      } else if (path.startsWith(FILE_PREFIX)) {
-        path = path.substring(FILE_PREFIX.length());
-        xmlReader.loadBeanDefinitions(new FileSystemResource(path));
-      } else {
-        xmlReader.loadBeanDefinitions(new ClassPathResource(path));
-      }
-    }
-
-    for (Map.Entry<String, BeanDefinition> entry : additionalBeans.entrySet())
-      ctx.registerBeanDefinition(entry.getKey(), entry.getValue());
-
-    ctx.refresh();
-    ctx.registerShutdownHook();
-    return ctx;
   }
 }
