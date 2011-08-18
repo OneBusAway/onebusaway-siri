@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,12 +74,36 @@ class InitiateSubscriptionsManager {
   public void setClient(SiriClientHandler client) {
     _client = client;
   }
-  
+
   @Inject
   public void setScheduleService(SchedulingService schedulingService) {
     _schedulingService = schedulingService;
   }
 
+  /**
+   * @param subscriptionId
+   * @return true if a subscription with the specified id is pending
+   */
+  public boolean isSubscriptionPending(SubscriptionId subscriptionId) {
+    return _pendingSubscriptionRequests.containsKey(subscriptionId);
+  }
+
+  /**
+   * Register a pending subscription by storing information necessary for
+   * completing the subscription when a subscription response is eventually
+   * received from the SIRI endpoint, as indicated with a call to
+   * {@link #handleSubscriptionResponse(SubscriptionResponseStructure)}. In
+   * addition to noting the pending subscription data, a timeout task is
+   * registered as well. If the subscription response is not received within the
+   * standard timeout (see
+   * {@link SchedulingService#scheduleResponseTimeoutTask(Runnable)}), then the
+   * pending subscription will be cleared and an error will be logged.
+   * 
+   * 
+   * @param request the client request
+   * @param subscriptionRequest the SIRI subscription request associated with
+   *          that client
+   */
   public void registerPendingSubscription(SiriClientRequest request,
       SubscriptionRequest subscriptionRequest) {
 
