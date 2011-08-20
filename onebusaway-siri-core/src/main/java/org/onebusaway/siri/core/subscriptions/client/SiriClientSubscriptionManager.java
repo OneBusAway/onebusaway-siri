@@ -448,7 +448,7 @@ public class SiriClientSubscriptionManager {
 
       long checkStatusInterval = request.getCheckStatusInterval();
       channel.setCheckStatusInterval(checkStatusInterval);
-      _checkStatusManager.resetCheckStatusTask(channel, checkStatusInterval);
+      _checkStatusManager.resetCheckStatusTask(channel, (int) checkStatusInterval);
     }
   }
 

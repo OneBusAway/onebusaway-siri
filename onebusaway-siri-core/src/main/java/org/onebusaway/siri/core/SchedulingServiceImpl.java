@@ -72,19 +72,22 @@ class SchedulingServiceImpl implements SchedulingService {
     return _executor.submit(task);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-    return _executor.schedule(command, delay, unit);
+  public <T> ScheduledFuture<T> schedule(Runnable command, long delay, TimeUnit unit) {
+    return (ScheduledFuture<T>) _executor.schedule(command, delay, unit);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
+  public <T> ScheduledFuture<T> scheduleAtFixedRate(Runnable command,
       long initialDelay, long period, TimeUnit unit) {
-    return _executor.scheduleAtFixedRate(command, initialDelay, period, unit);
+    return (ScheduledFuture<T>) _executor.scheduleAtFixedRate(command, initialDelay, period, unit);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public ScheduledFuture<?> scheduleResponseTimeoutTask(Runnable task) {
-    return _executor.schedule(task, _responseTimeout, TimeUnit.SECONDS);
+  public <T> ScheduledFuture<T> scheduleResponseTimeoutTask(Runnable task) {
+    return (ScheduledFuture<T>) _executor.schedule(task, _responseTimeout, TimeUnit.SECONDS);
   }
 }

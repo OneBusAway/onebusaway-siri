@@ -39,11 +39,11 @@ public interface SchedulingService {
 
   public Future<?> submit(Runnable task);
 
-  public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
+  public <T> ScheduledFuture<T> schedule(Runnable command, long delay, TimeUnit unit);
 
-  public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
+  public <T> ScheduledFuture<T> scheduleAtFixedRate(Runnable command,
       long initialDelay, long period, TimeUnit unit);
 
-  public ScheduledFuture<?> scheduleResponseTimeoutTask(Runnable task);
+  public <T> ScheduledFuture<T> scheduleResponseTimeoutTask(Runnable task);
 
 }

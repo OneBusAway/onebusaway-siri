@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +40,14 @@ import uk.org.siri.siri.MessageRefStructure;
 import uk.org.siri.siri.Siri;
 import uk.org.siri.siri.CheckStatusResponseBodyStructure.ErrorCondition;
 
+/**
+ * The CheckStatusManager is responsible for sending CheckStatusRequests to SIRI
+ * endpoints, listening for responses, and taking appropriate reaction to reset
+ * a subscription if the proper response is not received.
+ * 
+ * @author bdferris
+ * 
+ */
 @Singleton
 class CheckStatusManager {
 
@@ -68,12 +77,19 @@ class CheckStatusManager {
     _schedulingService = schedulingService;
   }
 
-  /****
+  /**
+   * Reset the CheckStatus task for the specified channel. Any existing check
+   * status task will be canceled and cleared. If the checkStatusInterval is
+   * greater than zero, then a new check status task will be created and
+   * scheduled.
    * 
-   ****/
-
+   * @param channel the CheckStatus task will be reset on this channel
+   * @param checkStatusInterval the interval between check status requests, in
+   *          seconds, or zero, to indicate no check status requests should be
+   *          sent.
+   */
   public void resetCheckStatusTask(ClientSubscriptionChannel channel,
-      long checkStatusInterval) {
+      int checkStatusInterval) {
 
     _log.debug("resetting check status task: channel={} interval={}",
         channel.getAddress(), checkStatusInterval);
@@ -93,6 +109,13 @@ class CheckStatusManager {
     }
   }
 
+  /**
+   * Submit a CheckStatusResponse received from a SIRI endpoint. The
+   * subscription will be reset if the CheckStatusResponse has errors or if the
+   * SIRI endpoint has been restarted since the most-recent check.
+   * 
+   * @param response the CheckStatusResponse
+   */
   public void handleCheckStatusResponse(CheckStatusResponseStructure response) {
 
     _log.debug("handle check status response");

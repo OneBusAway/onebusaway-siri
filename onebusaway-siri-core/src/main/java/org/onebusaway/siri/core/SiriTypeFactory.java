@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +30,7 @@ import uk.org.siri.siri.ErrorDescriptionStructure;
 import uk.org.siri.siri.JourneyPatternRefStructure;
 import uk.org.siri.siri.LineRefStructure;
 import uk.org.siri.siri.MessageQualifierStructure;
+import uk.org.siri.siri.MessageRefStructure;
 import uk.org.siri.siri.NaturalLanguageStringStructure;
 import uk.org.siri.siri.OperatorRefStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
@@ -56,6 +58,12 @@ public class SiriTypeFactory {
 
   public static MessageQualifierStructure randomMessageId() {
     return messageId(UUID.randomUUID().toString());
+  }
+  
+  public static MessageRefStructure messageRef(String messageId) {
+    MessageRefStructure ref = new MessageRefStructure();
+    ref.setValue(messageId);
+    return ref;
   }
 
   public static SubscriptionQualifierStructure subscriptionId(
