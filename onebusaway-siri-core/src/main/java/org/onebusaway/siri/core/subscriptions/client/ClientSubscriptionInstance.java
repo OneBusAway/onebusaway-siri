@@ -21,7 +21,6 @@ import org.onebusaway.siri.core.ESiriModuleType;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 
-import uk.org.siri.siri.AbstractSubscriptionStructure;
 
 /**
  * Captures information about an active client-to-server subscription.
@@ -39,19 +38,15 @@ class ClientSubscriptionInstance {
 
   private final ESiriModuleType moduleType;
 
-  private final AbstractSubscriptionStructure moduleRequest;
-
   private final ScheduledFuture<?> expirationTask;
 
   public ClientSubscriptionInstance(ClientSubscriptionChannel channel,
       SubscriptionId subscriptionId, SiriClientRequest request,
-      ESiriModuleType moduleType, AbstractSubscriptionStructure moduleRequest,
-      ScheduledFuture<?> expirationTask) {
+      ESiriModuleType moduleType, ScheduledFuture<?> expirationTask) {
     this.channel = channel;
     this.subscriptionId = subscriptionId;
     this.request = request;
     this.moduleType = moduleType;
-    this.moduleRequest = moduleRequest;
     this.expirationTask = expirationTask;
   }
 
@@ -69,10 +64,6 @@ class ClientSubscriptionInstance {
 
   public ESiriModuleType getModuleType() {
     return moduleType;
-  }
-
-  public AbstractSubscriptionStructure getModuleRequest() {
-    return moduleRequest;
   }
 
   public ScheduledFuture<?> getExpirationTask() {

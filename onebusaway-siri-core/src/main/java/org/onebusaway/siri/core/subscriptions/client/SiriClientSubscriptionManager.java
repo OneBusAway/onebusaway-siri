@@ -276,7 +276,7 @@ public class SiriClientSubscriptionManager {
 
     ClientSubscriptionInstance instance = new ClientSubscriptionInstance(
         channel, subscriptionId, originalSubscriptionRequest, moduleType,
-        moduleRequest, expiration);
+        expiration);
 
     ClientSubscriptionInstance existing = _activeSubscriptions.put(
         subscriptionId, instance);

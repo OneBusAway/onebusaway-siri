@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,12 +85,38 @@ class TerminateSubscriptionsManager {
    * 
    ****/
 
-  public void requestTerminationOfSubscription(
+  /**
+   * Request that the specified client subscription be terminated. This is a
+   * convenience method that calls
+   * {@link #requestTerminationOfSubscriptions(Collection, boolean)}.
+   * 
+   * @param instance the client subscription instance to terminate
+   * @param resubscribeAfterTermination if true, the subscription will be
+   *          reconnected after termination
+   * @return the messageId for the pending termination request, or null
+   */
+  public String requestTerminationOfSubscription(
       ClientSubscriptionInstance instance, boolean resubscribeAfterTermination) {
-    requestTerminationOfSubscriptions(Arrays.asList(instance),
-        resubscribeAfterTermination);
+    List<String> messageIds = requestTerminationOfSubscriptions(
+        Arrays.asList(instance), resubscribeAfterTermination);
+    return messageIds.get(0);
   }
 
+  /**
+   * Request that the specified client subscriptions be terminated. This
+   * involves sending a {@link TerminateSubscriptionRequestStructure} to the
+   * SIRI endpoint and waiting for a
+   * {@link TerminateSubscriptionResponseStructure}. Once the response it
+   * received, it should handled by calling
+   * {@link #handleTerminateSubscriptionResponse(TerminateSubscriptionResponseStructure)}
+   * . The subscription will be continue to be active until the termination
+   * response is received. What happens if no termination response is received?
+   * 
+   * @param instances the client subscription instances to terminate
+   * @param resubscribeAfterTermination if true, the subscription will be
+   *          reconnected after termination
+   * @return the message ids for the pending subscription terminations
+   */
   public List<String> requestTerminationOfSubscriptions(
       Collection<ClientSubscriptionInstance> instances,
       boolean resubscribeAfterTermination) {
@@ -124,17 +151,20 @@ class TerminateSubscriptionsManager {
         SiriClientRequest request = getTerminateSubscriptionRequestForSubscriptions(
             channel, messageId, subscriberId, subscriberInstances);
 
+        List<SubscriptionId> subscriptionIds = new ArrayList<SubscriptionId>();
         List<SiriClientRequest> originalSubscriptionRequests = new ArrayList<SiriClientRequest>();
 
-        for (ClientSubscriptionInstance instance : subscriberInstances)
+        for (ClientSubscriptionInstance instance : subscriberInstances) {
+          subscriptionIds.add(instance.getSubscriptionId());
           originalSubscriptionRequests.add(instance.getRequest());
+        }
 
         PendingSubscriptionTerminationTimeoutTask timeoutTask = new PendingSubscriptionTerminationTimeoutTask(
             messageId.getValue());
         ScheduledFuture<?> scheduled = _schedulingService.scheduleResponseTimeoutTask(timeoutTask);
 
         PendingTermination pending = new PendingTermination(scheduled,
-            subscriberId, resubscribeAfterTermination,
+            subscriberId, subscriptionIds, resubscribeAfterTermination,
             originalSubscriptionRequests);
 
         _pendingSubscriptionTerminations.put(messageId.getValue(), pending);
@@ -147,6 +177,28 @@ class TerminateSubscriptionsManager {
     return pendingTerminationMessageIds;
   }
 
+  /**
+   * Check if a subscription termination is still pending. The message id is the
+   * id returned by either
+   * {@link #requestTerminationOfSubscription(ClientSubscriptionInstance, boolean)}
+   * or {@link #requestTerminationOfSubscriptions(Collection, boolean)}.
+   * 
+   * @param messageId the message id of the pending subscription termination id
+   * @return true if still pending
+   */
+  public boolean isTerminationOfSubscriptionPending(String messageId) {
+    return _pendingSubscriptionTerminations.containsKey(messageId);
+  }
+
+  /**
+   * Wait for the specified pending subscription termination requests to
+   * complete. The pending subscriptions are identified by their message id, as
+   * returned by the
+   * {@link #requestTerminationOfSubscriptions(Collection, boolean)} method.
+   * 
+   * @param messageIds message ids of the subscriptions to terminate
+   * @param responseTimeout max time, in seconds, to wait for a response
+   */
   public void waitForPendingSubscriptionTerminationResponses(
       List<String> messageIds, int responseTimeout) {
 
@@ -176,6 +228,13 @@ class TerminateSubscriptionsManager {
     }
   }
 
+  /**
+   * Handle an incoming {@link TerminateSubscriptionResponseStructure} message
+   * received in response to a subscription termination request. The
+   * subscription will be officially terminated at this point.
+   * 
+   * @param response the subscription termination response
+   */
   public void handleTerminateSubscriptionResponse(
       TerminateSubscriptionResponseStructure response) {
 
@@ -198,7 +257,7 @@ class TerminateSubscriptionsManager {
      * Cancel the waiting-for-response timeout task
      */
     ScheduledFuture<?> timeoutTask = pending.getTimeoutTask();
-    timeoutTask.cancel(false);
+    timeoutTask.cancel(true);
 
     String subscriberId = pending.getSubscriberId();
 
@@ -230,7 +289,7 @@ class TerminateSubscriptionsManager {
    * Private Methods
    ****/
 
-  public SubscriptionId getSubscriptionIdForTerminationStatusResponse(
+  private SubscriptionId getSubscriptionIdForTerminationStatusResponse(
       TerminationResponseStatus status, String subscriberId) {
 
     ParticipantRefStructure subscriberRef = status.getSubscriberRef();
@@ -246,7 +305,7 @@ class TerminateSubscriptionsManager {
     return ClientSupport.getSubscriptionId(subscriberRef, subscriptionRef);
   }
 
-  public SiriClientRequest getTerminateSubscriptionRequestForSubscriptions(
+  private SiriClientRequest getTerminateSubscriptionRequestForSubscriptions(
       ClientSubscriptionChannel channel, MessageQualifierStructure messageId,
       String subscriberId,
       List<ClientSubscriptionInstance> subscriptionInstances) {
@@ -281,7 +340,7 @@ class TerminateSubscriptionsManager {
     return request;
   }
 
-  public void logTerminateSubscriptionResponseWithoutRequestMessageRef(
+  private void logTerminateSubscriptionResponseWithoutRequestMessageRef(
       TerminateSubscriptionResponseStructure response) {
     StringBuilder b = new StringBuilder();
     b.append("A <TerminateSubscriptionResponse/> was received with no <RequestMessageRef/> value: ");
@@ -293,7 +352,7 @@ class TerminateSubscriptionsManager {
     _log.warn(b.toString());
   }
 
-  public void logUnknownTerminateSubscriptionResponse(
+  private void logUnknownTerminateSubscriptionResponse(
       TerminateSubscriptionResponseStructure response) {
     StringBuilder b = new StringBuilder();
     b.append("A <TerminateSubscriptionResponse/> was received with no pending <TerminateSubscriptionRequest/> having been sent:");
@@ -359,6 +418,13 @@ class TerminateSubscriptionsManager {
             + _messageId);
 
         /**
+         * We still remove the subscriptions, even if we didn't receive a
+         * termination response
+         */
+        for (SubscriptionId subscriptionId : pending.getSubscriptionIds())
+          _subscriptionManager.removeSubscription(subscriptionId);
+
+        /**
          * Even if the termination failed, attempt to resubscribe if it's been
          * requested.
          */
@@ -376,15 +442,18 @@ class TerminateSubscriptionsManager {
 
     private final String _subscriberId;
 
+    private final List<SubscriptionId> _subscriptionIds;
+
     private final boolean _resubscribe;
 
     private final List<SiriClientRequest> _subscriptionRequests;
 
     public PendingTermination(ScheduledFuture<?> timeoutTask,
-        String subscriberId, boolean resubscribe,
-        List<SiriClientRequest> subscriptionRequests) {
+        String subscriberId, List<SubscriptionId> subscriptionIds,
+        boolean resubscribe, List<SiriClientRequest> subscriptionRequests) {
       _timeoutTask = timeoutTask;
       _subscriberId = subscriberId;
+      _subscriptionIds = subscriptionIds;
       _resubscribe = resubscribe;
       _subscriptionRequests = subscriptionRequests;
     }
@@ -395,6 +464,10 @@ class TerminateSubscriptionsManager {
 
     public String getSubscriberId() {
       return _subscriberId;
+    }
+
+    public List<SubscriptionId> getSubscriptionIds() {
+      return _subscriptionIds;
     }
 
     public boolean isResubscribe() {
