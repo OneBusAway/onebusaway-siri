@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.org.siri.siri.AbstractServiceDeliveryStructure;
-import uk.org.siri.siri.AbstractSubscriptionStructure;
 import uk.org.siri.siri.CheckStatusResponseStructure;
 import uk.org.siri.siri.HeartbeatNotificationStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
@@ -85,6 +85,8 @@ public class SiriClientSubscriptionManager {
 
   private CheckStatusManager _checkStatusManager;
 
+  private HeartbeatManager _heartbeatManager;
+
   private TerminateSubscriptionsManager _terminateSubscriptionsManager;
 
   @Inject
@@ -106,6 +108,11 @@ public class SiriClientSubscriptionManager {
   @Inject
   void setCheckStatusManager(CheckStatusManager checkStatusManager) {
     _checkStatusManager = checkStatusManager;
+  }
+
+  @Inject
+  public void setHeartbeatManager(HeartbeatManager heartbeatManager) {
+    _heartbeatManager = heartbeatManager;
   }
 
   @Inject
@@ -156,11 +163,24 @@ public class SiriClientSubscriptionManager {
 
   }
 
+  /**
+   * @param subscriptionId
+   * @return true if a subscription with the specified id is active
+   */
+  public boolean isSubscriptionActive(SubscriptionId subscriptionId) {
+    return _activeSubscriptions.containsKey(subscriptionId);
+  }
+
+  /**
+   * 
+   * @param moduleDelivery
+   * @return
+   */
   public boolean isSubscriptionActiveForModuleDelivery(
       AbstractServiceDeliveryStructure moduleDelivery) {
 
     SubscriptionId id = ClientSupport.getSubscriptionIdForModuleDelivery(moduleDelivery);
-    return _activeSubscriptions.containsKey(id);
+    return isSubscriptionActive(id);
   }
 
   public SiriChannelInfo getChannelInfoForServiceDelivery(
@@ -218,21 +238,10 @@ public class SiriClientSubscriptionManager {
 
     _log.debug("hearbeat notification");
 
-    ClientSubscriptionChannel channel = null;
+    ClientSubscriptionChannel channel = _activeChannels.get(heartbeat.getAddress());
 
-    ParticipantRefStructure producerRef = heartbeat.getProducerRef();
-    if (producerRef != null && producerRef.getValue() != null) {
-      channel = _activeChannels.get(producerRef.getValue());
-    }
-
-    if (channel == null && heartbeat.getAddress() != null)
-      channel = _activeChannels.get(heartbeat.getAddress());
-
-    if (channel != null) {
-      synchronized (channel) {
-        resetHeartbeat(channel, channel.getHeartbeatInterval());
-      }
-    }
+    if (channel != null)
+      _heartbeatManager.resetHeartbeat(channel, channel.getHeartbeatInterval());
   }
 
   /****
@@ -254,13 +263,11 @@ public class SiriClientSubscriptionManager {
    *          specific subscription
    * @param subscriptionId the subscription id
    * @param moduleType
-   * @param moduleRequest
    * @param originalSubscriptionRequest
    */
   synchronized void upgradePendingSubscription(
       SubscriptionResponseStructure response, StatusResponseStructure status,
       SubscriptionId subscriptionId, ESiriModuleType moduleType,
-      AbstractSubscriptionStructure moduleRequest,
       SiriClientRequest originalSubscriptionRequest) {
 
     ClientSubscriptionChannel channel = getChannelForServer(
@@ -362,7 +369,7 @@ public class SiriClientSubscriptionManager {
       _log.debug("channel has no more subscriptions: {}", channel.getAddress());
 
       _checkStatusManager.resetCheckStatusTask(channel, 0);
-      resetHeartbeat(channel, 0);
+      _heartbeatManager.resetHeartbeat(channel, 0);
 
       _activeChannels.remove(channel.getAddress());
     }
@@ -439,37 +446,11 @@ public class SiriClientSubscriptionManager {
       channel.setReconnectionInterval(request.getReconnectionInterval());
       channel.setContext(request.getChannelContext());
 
-      long heartbeatInterval = request.getHeartbeatInterval();
+      int heartbeatInterval = request.getHeartbeatInterval();
+      _heartbeatManager.resetHeartbeat(channel, heartbeatInterval);
 
-      if (heartbeatInterval != channel.getHeartbeatInterval()) {
-        channel.setHeartbeatInterval(heartbeatInterval);
-        resetHeartbeat(channel, heartbeatInterval);
-      }
-
-      long checkStatusInterval = request.getCheckStatusInterval();
-      channel.setCheckStatusInterval(checkStatusInterval);
-      _checkStatusManager.resetCheckStatusTask(channel, (int) checkStatusInterval);
-    }
-  }
-
-  private void resetHeartbeat(ClientSubscriptionChannel channel,
-      long heartbeatInterval) {
-
-    ScheduledFuture<?> heartbeatTask = channel.getHeartbeatTask();
-    if (heartbeatTask != null) {
-      heartbeatTask.cancel(true);
-      channel.setHeartbeatTask(null);
-    }
-
-    if (heartbeatInterval > 0) {
-      ClientHeartbeatTimeoutTask task = new ClientHeartbeatTimeoutTask(this,
-          channel);
-
-      // Why is this * 2? We want to give the heartbeat a little slack time.
-      // Could be better...
-      heartbeatTask = _schedulingService.schedule(task, heartbeatInterval * 2,
-          TimeUnit.SECONDS);
-      channel.setHeartbeatTask(heartbeatTask);
+      int checkStatusInterval = request.getCheckStatusInterval();
+      _checkStatusManager.resetCheckStatusTask(channel, checkStatusInterval);
     }
   }
 
@@ -512,23 +493,24 @@ public class SiriClientSubscriptionManager {
      * No matter what, the original subscription request should have included an
      * initial termination time.
      */
-    Date validUntil = new Date(System.currentTimeMillis()
-        + originalSubscriptionRequest.getInitialTerminationDuration());
+    long delay = originalSubscriptionRequest.getInitialTerminationDuration();
 
     /**
      * If the subscription response status included a "validUntil" timestamp, we
      * use that as the expiration if it comes before the subscription initial
      * termination time.
      */
-    if (status.getValidUntil() != null
-        && validUntil.after(status.getValidUntil()))
-      validUntil = status.getValidUntil();
+    if (status.getValidUntil() != null) {
+      Date validUntil = status.getValidUntil();
+      long newDelay = validUntil.getTime() - System.currentTimeMillis();
+      if (newDelay < delay)
+        delay = newDelay;
+    }
 
-    _log.debug("subscription is valid until {}", validUntil);
+    _log.debug("subscription is valid for {} secs", (delay / 1000));
 
     ScheduledFuture<?> expiration = null;
 
-    long delay = validUntil.getTime() - System.currentTimeMillis();
     if (delay > 0) {
       SubscriptionExpirationTask task = new SubscriptionExpirationTask(this,
           subscriptionId);
@@ -536,8 +518,8 @@ public class SiriClientSubscriptionManager {
           TimeUnit.MILLISECONDS);
     } else {
       _log.warn(
-          "subscription has already expired before it had a chance to start: id={} validUntil={}",
-          subscriptionId, validUntil);
+          "subscription has already expired before it had a chance to start: id={} delay={}",
+          subscriptionId, (delay / 1000));
     }
     return expiration;
   }

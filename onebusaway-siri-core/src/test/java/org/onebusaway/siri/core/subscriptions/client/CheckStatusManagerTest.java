@@ -80,8 +80,11 @@ public class CheckStatusManagerTest {
     _checkStatusManager.resetCheckStatusTask(channel, 30);
 
     assertSame(taskMonitor, channel.getCheckStatusTask());
+    assertEquals(30, channel.getCheckStatusInterval());
 
     _checkStatusManager.resetCheckStatusTask(channel, 0);
+
+    assertEquals(0, channel.getCheckStatusInterval());
 
     /**
      * Verify that the existing check status task is canceled when the task is
@@ -153,7 +156,7 @@ public class CheckStatusManagerTest {
     CheckStatusResponseStructure checkStatusResponse = new CheckStatusResponseStructure();
     checkStatusResponse.setRequestMessageRef(SiriTypeFactory.messageRef(messageId.getValue()));
     checkStatusResponse.setStatus(Boolean.TRUE);
-    
+
     _checkStatusManager.handleCheckStatusResponse(checkStatusResponse);
 
     /**
@@ -162,7 +165,7 @@ public class CheckStatusManagerTest {
      */
     Mockito.verify(timeoutTaskMonitor).cancel(true);
   }
-  
+
   @Test
   public void testCheckStatusTaskWithBadResponse() {
 
@@ -229,23 +232,23 @@ public class CheckStatusManagerTest {
      * is received
      */
     Mockito.verify(timeoutTaskMonitor).cancel(true);
-    
+
     /**
      * Verify that the error causes a disconnect-reconnect
      */
-    Mockito.verify(_subscriptionManager).handleChannelDisconnectAndReconnect(channel);
+    Mockito.verify(_subscriptionManager).handleChannelDisconnectAndReconnect(
+        channel);
   }
-  
+
   @Test
   public void testCheckStatusTaskWithServerTimestampChanged() {
 
-    
     ClientSubscriptionChannel channel = new ClientSubscriptionChannel(
         "http://localhost", ESiriVersion.V1_0);
-    
+
     long now = System.currentTimeMillis();
     channel.setLastServiceStartedTime(new Date(now));
-    
+
     @SuppressWarnings("unchecked")
     ScheduledFuture<Object> taskMonitor = Mockito.mock(ScheduledFuture.class);
     ArgumentCaptor<Runnable> taskArgument = ArgumentCaptor.forClass(Runnable.class);
@@ -301,7 +304,7 @@ public class CheckStatusManagerTest {
     CheckStatusResponseStructure checkStatusResponse = new CheckStatusResponseStructure();
     checkStatusResponse.setRequestMessageRef(SiriTypeFactory.messageRef(messageId.getValue()));
     checkStatusResponse.setStatus(Boolean.TRUE);
-    checkStatusResponse.setServiceStartedTime(new Date(now+1000));
+    checkStatusResponse.setServiceStartedTime(new Date(now + 1000));
 
     _checkStatusManager.handleCheckStatusResponse(checkStatusResponse);
 
@@ -310,13 +313,14 @@ public class CheckStatusManagerTest {
      * is received
      */
     Mockito.verify(timeoutTaskMonitor).cancel(true);
-    
+
     /**
      * Verify that the error causes a disconnect-reconnect
      */
-    Mockito.verify(_subscriptionManager).handleChannelDisconnectAndReconnect(channel);
+    Mockito.verify(_subscriptionManager).handleChannelDisconnectAndReconnect(
+        channel);
   }
-  
+
   @Test
   public void testCheckStatusTaskWithResponseTimeout() {
 
@@ -362,9 +366,10 @@ public class CheckStatusManagerTest {
     /**
      * Now fire off the time-out task
      */
-    Runnable timeoutTask = timeoutTaskArgument.getValue();    
+    Runnable timeoutTask = timeoutTaskArgument.getValue();
     timeoutTask.run();
 
-    Mockito.verify(_subscriptionManager).handleChannelDisconnectAndReconnect(channel);
+    Mockito.verify(_subscriptionManager).handleChannelDisconnectAndReconnect(
+        channel);
   }
 }

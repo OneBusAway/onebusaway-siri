@@ -91,21 +91,26 @@ class CheckStatusManager {
   public void resetCheckStatusTask(ClientSubscriptionChannel channel,
       int checkStatusInterval) {
 
-    _log.debug("resetting check status task: channel={} interval={}",
-        channel.getAddress(), checkStatusInterval);
+    synchronized (channel) {
 
-    ScheduledFuture<?> checkStatusTask = channel.getCheckStatusTask();
-    if (checkStatusTask != null) {
-      checkStatusTask.cancel(true);
-      channel.setCheckStatusTask(null);
-    }
+      channel.setCheckStatusInterval(checkStatusInterval);
 
-    if (checkStatusInterval > 0) {
-      CheckStatusTask task = new CheckStatusTask(channel);
+      _log.debug("resetting check status task: channel={} interval={}",
+          channel.getAddress(), checkStatusInterval);
 
-      checkStatusTask = _schedulingService.scheduleAtFixedRate(task,
-          checkStatusInterval, checkStatusInterval, TimeUnit.SECONDS);
-      channel.setCheckStatusTask(checkStatusTask);
+      ScheduledFuture<?> checkStatusTask = channel.getCheckStatusTask();
+      if (checkStatusTask != null) {
+        checkStatusTask.cancel(true);
+        channel.setCheckStatusTask(null);
+      }
+
+      if (checkStatusInterval > 0) {
+        CheckStatusTask task = new CheckStatusTask(channel);
+
+        checkStatusTask = _schedulingService.scheduleAtFixedRate(task,
+            checkStatusInterval, checkStatusInterval, TimeUnit.SECONDS);
+        channel.setCheckStatusTask(checkStatusTask);
+      }
     }
   }
 

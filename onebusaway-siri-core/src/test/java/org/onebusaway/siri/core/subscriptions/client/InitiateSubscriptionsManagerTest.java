@@ -116,7 +116,7 @@ public class InitiateSubscriptionsManagerTest {
     _manager.handleSubscriptionResponse(response);
 
     Mockito.verify(_subscriptionManager).upgradePendingSubscription(response,
-        status, subId, ESiriModuleType.VEHICLE_MONITORING, vmRequest, request);
+        status, subId, ESiriModuleType.VEHICLE_MONITORING, request);
     assertFalse(_manager.isSubscriptionPending(subId));
 
     Mockito.verifyNoMoreInteractions(_subscriptionManager, _client,
@@ -152,7 +152,7 @@ public class InitiateSubscriptionsManagerTest {
 
     SubscriptionId subId = new SubscriptionId("userB", "subId");
     Mockito.verify(_subscriptionManager).upgradePendingSubscription(response,
-        status, subId, ESiriModuleType.VEHICLE_MONITORING, vmRequest, request);
+        status, subId, ESiriModuleType.VEHICLE_MONITORING, request);
   }
 
   /**
@@ -186,7 +186,7 @@ public class InitiateSubscriptionsManagerTest {
 
     SubscriptionId subId = new SubscriptionId("userB", "subId");
     Mockito.verify(_subscriptionManager).upgradePendingSubscription(response,
-        status, subId, ESiriModuleType.VEHICLE_MONITORING, vmRequest, request);
+        status, subId, ESiriModuleType.VEHICLE_MONITORING, request);
   }
 
   /**

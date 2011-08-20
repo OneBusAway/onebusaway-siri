@@ -181,8 +181,7 @@ class InitiateSubscriptionsManager {
       if (status.isStatus()) {
 
         _subscriptionManager.upgradePendingSubscription(response, status,
-            subId, pending.getModuleType(), pending.getModuleRequest(),
-            pending.getRequest());
+            subId, pending.getModuleType(), pending.getRequest());
 
       } else {
         logErrorInSubscriptionResponse(response, status, subId);

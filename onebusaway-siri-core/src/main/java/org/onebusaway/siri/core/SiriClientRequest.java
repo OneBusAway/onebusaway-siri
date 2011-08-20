@@ -198,10 +198,18 @@ public class SiriClientRequest {
     this.heartbeatInterval = heartbeatInterval;
   }
 
+  /**
+   * 
+   * @return time, in milliseconds
+   */
   public long getInitialTerminationDuration() {
     return initialTerminationDuration;
   }
 
+  /**
+   * 
+   * @param initialTerminationDuration time, in milliseconds
+   */
   public void setInitialTerminationDuration(long initialTerminationDuration) {
     this.initialTerminationDuration = initialTerminationDuration;
   }

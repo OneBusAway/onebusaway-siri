@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +42,7 @@ class ClientSubscriptionChannel {
 
   private ScheduledFuture<?> checkStatusTask;
 
-  private long heartbeatInterval = 0;
+  private int heartbeatInterval = 0;
 
   private ScheduledFuture<?> heartbeatTask;
 
@@ -108,11 +109,11 @@ class ClientSubscriptionChannel {
     this.checkStatusTask = checkStatusTask;
   }
 
-  public long getHeartbeatInterval() {
+  public int getHeartbeatInterval() {
     return heartbeatInterval;
   }
 
-  public void setHeartbeatInterval(long heartbeatInterval) {
+  public void setHeartbeatInterval(int heartbeatInterval) {
     this.heartbeatInterval = heartbeatInterval;
   }
 
