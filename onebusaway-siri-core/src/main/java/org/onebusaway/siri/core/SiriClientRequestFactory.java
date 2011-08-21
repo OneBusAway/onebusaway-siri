@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -232,6 +233,9 @@ public class SiriClientRequestFactory {
         throw new SiriUnknownVersionException(versionId);
       }
       request.setTargetVersion(version);
+    }
+    else {
+      request.setTargetVersion(ESiriVersion.V1_3);
     }
 
     String initialTerminationTime = args.get(ARG_INITIAL_TERMINATION_TIME);

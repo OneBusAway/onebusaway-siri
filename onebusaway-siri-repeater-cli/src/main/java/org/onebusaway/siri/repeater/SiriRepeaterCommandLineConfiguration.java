@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +43,7 @@ import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterFactoryImpl;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcherFactoryImpl;
 import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionManager;
+import org.onebusaway.siri.jetty.SiriJettyModule;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -93,6 +95,7 @@ public class SiriRepeaterCommandLineConfiguration {
 
     List<Module> modules = new ArrayList<Module>();
     modules.addAll(SiriCoreModule.getModules());
+    modules.add(new SiriJettyModule());
     Injector injector = Guice.createInjector(modules);
 
     handleCommandLineOptions(cli, injector);
