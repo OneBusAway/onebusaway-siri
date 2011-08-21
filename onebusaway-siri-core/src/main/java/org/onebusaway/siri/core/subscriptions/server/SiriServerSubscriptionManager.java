@@ -28,6 +28,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.xml.datatype.Duration;
 
 import org.onebusaway.collections.tuple.T2;
@@ -64,6 +65,7 @@ import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.TerminateSubscriptionRequestStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure.TerminationResponseStatus;
 
+@Singleton
 public class SiriServerSubscriptionManager {
 
   /****
