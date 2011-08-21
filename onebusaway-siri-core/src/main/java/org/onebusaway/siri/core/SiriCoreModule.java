@@ -41,5 +41,6 @@ public class SiriCoreModule extends AbstractModule {
     bind(SiriServer.class);
     bind(SiriClientHandler.class).to(SiriClient.class);
     bind(SchedulingService.class).to(SchedulingServiceImpl.class);
+    bind(HttpClientService.class).to(HttpClientServiceImpl.class);
   }
 }

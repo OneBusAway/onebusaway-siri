@@ -127,7 +127,7 @@ public class SiriTypeFactory {
     return ref;
   }
 
-  private static DatatypeFactory createDataTypeFactory() {
+  public static DatatypeFactory createDataTypeFactory() {
     try {
       return DatatypeFactory.newInstance();
     } catch (DatatypeConfigurationException e) {

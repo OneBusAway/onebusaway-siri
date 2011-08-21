@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +49,7 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
 
   private List<SiriServiceDeliveryHandler> _serviceDeliveryHandlers = new ArrayList<SiriServiceDeliveryHandler>();
 
-  private SiriClientSubscriptionManager _subscriptionManager = new SiriClientSubscriptionManager();
+  private SiriClientSubscriptionManager _subscriptionManager;
 
   private boolean _includeDeliveriesToUnknownSubscription = true;
 
@@ -107,6 +108,7 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    */
   @Override
   public Siri handleRequestWithResponse(SiriClientRequest request) {
+    checkRequest(request);
     request.resetConnectionStatistics();
     return processRequestWithResponse(request);
   }
@@ -116,6 +118,7 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    */
   @Override
   public void handleRequest(SiriClientRequest request) {
+    checkRequest(request);
     request.resetConnectionStatistics();
     processRequestWithAsynchronousResponse(request);
   }
@@ -126,6 +129,7 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    */
   @Override
   public void handleRequestReconnectIfApplicable(SiriClientRequest request) {
+    checkRequest(request);
     /**
      * Note that we DON'T reset connection statistics on the request, because
      * this is a reconnect, as opposed to an initial attempt
@@ -175,6 +179,17 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
   /****
    * Protected Methods
    ****/
+
+  protected void checkRequest(SiriClientRequest request) {
+    if (request == null)
+      throw new IllegalArgumentException("request is null");
+    if (request.getTargetUrl() == null)
+      throw new IllegalArgumentException("targetUrl is null for request");
+    if (request.getTargetVersion() == null)
+      throw new IllegalArgumentException("targetVersion is null for request");
+    if (request.getPayload() == null)
+      throw new IllegalArgumentException("payload is null for request");
+  }
 
   /**
    * We override the common method to add custom subscription-management

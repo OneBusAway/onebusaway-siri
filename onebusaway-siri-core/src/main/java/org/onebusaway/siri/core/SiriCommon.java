@@ -41,7 +41,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 
@@ -84,10 +83,14 @@ public class SiriCommon implements SiriRawHandler {
   }
 
   private static Logger _log = LoggerFactory.getLogger(SiriCommon.class);
+  
+  private static DatatypeFactory _dataTypeFactory = SiriTypeFactory.createDataTypeFactory();
 
   private JAXBContext _jaxbContext;
 
   protected SchedulingService _schedulingService;
+  
+  protected HttpClientService _httpClientService;
 
   private String _identity;
 
@@ -106,6 +109,7 @@ public class SiriCommon implements SiriRawHandler {
 
   protected ELogRawXmlType _logRawXmlType = ELogRawXmlType.NONE;
 
+
   public SiriCommon() {
 
     try {
@@ -123,6 +127,11 @@ public class SiriCommon implements SiriRawHandler {
   @Inject
   public void setSchedulingService(SchedulingService schedulingService) {
     _schedulingService = schedulingService;
+  }
+  
+  @Inject
+  public void setHttpClientService(HttpClientService httpClientService) {
+    _httpClientService = httpClientService;
   }
 
   public String getIdentity() {
@@ -371,8 +380,8 @@ public class SiriCommon implements SiriRawHandler {
 
     int heartbeatInterval = request.getHeartbeatInterval();
     if (heartbeatInterval > 0) {
-      DatatypeFactory dataTypeFactory = createDataTypeFactory();
-      Duration interval = dataTypeFactory.newDuration(heartbeatInterval * 1000);
+      
+      Duration interval = _dataTypeFactory.newDuration(heartbeatInterval * 1000);
       SubscriptionContextStructure context = new SubscriptionContextStructure();
       context.setHeartbeatInterval(interval);
       subscriptionRequest.setSubscriptionContext(context);
@@ -696,7 +705,7 @@ public class SiriCommon implements SiriRawHandler {
       throw new SiriSerializationException(ex);
     }
 
-    HttpResponse response = executeHttpMethod(client, post);
+    HttpResponse response = _httpClientService.executeHttpMethod(client, post);
     StatusLine statusLine = response.getStatusLine();
 
     if (statusLine.getStatusCode() != HttpStatus.SC_OK) {
@@ -730,16 +739,6 @@ public class SiriCommon implements SiriRawHandler {
     }
 
     return response;
-  }
-
-  protected HttpResponse executeHttpMethod(DefaultHttpClient client,
-      HttpPost post) throws SiriException {
-    try {
-      return client.execute(post);
-    } catch (Exception ex) {
-      throw new SiriConnectionException("error connecting to url "
-          + post.getURI(), ex);
-    }
   }
 
   /**
@@ -822,14 +821,6 @@ public class SiriCommon implements SiriRawHandler {
       } catch (UnknownHostException ex) {
         _log.warn("error resolving hostname: " + bindUrl.getHost(), ex);
       }
-    }
-  }
-
-  protected DatatypeFactory createDataTypeFactory() {
-    try {
-      return DatatypeFactory.newInstance();
-    } catch (DatatypeConfigurationException e) {
-      throw new IllegalStateException(e);
     }
   }
 

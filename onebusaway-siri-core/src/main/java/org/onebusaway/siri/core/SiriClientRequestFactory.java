@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 
@@ -83,7 +82,7 @@ public class SiriClientRequestFactory {
   private static final String ARG_DIRECTION_REF = "DirectionRef";
   private static final String ARG_VEHICLE_MONITORING_REF = "VehicleMonitoringRef";
 
-  private static final DatatypeFactory _dataTypeFactory = createDataTypeFactory();
+  private static final DatatypeFactory _dataTypeFactory = SiriTypeFactory.createDataTypeFactory();
 
   public SiriClientRequest createServiceRequest(Map<String, String> args) {
 
@@ -420,14 +419,6 @@ public class SiriClientRequestFactory {
   private void applyArgsToSituationExchangeRequest(
       SituationExchangeRequestStructure request, Map<String, String> args) {
 
-  }
-
-  private static DatatypeFactory createDataTypeFactory() {
-    try {
-      return DatatypeFactory.newInstance();
-    } catch (DatatypeConfigurationException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
   private static Date getIso8601StringAsTime(String value, TimeZone timeZone)
