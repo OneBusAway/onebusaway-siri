@@ -109,6 +109,11 @@ public class JSR250Module extends AbstractModule {
             + object, ex);
       }
     }
+    
+    @Override
+    public String toString() {
+      return object + " " + method;
+    }
   }
 
   private static class RegisterMethodCallback<I> implements
@@ -135,6 +140,8 @@ public class JSR250Module extends AbstractModule {
     private final List<ObjectAndMethod> _postConstructActions;
     private final List<ObjectAndMethod> _preDestroyActions;
 
+    private boolean _started = false;
+
     public LifecycleServiceImpl(List<ObjectAndMethod> postConstructActions,
         List<ObjectAndMethod> preDestroyActions) {
       _postConstructActions = postConstructActions;
@@ -142,13 +149,21 @@ public class JSR250Module extends AbstractModule {
     }
 
     @Override
-    public void start() {
+    public synchronized void start() {
+      if (_started)
+        return;
+      _started = true;
+
       for (ObjectAndMethod target : _postConstructActions)
         target.execute();
     }
 
     @Override
     public void stop() {
+      if (!_started)
+        return;
+      _started = false;
+
       /**
        * The @PreDestroy actions need to be applied in reverse order of bean
        * instantiation

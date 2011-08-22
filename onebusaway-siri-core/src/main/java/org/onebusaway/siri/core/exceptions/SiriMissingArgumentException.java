@@ -21,13 +21,26 @@ public class SiriMissingArgumentException extends SiriException {
 
   private final String _name;
 
-  public SiriMissingArgumentException(String name) {
-    super("missing argument: " + name);
-    _name = name;
+  private final String _parentName;
 
+  public SiriMissingArgumentException(String name) {
+    super("<" + name + "/>, a required element, is missing");
+    _name = name;
+    _parentName = null;
+  }
+
+  public SiriMissingArgumentException(String name, String parentName) {
+    super("<" + name + "/>, a required element of <" + parentName
+        + "/>, is missing");
+    _name = name;
+    _parentName = parentName;
   }
 
   public String getName() {
     return _name;
+  }
+
+  public String getParentName() {
+    return _parentName;
   }
 }
