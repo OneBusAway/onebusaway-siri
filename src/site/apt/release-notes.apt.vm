@@ -2,9 +2,13 @@ Release Notes
 
 * ${currentVersion}
 
-  * Initial Site Documentation
+  * More complete SIRI support, specifically around subscription management.
   
-  * Bump to require Maven 3
+  * Initial release of <<<onebusaway-siri-client-cli>>> and <<<onebusaway-siri-repeater-cli>>> applications.
+
+  * Initial Site Documentation.
+  
+  * Bump to require Maven 3.
 
   * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
 
