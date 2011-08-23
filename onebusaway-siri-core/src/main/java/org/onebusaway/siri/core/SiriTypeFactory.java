@@ -34,6 +34,7 @@ import uk.org.siri.siri.MessageRefStructure;
 import uk.org.siri.siri.NaturalLanguageStringStructure;
 import uk.org.siri.siri.OperatorRefStructure;
 import uk.org.siri.siri.ParticipantRefStructure;
+import uk.org.siri.siri.StopPointRefStructure;
 import uk.org.siri.siri.SubscriptionQualifierStructure;
 import uk.org.siri.siri.VehicleRefStructure;
 
@@ -59,7 +60,7 @@ public class SiriTypeFactory {
   public static MessageQualifierStructure randomMessageId() {
     return messageId(UUID.randomUUID().toString());
   }
-  
+
   public static MessageRefStructure messageRef(String messageId) {
     MessageRefStructure ref = new MessageRefStructure();
     ref.setValue(messageId);
@@ -121,6 +122,12 @@ public class SiriTypeFactory {
     return ref;
   }
 
+  public static StopPointRefStructure stopPointRef(String value) {
+    StopPointRefStructure ref = new StopPointRefStructure();
+    ref.setValue(value);
+    return ref;
+  }
+
   public static BlockRefStructure blockRef(String value) {
     BlockRefStructure ref = new BlockRefStructure();
     ref.setValue(value);
@@ -140,4 +147,5 @@ public class SiriTypeFactory {
     ref.setValue(value);
     return ref;
   }
+
 }
