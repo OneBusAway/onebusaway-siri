@@ -30,7 +30,6 @@ import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriTypeFactory;
 import org.onebusaway.siri.core.exceptions.SiriSubscriptionModuleTypeConflictException;
-import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 
 import uk.org.siri.siri.SituationExchangeSubscriptionStructure;
@@ -43,7 +42,7 @@ public class InitiateSubscriptionsManagerTest {
 
   private InitiateSubscriptionsManager _manager;
 
-  private SiriClientHandler _client;
+  private TerminateSubscriptionsManager _terminateSubscriptionsManager;
 
   private SiriClientSubscriptionManager _subscriptionManager;
 
@@ -54,8 +53,8 @@ public class InitiateSubscriptionsManagerTest {
 
     _manager = new InitiateSubscriptionsManager();
 
-    _client = Mockito.mock(SiriClientHandler.class);
-    _manager.setClient(_client);
+    _terminateSubscriptionsManager = Mockito.mock(TerminateSubscriptionsManager.class);
+    _manager.setTerminateSubscriptionManager(_terminateSubscriptionsManager);
 
     _subscriptionManager = Mockito.mock(SiriClientSubscriptionManager.class);
     _manager.setSubscriptionManager(_subscriptionManager);
@@ -102,8 +101,8 @@ public class InitiateSubscriptionsManagerTest {
      */
     Mockito.verify(_subscriptionManager).getModuleTypeForSubscriptionId(subId);
 
-    Mockito.verifyNoMoreInteractions(_subscriptionManager, _client,
-        _schedulingService);
+    Mockito.verifyNoMoreInteractions(_subscriptionManager,
+        _terminateSubscriptionsManager, _schedulingService);
 
     SubscriptionResponseStructure response = new SubscriptionResponseStructure();
 
@@ -119,8 +118,8 @@ public class InitiateSubscriptionsManagerTest {
         status, subId, ESiriModuleType.VEHICLE_MONITORING, request);
     assertFalse(_manager.isSubscriptionPending(subId));
 
-    Mockito.verifyNoMoreInteractions(_subscriptionManager, _client,
-        _schedulingService);
+    Mockito.verifyNoMoreInteractions(_subscriptionManager,
+        _terminateSubscriptionsManager, _schedulingService);
   }
 
   /**
@@ -214,8 +213,8 @@ public class InitiateSubscriptionsManagerTest {
     Mockito.verify(_schedulingService).scheduleResponseTimeoutTask(
         argument.capture());
 
-    Mockito.verifyNoMoreInteractions(_subscriptionManager, _client,
-        _schedulingService);
+    Mockito.verifyNoMoreInteractions(_subscriptionManager,
+        _terminateSubscriptionsManager, _schedulingService);
 
     /**
      * We execute the timeout task ourselves. Normally it would be executed at
@@ -225,17 +224,88 @@ public class InitiateSubscriptionsManagerTest {
     task.run();
 
     /**
-     * The timeout task should automatically attempt to reconnect if applicable
+     * The timeout task should automatically attempt to terminated the timed-out
+     * subscription request, with no attempt to resubscribe since our client has
+     * no remaining reconnection attempts
      */
-    Mockito.verify(_client).handleRequestReconnectIfApplicable(request);
+    Mockito.verify(_terminateSubscriptionsManager).requestTerminationOfInitiatedSubscription(
+        request, subId, false);
 
     /**
      * It should also clear out the pending subscription
      */
     assertFalse(_manager.isSubscriptionPending(subId));
 
-    Mockito.verifyNoMoreInteractions(_subscriptionManager, _client,
-        _schedulingService);
+    /**
+     * Should have one connection error count now
+     */
+    assertEquals(1, request.getConnectionErrorCount());
+
+    Mockito.verifyNoMoreInteractions(_subscriptionManager,
+        _terminateSubscriptionsManager, _schedulingService);
+  }
+
+  /**
+   * Initiate a pending subscription and then simulate a timeout in the response
+   * from the SIRI endpoint. Make sure resubscription is requested as configured
+   * in the client request
+   */
+  @Test
+  public void testTimeoutWithResubscribe() throws InterruptedException {
+
+    SubscriptionId subId = new SubscriptionId("userA", "subId");
+
+    SiriClientRequest request = new SiriClientRequest();
+    request.setReconnectionAttempts(1);
+    request.resetConnectionStatistics();
+
+    SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
+    subscriptionRequest.setRequestorRef(SiriTypeFactory.particpantRef("userA"));
+
+    VehicleMonitoringSubscriptionStructure vmRequest = new VehicleMonitoringSubscriptionStructure();
+    vmRequest.setSubscriptionIdentifier(SiriTypeFactory.subscriptionId("subId"));
+    subscriptionRequest.getVehicleMonitoringSubscriptionRequest().add(vmRequest);
+
+    _manager.registerPendingSubscription(request, subscriptionRequest);
+
+    Mockito.verify(_subscriptionManager).getModuleTypeForSubscriptionId(subId);
+
+    ArgumentCaptor<Runnable> argument = ArgumentCaptor.forClass(Runnable.class);
+    Mockito.verify(_schedulingService).scheduleResponseTimeoutTask(
+        argument.capture());
+
+    Mockito.verifyNoMoreInteractions(_subscriptionManager,
+        _terminateSubscriptionsManager, _schedulingService);
+
+    /**
+     * We execute the timeout task ourselves. Normally it would be executed at
+     * some point in the future by the scheduling service.
+     */
+    Runnable task = argument.getValue();
+    task.run();
+
+    /**
+     * The timeout task should automatically attempt to terminated the timed-out
+     * subscription request, with no attempt to resubscribe since our client has
+     * no remaining reconnection attempts
+     */
+    Mockito.verify(_terminateSubscriptionsManager).requestTerminationOfInitiatedSubscription(
+        request, subId, true);
+
+    /**
+     * It should also clear out the pending subscription
+     */
+    assertFalse(_manager.isSubscriptionPending(subId));
+
+    /**
+     * Should have one connection error count now and no more remaining
+     * reconnection attempts
+     */
+    assertEquals(1, request.getConnectionErrorCount());
+    assertEquals(0, request.getRemainingReconnectionAttempts());
+
+    Mockito.verifyNoMoreInteractions(_subscriptionManager,
+        _terminateSubscriptionsManager, _schedulingService);
   }
 
   /**
@@ -262,8 +332,8 @@ public class InitiateSubscriptionsManagerTest {
     Mockito.verify(_schedulingService).scheduleResponseTimeoutTask(
         Mockito.any(Runnable.class));
 
-    Mockito.verifyNoMoreInteractions(_subscriptionManager, _client,
-        _schedulingService);
+    Mockito.verifyNoMoreInteractions(_subscriptionManager,
+        _terminateSubscriptionsManager, _schedulingService);
 
     SubscriptionResponseStructure response = new SubscriptionResponseStructure();
 
@@ -281,8 +351,8 @@ public class InitiateSubscriptionsManagerTest {
      * There should be no side effects to others classes if the subscription
      * response indicates the subscription was not successful.
      */
-    Mockito.verifyNoMoreInteractions(_subscriptionManager, _client,
-        _schedulingService);
+    Mockito.verifyNoMoreInteractions(_subscriptionManager,
+        _terminateSubscriptionsManager, _schedulingService);
   }
 
   /**
@@ -325,8 +395,8 @@ public class InitiateSubscriptionsManagerTest {
      * There should be no side effects to others classes if the subscription
      * response indicates the subscription was not successful.
      */
-    Mockito.verifyNoMoreInteractions(_subscriptionManager, _client,
-        _schedulingService);
+    Mockito.verifyNoMoreInteractions(_subscriptionManager,
+        _terminateSubscriptionsManager, _schedulingService);
 
     assertFalse(_manager.isSubscriptionPending(subId));
   }
@@ -377,8 +447,8 @@ public class InitiateSubscriptionsManagerTest {
      * There should be no side effects to others classes if the subscription
      * response indicates the subscription was not successful.
      */
-    Mockito.verifyNoMoreInteractions(_subscriptionManager, _client,
-        _schedulingService);
+    Mockito.verifyNoMoreInteractions(_subscriptionManager,
+        _terminateSubscriptionsManager, _schedulingService);
 
     assertFalse(_manager.isSubscriptionPending(subId));
   }

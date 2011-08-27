@@ -83,13 +83,13 @@ public class SiriCommon implements SiriRawHandler {
   }
 
   private static Logger _log = LoggerFactory.getLogger(SiriCommon.class);
-  
+
   private static DatatypeFactory _dataTypeFactory = SiriTypeFactory.createDataTypeFactory();
 
   private JAXBContext _jaxbContext;
 
   protected SchedulingService _schedulingService;
-  
+
   protected HttpClientService _httpClientService;
 
   private String _identity;
@@ -109,7 +109,6 @@ public class SiriCommon implements SiriRawHandler {
 
   protected ELogRawXmlType _logRawXmlType = ELogRawXmlType.NONE;
 
-
   public SiriCommon() {
 
     try {
@@ -128,7 +127,7 @@ public class SiriCommon implements SiriRawHandler {
   public void setSchedulingService(SchedulingService schedulingService) {
     _schedulingService = schedulingService;
   }
-  
+
   @Inject
   public void setHttpClientService(HttpClientService httpClientService) {
     _httpClientService = httpClientService;
@@ -281,7 +280,7 @@ public class SiriCommon implements SiriRawHandler {
     }
 
     HttpResponse response = processRawContentRequestWithResponse(request,
-        content);
+        payload, content);
 
     if (response == null)
       return null;
@@ -380,7 +379,7 @@ public class SiriCommon implements SiriRawHandler {
 
     int heartbeatInterval = request.getHeartbeatInterval();
     if (heartbeatInterval > 0) {
-      
+
       Duration interval = _dataTypeFactory.newDuration(heartbeatInterval * 1000);
       SubscriptionContextStructure context = new SubscriptionContextStructure();
       context.setHeartbeatInterval(interval);
@@ -612,11 +611,12 @@ public class SiriCommon implements SiriRawHandler {
    * This method encapsulates our reconnection behavior.
    * 
    * @param request
+   * @param payload
    * @param content
    * @return
    */
   protected HttpResponse processRawContentRequestWithResponse(
-      SiriClientRequest request, String content) {
+      SiriClientRequest request, Siri payload, String content) {
 
     String url = getUrlForRequest(request);
 
@@ -656,6 +656,7 @@ public class SiriCommon implements SiriRawHandler {
 
         request.incrementConnectionErrorCount();
 
+        cleanupFailedRequest(request, payload);
         reattemptRequestIfApplicable(request);
 
         /**
@@ -739,6 +740,16 @@ public class SiriCommon implements SiriRawHandler {
     }
 
     return response;
+  }
+
+  /**
+   * Method provides opportunity to clean up a failed client request.
+   * 
+   * @param request
+   * @param payload
+   */
+  protected void cleanupFailedRequest(SiriClientRequest request, Siri payload) {
+
   }
 
   /**

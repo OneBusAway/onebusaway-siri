@@ -146,11 +146,6 @@ class TerminateSubscriptionsManager {
         String subscriberId = entry.getKey();
         List<ClientSubscriptionInstance> subscriberInstances = entry.getValue();
 
-        MessageQualifierStructure messageId = SiriTypeFactory.randomMessageId();
-
-        SiriClientRequest request = getTerminateSubscriptionRequestForSubscriptions(
-            channel, messageId, subscriberId, subscriberInstances);
-
         List<SubscriptionId> subscriptionIds = new ArrayList<SubscriptionId>();
         List<SiriClientRequest> originalSubscriptionRequests = new ArrayList<SiriClientRequest>();
 
@@ -159,22 +154,50 @@ class TerminateSubscriptionsManager {
           originalSubscriptionRequests.add(instance.getRequest());
         }
 
-        PendingSubscriptionTerminationTimeoutTask timeoutTask = new PendingSubscriptionTerminationTimeoutTask(
-            messageId.getValue());
-        ScheduledFuture<?> scheduled = _schedulingService.scheduleResponseTimeoutTask(timeoutTask);
+        MessageQualifierStructure messageId = constructAndSubmitPendingTerminationRequest(
+            channel, subscriberId, subscriptionIds,
+            originalSubscriptionRequests, resubscribeAfterTermination);
 
-        PendingTermination pending = new PendingTermination(scheduled,
-            subscriberId, subscriptionIds, resubscribeAfterTermination,
-            originalSubscriptionRequests);
-
-        _pendingSubscriptionTerminations.put(messageId.getValue(), pending);
         pendingTerminationMessageIds.add(messageId.getValue());
-
-        _client.handleRequest(request);
       }
     }
 
     return pendingTerminationMessageIds;
+  }
+
+  /**
+   * Sometimes, we make a subscription request but never hear anything back.
+   * Even though there is a pretty good chance that the subscription was never
+   * established in the first place, we'd like to send a terminate subscription
+   * request either way just so the endpoint will close the subscription if it
+   * happened to have created it, but couldn't get a response out for some
+   * reason.
+   * 
+   * @param originalSubscriptionRequest the original subscription request
+   * @param subscriptionId subscription id for the initiated subscription
+   * @param resubscribeAfterTermination if true, the subscription will be
+   *          reconnected after termination
+   * @return the message id of the pending termination request
+   */
+  public String requestTerminationOfInitiatedSubscription(
+      SiriClientRequest originalSubscriptionRequest,
+      SubscriptionId subscriptionId, boolean resubscribeAfterTermination) {
+
+    ClientSubscriptionChannel channel = new ClientSubscriptionChannel(
+        originalSubscriptionRequest.getTargetUrl(),
+        originalSubscriptionRequest.getTargetVersion());
+    channel.setManageSubscriptionUrl(originalSubscriptionRequest.getManageSubscriptionUrl());
+
+    String subscriberId = subscriptionId.getSubscriberId();
+
+    List<SubscriptionId> subscriptionIds = Arrays.asList(subscriptionId);
+    List<SiriClientRequest> originalSubscriptionRequests = Arrays.asList(originalSubscriptionRequest);
+
+    MessageQualifierStructure messageId = constructAndSubmitPendingTerminationRequest(
+        channel, subscriberId, subscriptionIds, originalSubscriptionRequests,
+        resubscribeAfterTermination);
+
+    return messageId.getValue();
   }
 
   /**
@@ -305,10 +328,34 @@ class TerminateSubscriptionsManager {
     return ClientSupport.getSubscriptionId(subscriberRef, subscriptionRef);
   }
 
+  private MessageQualifierStructure constructAndSubmitPendingTerminationRequest(
+      ClientSubscriptionChannel channel, String subscriberId,
+      List<SubscriptionId> subscriptionIds,
+      List<SiriClientRequest> originalSubscriptionRequests,
+      boolean resubscribeAfterTermination) {
+
+    MessageQualifierStructure messageId = SiriTypeFactory.randomMessageId();
+
+    PendingSubscriptionTerminationTimeoutTask timeoutTask = new PendingSubscriptionTerminationTimeoutTask(
+        messageId.getValue());
+    ScheduledFuture<?> scheduled = _schedulingService.scheduleResponseTimeoutTask(timeoutTask);
+
+    PendingTermination pending = new PendingTermination(scheduled,
+        subscriberId, subscriptionIds, resubscribeAfterTermination,
+        originalSubscriptionRequests);
+
+    _pendingSubscriptionTerminations.put(messageId.getValue(), pending);
+
+    SiriClientRequest request = getTerminateSubscriptionRequestForSubscriptions(
+        channel, messageId, subscriberId, subscriptionIds);
+
+    _client.handleRequest(request);
+    return messageId;
+  }
+
   private SiriClientRequest getTerminateSubscriptionRequestForSubscriptions(
       ClientSubscriptionChannel channel, MessageQualifierStructure messageId,
-      String subscriberId,
-      List<ClientSubscriptionInstance> subscriptionInstances) {
+      String subscriberId, List<SubscriptionId> subscriptionIds) {
 
     TerminateSubscriptionRequestStructure terminateRequest = new TerminateSubscriptionRequestStructure();
 
@@ -317,9 +364,7 @@ class TerminateSubscriptionsManager {
     ParticipantRefStructure subscriberRef = SiriTypeFactory.particpantRef(subscriberId);
     terminateRequest.setSubscriberRef(subscriberRef);
 
-    for (ClientSubscriptionInstance instance : subscriptionInstances) {
-
-      SubscriptionId id = instance.getSubscriptionId();
+    for (SubscriptionId id : subscriptionIds) {
 
       SubscriptionQualifierStructure value = new SubscriptionQualifierStructure();
       value.setValue(id.getSubscriptionId());

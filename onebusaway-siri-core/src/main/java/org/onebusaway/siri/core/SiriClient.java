@@ -205,20 +205,22 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
         subscriptionRequest);
   }
 
+  /**
+   * Check to see if there is a pending subscription that can be cleared on a
+   * failed request
+   */
   @Override
-  protected void reattemptRequestIfApplicable(SiriClientRequest request) {
-
-    Siri payload = request.getPayload();
+  protected void cleanupFailedRequest(SiriClientRequest request,
+      Siri failedPayload) {
+    super.cleanupFailedRequest(request, failedPayload);
 
     /**
      * If we are reattempting a subscription request, we need to make sure to
      * clean up an existing request data
      */
-    if (payload.getSubscriptionRequest() != null)
+    if (failedPayload.getSubscriptionRequest() != null)
       _subscriptionManager.clearPendingSubscription(request,
-          payload.getSubscriptionRequest());
-
-    super.reattemptRequestIfApplicable(request);
+          failedPayload.getSubscriptionRequest());
   }
 
   @Override

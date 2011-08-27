@@ -34,7 +34,6 @@ import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.exceptions.SiriSubscriptionModuleTypeConflictException;
-import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,9 +59,9 @@ class InitiateSubscriptionsManager {
 
   private SiriClientSubscriptionManager _subscriptionManager;
 
-  private SiriClientHandler _client;
-
   private SchedulingService _schedulingService;
+
+  private TerminateSubscriptionsManager _terminateSubscriptionManager;
 
   @Inject
   public void setSubscriptionManager(
@@ -71,13 +70,14 @@ class InitiateSubscriptionsManager {
   }
 
   @Inject
-  public void setClient(SiriClientHandler client) {
-    _client = client;
+  public void setScheduleService(SchedulingService schedulingService) {
+    _schedulingService = schedulingService;
   }
 
   @Inject
-  public void setScheduleService(SchedulingService schedulingService) {
-    _schedulingService = schedulingService;
+  public void setTerminateSubscriptionManager(
+      TerminateSubscriptionsManager terminateSubscriptionManager) {
+    _terminateSubscriptionManager = terminateSubscriptionManager;
   }
 
   /**
@@ -353,11 +353,26 @@ class InitiateSubscriptionsManager {
       for (SubscriptionId subscriptionId : _subscriptionIds) {
         ClientPendingSubscription pending = _pendingSubscriptionRequests.remove(subscriptionId);
         if (pending != null) {
-          _log.warn("pending subscription expired before receiving a subscription response from server: "
-              + subscriptionId);
 
           SiriClientRequest request = pending.getRequest();
-          _client.handleRequestReconnectIfApplicable(request);
+
+          _log.warn("pending subscription expired before receiving a subscription response from server: url="
+              + request.getTargetUrl()
+              + " subscriptionId="
+              + subscriptionId
+              + " (remainingConnectionAttempts="
+              + request.getRemainingReconnectionAttempts()
+              + " connectionErrorCount="
+              + request.getConnectionErrorCount()
+              + ")");
+
+          request.incrementConnectionErrorCount();
+
+          boolean resubscribe = request.getRemainingReconnectionAttempts() != 0;
+          request.decrementRemainingReconnctionAttempts();
+
+          _terminateSubscriptionManager.requestTerminationOfInitiatedSubscription(
+              request, subscriptionId, resubscribe);
         }
       }
     }

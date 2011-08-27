@@ -31,8 +31,8 @@ public class SiriClientRequest {
   private ESiriVersion targetVersion;
 
   /**
-   * The number of times to attempt to reconnect when a (network) connection
-   * fails. Zero indicates that no reconnection attempts will be made while -1
+   * The number of times to attempt to reconnect when a client request fails.
+   * Zero indicates that no reconnection attempts will be made while -1
    * indicates that an indefinite number of reconnection attempts will be made.
    */
   private int reconnectionAttempts = 0;
@@ -127,10 +127,24 @@ public class SiriClientRequest {
     this.targetVersion = targetVersion;
   }
 
+  /**
+   * The number of times to attempt to reconnect when a client request fails.
+   * Zero indicates that no reconnection attempts will be made while -1
+   * indicates that an indefinite number of reconnection attempts will be made.
+   * 
+   * @return the number of reconnection attempts
+   */
   public int getReconnectionAttempts() {
     return reconnectionAttempts;
   }
 
+  /**
+   * Set the number of times to attempt to reconnect when a client request
+   * fails. Zero indicates that no reconnection attempts will be made while -1
+   * indicates that an indefinite number of reconnection attempts will be made.
+   * 
+   * @param reconnectionAttempts - the number of reconnection attempts
+   */
   public void setReconnectionAttempts(int reconnectionAttempts) {
     this.reconnectionAttempts = reconnectionAttempts;
   }
