@@ -101,7 +101,7 @@ SiriServer client = injector.getInstance(SiriServer.class);
 +---+
 
   Once you have the SiriServer instance, you can call any number of methods to configure the server.  See the
-{{{./apidocs/org/onebusaway/siri/core/SiriServer.html}SiriClient javaodoc}} for more details.  You might, for example,
+{{{./apidocs/org/onebusaway/siri/core/SiriServer.html}SiriServer javaodoc}} for more details.  You might, for example,
 change the SIRI identity used by the server or the URL the server exports for subscriptions.
 
 * Using the Client
