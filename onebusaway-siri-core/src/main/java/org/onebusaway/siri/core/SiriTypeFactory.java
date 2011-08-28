@@ -134,6 +134,12 @@ public class SiriTypeFactory {
     return ref;
   }
 
+  public static VehicleRefStructure vehicleRef(String value) {
+    VehicleRefStructure ref = new VehicleRefStructure();
+    ref.setValue(value);
+    return ref;
+  }
+
   public static DatatypeFactory createDataTypeFactory() {
     try {
       return DatatypeFactory.newInstance();
@@ -141,11 +147,4 @@ public class SiriTypeFactory {
       throw new IllegalStateException(e);
     }
   }
-
-  public static VehicleRefStructure vehicleRef(String value) {
-    VehicleRefStructure ref = new VehicleRefStructure();
-    ref.setValue(value);
-    return ref;
-  }
-
 }
