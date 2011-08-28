@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +19,23 @@ package org.onebusaway.siri.core.handlers;
 import java.io.Reader;
 import java.io.Writer;
 
+/**
+ * This method provides low-level access to a SIRI endpoint, appropriate for
+ * implementing methods that expose the SIRI endpoint over a transport mechanism
+ * (eg. an HTTP server).
+ * 
+ * @author bdferris
+ * 
+ */
 public interface SiriRawHandler {
 
+  /**
+   * Handle an incoming raw request, in the form of a {@link Reader} typically
+   * containing a SIRI message in XML form. Any response will be written to the
+   * outgoing {@link Writer}.
+   * 
+   * @param reader the input reader
+   * @param writer the output writer
+   */
   public void handleRawRequest(Reader reader, Writer writer);
 }

@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +27,17 @@ import uk.org.siri.siri.ServiceRequest;
  * pattern.
  * 
  * @author bdferris
- * @see SiriServer
+ * @see SiriServer#addRequestResponseHandler(SiriRequestResponseHandler)
  */
 public interface SiriRequestResponseHandler {
 
+  /**
+   * Upon receiving an incoming {@link ServiceRequest}, populate the supplied
+   * {@link ServiceDelivery} with an appropriate response, if any.
+   * 
+   * @param request
+   * @param response
+   */
   public void handleRequestAndResponse(ServiceRequest request,
       ServiceDelivery response);
 }

@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +21,6 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -29,6 +28,7 @@ import javax.inject.Singleton;
 
 import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriException;
+import org.onebusaway.siri.core.guice.LifecycleService;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.handlers.SiriRequestResponseHandler;
 import org.onebusaway.siri.core.handlers.SiriSubscriptionRequestHandler;
@@ -53,6 +53,39 @@ import uk.org.siri.siri.TerminateSubscriptionRequestStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure.TerminationResponseStatus;
 
+/**
+ * A SIRI server implementation. Typically, you don't instantiate this directly,
+ * but instead let the Guice framework do the configuration. See
+ * {@link SiriCoreModule} for more details.
+ * 
+ * Here is a quick example:
+ * 
+ * <pre>
+ *   // Configure the Guice container
+ *   List<Module> modules = new ArrayList<Module>();
+ *   modules.addAll(SiriCoreModule.getModules());
+ *   modules.add(new SiriJettyModule());
+ *   Injector injector = Guice.createInjector(modules);
+ *
+ *   SiriServer server = injector.getInstance(SiriServer.class);
+ *   // Set our SIRI identity
+ *   server.setIdentify("me");
+ *   // Change the port and url we listen to for incoming client requests
+ *   server.setUrl("http://*:8080/server.xml");
+ *   
+ *   // Start the client
+ *   LifecycleService lifecycleService = injector.getInstance(LifecycleService.class);
+ *   lifecycleService.start();
+ *   
+ *   // Publish a ServiceDelivery
+ *   ServiceDelivery delivery = ...
+ *   server.puslish(delivery);
+ * </pre>
+ * 
+ * @author bdferris
+ * @see SiriClient
+ * @see ServiceDelivery
+ */
 @Singleton
 public class SiriServer extends SiriCommon implements SiriRawHandler {
 
@@ -76,23 +109,49 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
     _subscriptionManager = subscriptionManager;
   }
 
+  /**
+   * 
+   * @return the time at which the server started, in ms since the epoch
+   */
   public long getServiceStartedTimestamp() {
     return _serviceStartedTimestamp;
   }
 
+  /**
+   * Add a request-response handler if you want to respond directly to a
+   * {@link ServiceRequest} from a client.
+   * 
+   * @param handler the request-response handler
+   */
   public void addRequestResponseHandler(SiriRequestResponseHandler handler) {
     _requestResponseHandlers.add(handler);
   }
 
+  /**
+   * Remove an existing request-response handler
+   * 
+   * @param handler the handler to remove
+   */
   public void removeRequestResponseHandler(SiriRequestResponseHandler handler) {
     _requestResponseHandlers.remove(handler);
   }
 
+  /**
+   * Add a handler to receive notification every time a subscription request is
+   * received from a client.
+   * 
+   * @param handler the subscription request handler
+   */
   public void addSubscriptionRequestHandler(
       SiriSubscriptionRequestHandler handler) {
     _subscriptionRequestHandlers.add(handler);
   }
 
+  /**
+   * Remove an existing subscription request handler.
+   * 
+   * @param handler the handler to remove
+   */
   public void removeSubscriptionRequestHandler(
       SiriSubscriptionRequestHandler handler) {
     _subscriptionRequestHandlers.remove(handler);
@@ -102,15 +161,26 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
    * 
    ****/
 
+  /**
+   * This method is called on server startup. Typically, calling this method is
+   * handled automatically by the {@link LifecycleService}.
+   */
   @PostConstruct
   public void start() {
     _serviceStartedTimestamp = System.currentTimeMillis();
   }
 
   /****
-   * 
-   ****/
+   * Server Methods
+   ***/
 
+  /**
+   * Publish a {@link ServiceDelivery} to any connected clients based on the
+   * contents of the delivery.
+   * 
+   * @param serviceDelivery the delivery to publish
+   * @return the number of clients the delivery is published to
+   */
   public int publish(ServiceDelivery serviceDelivery) {
 
     List<SiriServerSubscriptionEvent> events = _subscriptionManager.publish(serviceDelivery);
@@ -133,6 +203,9 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
    * {@link SiriRawHandler} Interface
    ****/
 
+  /**
+   * See {@link SiriRawHandler#handleRawRequest(Reader, Writer)}.
+   */
   @Override
   public void handleRawRequest(Reader reader, Writer writer) {
 
@@ -190,18 +263,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
   }
 
   /****
-   * Protected Methods
-   ****/
-
-  @Override
-  protected ScheduledExecutorService createExecutor() {
-    return Executors.newScheduledThreadPool(5);
-  }
-
-  /****
    * Private Methods
-   * 
-   * @return
    ****/
 
   private SubscriptionResponseStructure handleSubscriptionRequest(

@@ -1,0 +1,170 @@
+ ------
+SIRI Client and Server Library
+ ------
+Brian Ferris
+ ------
+2011-08-28
+ ------
+
+Introduction
+
+  The <<<onebusaway-siri-core>>> library provides a Java-based SIRI implementation that makes it easy to build your own
+SIRI clients and servers.  We've especially focused on implementing the complex SIRI pub-sub subscription management
+functionality.
+
+Getting the Library
+
+  If you are using Maven to manage your project, it's easy to add a dependency for the library.  First, add the
+OneBusAway Maven repository to your project's <<<pom.xml>>>:
+
++---+
+<repositories>
+  <repository>
+    <id>public.onebusaway.org</id>
+    <url>http://nexus.onebusaway.org/content/groups/public/</url>
+  </repository>
+<repositories>
++---+ 
+
+  Next, add the dependencies for the libraries.  Note that we include both the core SIRI library and the Jetty-based
+implementation for web-server.
+  
++---+
+<dependencies>
+  <dependency>
+    <groupId>org.onebusaway</groupId>
+    <artifactId>onebusaway-siri-core</artifactId>
+    <version>${currentVersion}</version>
+  </dependency>
+  <dependency>
+    <groupId>org.onebusaway</groupId>
+    <artifactId>onebusaway-siri-jetty</artifactId>
+    <version>${currentVersion}</version>
+  </dependency>
+</dependencies>
++---+
+
+* A Note About SIRI Versions
+
+  Internally, we use SIRI 1.3 data structures in our client and server library.  However, the library can automatically
+convert those structures to and from SIRI 1.0 as needed by a remote SIRI endpoint.
+
+Using the Library
+
+* Common Setup
+
+  Whether your are implementing a SIRI client or server (or both), there is some common setup that needs to happen
+first.  We use {{{http://code.google.com/p/google-guice/}Google Guice}} to wire up the various components that make up
+the library.  The first setup is instantiating the library's container, including the appropriate SIRI-specific
+Guice modules.  Next, perform additional configuration on the client or server, and finally start everything up.
+
++--+
+List<Module> modules = new ArrayList<Module>();
+modules.addAll(SiriCoreModule.getModules());
+modules.add(new SiriJettyModule());
+Injector injector = Guice.createInjector(modules);
+
+// Additional client or server configuration goes here
+
+// This starts your siri client or server
+LifecycleService lifecycleService = injector.getInstance(LifecycleService.class);
+lifecycleService.start();
+
+// Now you can use the client or server
++--+
+
+  Note that we add the default <<<onebusaway-siri-core>>> modules and the <<<onebusaway-siri-jetty>>> module as well.
+  
+  Note the <<<Additional configuration goes here>>> section.  It's important to configure you client or server here,
+before starting them up.  Otherwise, the configuration won't be appropriately applied.  Note on configuration follows.
+
+* Configuring a Client
+
+  To configure a client, you first need to grab the client instance from the container:
+  
++---+
+SiriClient client = injector.getInstance(SiriClient.class);
++---+
+
+  Once you have the SiriClient instance, you can call any number of methods to configure the client.  See the
+{{{./apidocs/org/onebusaway/siri/core/SiriClient.html}SiriClient javaodoc}} for more details.  You might, for example,
+change the SIRI identity used by the client or the URL the client exports for subscriptions.  Also see
+{{{./apidocs/org/onebusaway/siri/core/SiriClient.html#addServiceDeliveryHandler(org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler)}SiriClient.addServiceDeliveryHandler()}}
+to register a listener for incoming, asynchronous ServiceDeliveries. 
+
+* Configuring a Server
+
+  To configure a server, you first need to grab the server instance from the container:
+  
++---+
+SiriServer client = injector.getInstance(SiriServer.class);
++---+
+
+  Once you have the SiriServer instance, you can call any number of methods to configure the server.  See the
+{{{./apidocs/org/onebusaway/siri/core/SiriServer.html}SiriClient javaodoc}} for more details.  You might, for example,
+change the SIRI identity used by the server or the URL the server exports for subscriptions.
+
+* Using the Client
+
+  Once you've configured your client and started it up, you can now start making requests.  See
+{{{./apidocs/org/onebusaway/siri/core/SiriClient.html#handleRequest(org.onebusaway.siri.core.SiriClientRequest)}SiriClient.handleRequest()}}
+and {{{./apidocs/org/onebusaway/siri/core/SiriClient.html#handleRequestWithResponse(org.onebusaway.siri.core.SiriClientRequest)}SiriClient.handleRequestWithResponse()}}
+for making requests.
+
+* Using the Server
+
+  Once you've configured your server and started it up, you can now start publishing service deliveries.  See
+{{{.apidocs/org/onebusaway/siri/core/SiriServer.html#publish(uk.org.siri.siri.ServiceDelivery)}SiriServer.publish()}}
+for more details.
+
+Examples
+
+* Client Example
+
++---+
+ // Configure the Guice container
+ List<Module> modules = new ArrayList<Module>();
+ modules.addAll(SiriCoreModule.getModules());
+ modules.add(new SiriJettyModule());
+ Injector injector = Guice.createInjector(modules);
+ 
+ SiriClient client = injector.getInstance(SiriClient.class);
+ // Set our SIRI identity
+ client.setIdentify("me");
+ // Change the port and url we listen to for incoming service deliveries
+ client.setUrl("http://*:8080/client.xml");
+ // Register a service delivery handler
+ client.addServiceDeliveryHandler(...);
+ 
+ // Start the client
+ LifecycleService lifecycleService = injector.getInstance(LifecycleService.class);
+ lifecycleService.start();
+ 
+ // Send a request
+ SiriClient request = ...
+ client.handleRequest(request);
++---+
+
+* Server Example
+
++---+
+ // Configure the Guice container
+ List<Module> modules = new ArrayList<Module>();
+ modules.addAll(SiriCoreModule.getModules());
+ modules.add(new SiriJettyModule());
+ Injector injector = Guice.createInjector(modules);
+ 
+ SiriServer server = injector.getInstance(SiriServer.class);
+ // Set our SIRI identity
+ server.setIdentify("me");
+ // Change the port and url we listen to for incoming client requests
+ server.setUrl("http://*:8080/server.xml");
+ 
+ // Start the client
+ LifecycleService lifecycleService = injector.getInstance(LifecycleService.class);
+ lifecycleService.start();
+ 
+ // Publish a ServiceDelivery
+ ServiceDelivery delivery = ...
+ server.puslish(delivery);
++---+

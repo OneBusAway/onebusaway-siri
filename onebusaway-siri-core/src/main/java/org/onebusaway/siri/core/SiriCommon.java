@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2011 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +77,13 @@ import uk.org.siri.siri.SubscriptionContextStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.VehicleMonitoringSubscriptionStructure;
 
+/**
+ * Common base configuration and methods used by both {@link SiriClient} and
+ * {@link SiriServer}.
+ * 
+ * @author bdferris
+ * 
+ */
 public class SiriCommon implements SiriRawHandler {
 
   public enum ELogRawXmlType {
@@ -90,6 +98,9 @@ public class SiriCommon implements SiriRawHandler {
 
   protected SchedulingService _schedulingService;
 
+  /**
+   * We break this out as a separate service to assist with unit testing
+   */
   protected HttpClientService _httpClientService;
 
   private String _identity;
@@ -120,7 +131,6 @@ public class SiriCommon implements SiriRawHandler {
     }
 
     _identity = UUID.randomUUID().toString();
-
   }
 
   @Inject
@@ -133,10 +143,20 @@ public class SiriCommon implements SiriRawHandler {
     _httpClientService = httpClientService;
   }
 
+  /**
+   * @return your SIRI participant identity, used to identify your SIRI endpoint
+   *         in most requests and responses
+   */
   public String getIdentity() {
     return _identity;
   }
 
+  /**
+   * Set the SIRI participant identity used to identify your SIRI endpoint in
+   * most requests and responses.
+   * 
+   * @param identity your SIRI participant identity
+   */
   public void setIdentity(String identity) {
     _identity = identity;
   }
@@ -217,18 +237,41 @@ public class SiriCommon implements SiriRawHandler {
     return url(clientUrl);
   }
 
+  /**
+   * If your machine has multiple addresses and you need your SIRI HTTP requests
+   * to look like they are coming from a specific address, this address will be
+   * used.
+   * 
+   * @return
+   */
   public InetAddress getLocalAddress() {
     return _localAddress;
   }
 
+  /**
+   * If your machine has multiple addresses and you need your SIRI HTTP requests
+   * to look like they are coming from a specific address, use this method to
+   * indicate which local address to use.
+   * 
+   * @param localAddress the address to use
+   */
   public void setLocalAddress(InetAddress localAddress) {
     _localAddress = localAddress;
   }
 
+  /**
+   * 
+   * @return how raw XML of SIRI messages is logged
+   */
   public ELogRawXmlType getLogRawXmlType() {
     return _logRawXmlType;
   }
 
+  /**
+   * Determine how raw XML of SIRI messages is internally logged
+   * 
+   * @param logRawXmlType the logging type
+   */
   public void setLogRawXmlType(ELogRawXmlType logRawXmlType) {
     _logRawXmlType = logRawXmlType;
   }
@@ -243,10 +286,16 @@ public class SiriCommon implements SiriRawHandler {
 
   }
 
-  /****
+  /**
+   * Submit the specified {@link SiriClientRequest}, filling in any Siri
+   * data-structures with appropriate default values, versioning the payload as
+   * appropriate for the endpoint, and submitting the request over HTTP. Any
+   * response is parsed, convered back to the latest SIRI version, and returned.
    * 
-   ****/
-
+   * @param <T>
+   * @param request the SIRI client request
+   * @return any response from the endpoint, or null if none received
+   */
   @SuppressWarnings("unchecked")
   protected <T> T processRequestWithResponse(SiriClientRequest request) {
 
@@ -332,6 +381,11 @@ public class SiriCommon implements SiriRawHandler {
     return (T) responseData;
   }
 
+  /**
+   * The specified client request is processed asynchronously on another thread.
+   * 
+   * @param request the SIRI client request
+   */
   protected void processRequestWithAsynchronousResponse(
       SiriClientRequest request) {
 
@@ -340,6 +394,14 @@ public class SiriCommon implements SiriRawHandler {
     _schedulingService.submit(attempt);
   }
 
+  /**
+   * Override this method to provide custom behavior for processing a response
+   * from a SIRI endoint.
+   * 
+   * @param siri the payload
+   * @param asynchronousResponse true if the response was received
+   *          asynchronously, otherwise false
+   */
   protected void handleSiriResponse(Siri siri, boolean asynchronousResponse) {
 
   }
@@ -348,6 +410,11 @@ public class SiriCommon implements SiriRawHandler {
    * 
    ****/
 
+  /**
+   * Fill in all SIRI data-strutures with appropriate default values as needed.
+   * 
+   * @param siri the SIRI payload
+   */
   protected void fillAllSiriStructures(Siri siri) {
 
     fillRequestStructure(siri.getCapabilitiesRequest());
@@ -371,6 +438,14 @@ public class SiriCommon implements SiriRawHandler {
     fillResponseStructure(siri.getTerminateSubscriptionResponse());
   }
 
+  /**
+   * Fill in the {@link SubscriptionRequest} with appropriate default values as
+   * needed.
+   * 
+   * @param request the SIRI client request associated with the subscription
+   *          request
+   * @param subscriptionRequest the subscription request to fill in
+   */
   protected void fillSubscriptionRequestStructure(SiriClientRequest request,
       SubscriptionRequest subscriptionRequest) {
 
@@ -417,6 +492,11 @@ public class SiriCommon implements SiriRawHandler {
     }
   }
 
+  /**
+   * Fill in the request with appropriate default values as needed.
+   * 
+   * @param request the request
+   */
   protected void fillRequestStructure(RequestStructure request) {
 
     if (request == null)
@@ -437,6 +517,8 @@ public class SiriCommon implements SiriRawHandler {
   }
 
   /**
+   * Fill in the request with appropriate default values as needed.
+   * 
    * TODO: It sure would be nice if {@link ServiceRequest} was a sub-class of
    * {@link RequestStructure}
    * 
@@ -466,22 +548,42 @@ public class SiriCommon implements SiriRawHandler {
     fillAbstractFunctionalServiceRequestStructures(request.getVehicleMonitoringRequest());
   }
 
+  /**
+   * Fill in the requests with appropriate default values as needed.
+   * 
+   * @param <T>
+   * @param requests
+   */
   protected <T extends AbstractFunctionalServiceRequestStructure> void fillAbstractFunctionalServiceRequestStructures(
       List<T> requests) {
     for (AbstractFunctionalServiceRequestStructure request : requests)
       fillAbstractFunctionalServiceRequestStructure(request);
   }
 
+  /**
+   * Fill in the request with appropriate default values as needed.
+   * 
+   * @param request
+   */
   protected void fillAbstractFunctionalServiceRequestStructure(
       AbstractFunctionalServiceRequestStructure request) {
 
     fillAbstractRequestStructure(request);
   }
 
+  /**
+   * Fill in the request with appropriate default values as needed.
+   * 
+   * @param request
+   */
   protected void fillAbstractRequestStructure(AbstractRequestStructure request) {
     if (request.getRequestTimestamp() == null)
       request.setRequestTimestamp(new Date());
   }
+
+  /****
+   * Private Methods
+   ****/
 
   private void fillResponseStructure(ResponseEndpointStructure response) {
 
@@ -544,6 +646,12 @@ public class SiriCommon implements SiriRawHandler {
    * 
    ****/
 
+  /**
+   * 
+   * @param payload the SIRI payload
+   * @return true if the specified payload should be logged, as determined by
+   *         the {@link #getLogRawXmlType()} settings.
+   */
   protected boolean isRawDataLogged(Siri payload) {
     switch (_logRawXmlType) {
       case NONE:
@@ -564,6 +672,14 @@ public class SiriCommon implements SiriRawHandler {
    * 
    ****/
 
+  /**
+   * Method to unmarshall an {@link InputStream} into a high-level SIRI
+   * data-structure using JAXB. Typically, you don't call this directly.
+   * 
+   * @param <T>
+   * @param in
+   * @return
+   */
   @SuppressWarnings("unchecked")
   public <T> T unmarshall(InputStream in) {
     try {
@@ -574,6 +690,14 @@ public class SiriCommon implements SiriRawHandler {
     }
   }
 
+  /**
+   * Method to unmarshall an {@link Reader} into a high-level SIRI
+   * data-structure using JAXB. Typically, you don't call this directly.
+   * 
+   * @param <T>
+   * @param reader
+   * @return
+   */
   @SuppressWarnings("unchecked")
   public <T> T unmarshall(Reader reader) {
     try {
@@ -584,6 +708,12 @@ public class SiriCommon implements SiriRawHandler {
     }
   }
 
+  /**
+   * Marshall the specified object to the target {@link Writer} using JAXB.
+   * 
+   * @param object
+   * @param writer
+   */
   public void marshall(Object object, Writer writer) {
     try {
       Marshaller m = _jaxbContext.createMarshaller();
@@ -593,6 +723,12 @@ public class SiriCommon implements SiriRawHandler {
     }
   }
 
+  /**
+   * Marshall the specified object as a String using JAXB.
+   * 
+   * @param object
+   * @return the String representation of the specified Object
+   */
   public String marshallToString(Object object) {
     StringWriter writer = new StringWriter();
     marshall(object, writer);
@@ -608,7 +744,8 @@ public class SiriCommon implements SiriRawHandler {
   }
 
   /**
-   * This method encapsulates our reconnection behavior.
+   * This method encapsulates our reconnection behavior around the call to
+   * {@link #sendHttpRequest(String, String)}.
    * 
    * @param request
    * @param payload
@@ -674,6 +811,14 @@ public class SiriCommon implements SiriRawHandler {
     }
   }
 
+  /**
+   * Determine which URL should be used for a request. Recall that a SIRI
+   * endpoint can have separate URLs for subscription management and
+   * check-status requests.
+   * 
+   * @param request
+   * @return
+   */
   protected String getUrlForRequest(SiriClientRequest request) {
     Siri payload = request.getPayload();
     if (payload.getCheckStatusRequest() != null
@@ -685,6 +830,17 @@ public class SiriCommon implements SiriRawHandler {
     return request.getTargetUrl();
   }
 
+  /**
+   * Construct an HTTP POST request, send it, and decode the response.
+   * 
+   * TODO: We could probably encapsulate this even further to make it easier to
+   * replace the HTTP client implementation or support additional transport
+   * mechanisms.
+   * 
+   * @param url the target url where we will POST
+   * @param content the content of the POST request
+   * @return the response
+   */
   protected HttpResponse sendHttpRequest(String url, String content) {
 
     DefaultHttpClient client = new DefaultHttpClient();
@@ -795,6 +951,13 @@ public class SiriCommon implements SiriRawHandler {
     return responseReader;
   }
 
+  /**
+   * Convenience method that hides the {@link MalformedURLException} thrown when
+   * creating a URL object.
+   * 
+   * @param url string representation of a URL
+   * @return the actual URL
+   */
   protected URL url(String url) {
     try {
       return new URL(url);
@@ -803,6 +966,16 @@ public class SiriCommon implements SiriRawHandler {
     }
   }
 
+  /**
+   * If the user has specified a wildcard "*" in their {@link #getUrl()},
+   * indicating that they want to bind to all interfaces on their machine, we
+   * still need a hostname for when we broadcast that URL to SIRI endpoints for
+   * pub-sub callbacks. This method constructs a URL with the "*" replaced with
+   * the machine's hostname.
+   * 
+   * @param url
+   * @return
+   */
   protected String replaceHostnameWildcardWithPublicHostnameInUrl(String url) {
 
     try {
@@ -821,6 +994,13 @@ public class SiriCommon implements SiriRawHandler {
     return url;
   }
 
+  /**
+   * Determine if a specific local address has been specified in the internal
+   * URL, indicating that we should use that as our source address when making
+   * HTTP client requests. Important if you need your SIRI HTTP requests to look
+   * like they are coming from a particular address, especially when your
+   * machine has more than one address.
+   */
   protected void checkLocalAddress() {
 
     URL bindUrl = getInternalUrlToBind(false);

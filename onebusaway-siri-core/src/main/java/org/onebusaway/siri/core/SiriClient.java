@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.onebusaway.siri.core.exceptions.SiriException;
+import org.onebusaway.siri.core.guice.LifecycleService;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
@@ -41,6 +42,42 @@ import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.Siri;
 import uk.org.siri.siri.SubscriptionRequest;
 
+/**
+ * A SIRI client implementation. Typically, you don't instantiate this directly,
+ * but instead let the Guice framework do the configuration. See
+ * {@link SiriCoreModule} for more details.
+ * 
+ * Here is a quick example:
+ * 
+ * <pre>
+ *   // Configure the Guice container
+ *   List<Module> modules = new ArrayList<Module>();
+ *   modules.addAll(SiriCoreModule.getModules());
+ *   modules.add(new SiriJettyModule());
+ *   Injector injector = Guice.createInjector(modules);
+ *
+ *   SiriClient client = injector.getInstance(SiriClient.class);
+ *   // Set our SIRI identity
+ *   client.setIdentify("me");
+ *   // Change the port and url we listen to for incoming service deliveries
+ *   client.setUrl("http://*:8080/client.xml");
+ *   // Register a service delivery handler
+ *   client.addServiceDeliveryHandler(...);
+ *   
+ *   // Start the client
+ *   LifecycleService lifecycleService = injector.getInstance(LifecycleService.class);
+ *   lifecycleService.start();
+ *   
+ *   // Send a request
+ *   SiriClient request = ...
+ *   client.handleRequest(request);
+ * </pre>
+ * 
+ * @author bdferris
+ * @see SiriServer
+ * @see SiriClientRequest
+ * @see SiriClientRequestFactory
+ */
 @Singleton
 public class SiriClient extends SiriCommon implements SiriClientHandler,
     SiriRawHandler {
@@ -70,10 +107,21 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
     _subscriptionManager = subscriptionManager;
   }
 
+  /**
+   * Add a service delivery handler to receive notification of
+   * {@link ServiceDelivery} deliveries from a remote SIRI endpoint.
+   * 
+   * @param handler the service delivery handler
+   */
   public void addServiceDeliveryHandler(SiriServiceDeliveryHandler handler) {
     _serviceDeliveryHandlers.add(handler);
   }
 
+  /**
+   * Remove a previously registered service delivery handler
+   * 
+   * @param handler the handler to remove
+   */
   public void removeServiceDeliveryHandler(SiriServiceDeliveryHandler handler) {
     _serviceDeliveryHandlers.remove(handler);
   }
@@ -90,10 +138,11 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
     _includeDeliveriesToUnknownSubscription = includeDeliveriesToUnknownSubscription;
   }
 
-  public SiriClientSubscriptionManager getSubscriptionManager() {
-    return _subscriptionManager;
-  }
-
+  /**
+   * Call when ready to stop the client. The method will automatically terminate
+   * any open subscriptions. Note that this method is typically called
+   * automatically by the {@link LifecycleService}.
+   */
   @PreDestroy
   public void stop() {
     _subscriptionManager.terminateAllSubscriptions(_waitForTerminateSubscriptionResponseOnExit);
@@ -141,6 +190,9 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    * {@link SiriRawHandler} Interface
    ****/
 
+  /**
+   * See {@link SiriRawHandler#handleRawRequest(Reader, Writer)}.
+   */
   @Override
   public void handleRawRequest(Reader reader, Writer writer) {
 
@@ -180,6 +232,10 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    * Protected Methods
    ****/
 
+  /**
+   * Called to verify that a {@link SiriClientRequest} is not missing any
+   * necessary fields.
+   */
   protected void checkRequest(SiriClientRequest request) {
     if (request == null)
       throw new IllegalArgumentException("request is null");
@@ -223,8 +279,15 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
           failedPayload.getSubscriptionRequest());
   }
 
+  /**
+   * Handle an incoming response from a SIRI endpoint. Checks if any
+   * subscription-related responses are contained in the response and, if so,
+   * takes appropriate action.
+   */
   @Override
   protected void handleSiriResponse(Siri siri, boolean asynchronousResponse) {
+
+    super.handleSiriResponse(siri, asynchronousResponse);
 
     if (siri.getSubscriptionResponse() != null)
       _subscriptionManager.handleSubscriptionResponse(siri.getSubscriptionResponse());
