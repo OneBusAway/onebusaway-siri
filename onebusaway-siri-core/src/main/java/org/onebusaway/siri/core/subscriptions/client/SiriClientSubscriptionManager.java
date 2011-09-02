@@ -33,6 +33,7 @@ import org.onebusaway.siri.core.ESiriModuleType;
 import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClientRequest;
+import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
@@ -43,7 +44,6 @@ import org.slf4j.LoggerFactory;
 import uk.org.siri.siri.AbstractServiceDeliveryStructure;
 import uk.org.siri.siri.CheckStatusResponseStructure;
 import uk.org.siri.siri.HeartbeatNotificationStructure;
-import uk.org.siri.siri.ParticipantRefStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.StatusResponseStructure;
 import uk.org.siri.siri.SubscriptionRequest;
@@ -190,15 +190,35 @@ public class SiriClientSubscriptionManager {
 
     ClientSubscriptionChannel clientSubscriptionChannel = null;
 
+    /**
+     * First, try looking up by address
+     */
     String address = serviceDelivery.getAddress();
     if (address != null)
       clientSubscriptionChannel = _activeChannels.get(address);
 
-    ParticipantRefStructure producerRef = serviceDelivery.getProducerRef();
-    if (producerRef != null && producerRef.getValue() != null) {
-      ClientSubscriptionChannel other = _activeChannels.get(producerRef.getValue());
-      if (other != null)
-        clientSubscriptionChannel = other;
+    /**
+     * If that fails, try looking up by a specific subscription
+     */
+    if (clientSubscriptionChannel == null) {
+      Set<ClientSubscriptionChannel> channels = new HashSet<ClientSubscriptionChannel>();
+      for (ESiriModuleType moduleType : ESiriModuleType.values()) {
+        List<AbstractServiceDeliveryStructure> moduleDeliveries = SiriLibrary.getServiceDeliveriesForModule(
+            serviceDelivery, moduleType);
+        for (AbstractServiceDeliveryStructure moduleDelivery : moduleDeliveries) {
+          SubscriptionId subscriptionId = ClientSupport.getSubscriptionIdForModuleDelivery(moduleDelivery);
+          ClientSubscriptionInstance instance = _activeSubscriptions.get(subscriptionId);
+          if (instance != null) {
+            channels.add(instance.getChannel());
+          }
+        }
+      }
+      if (!channels.isEmpty()) {
+        if (channels.size() > 1)
+          _log.warn("multiple channels found for a single service delivery");
+        else
+          clientSubscriptionChannel = channels.iterator().next();
+      }
     }
 
     if (clientSubscriptionChannel != null) {
