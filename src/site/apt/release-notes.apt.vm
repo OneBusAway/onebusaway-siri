@@ -4,6 +4,8 @@ Release Notes
 
   * Bug fix for subscription request handling when no response is heard from the server
   
+  * Better SIRI channel matching for an incoming ServiceDelivery 
+  
   * Additional documentation
 
   * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
