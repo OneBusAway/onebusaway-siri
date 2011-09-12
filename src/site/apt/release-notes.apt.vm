@@ -2,9 +2,13 @@ Release Notes
 
 * ${currentVersion}
 
-  * Bug fix for subscription request handling when no response is heard from the server
+  * Better SIRI channel matching for an incoming ServiceDelivery
   
-  * Better SIRI channel matching for an incoming ServiceDelivery 
+  * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
+
+* 1.0.1
+
+  * Bug fix for subscription request handling when no response is heard from the server
   
   * Additional documentation
 
