@@ -6,6 +6,12 @@ Release Notes
   
   * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
 
+* 1.0.2
+
+  * Better SIRI channel matching for an incoming ServiceDelivery
+  
+  * Full Documentation: {{${site_base_url}/onebusaway-siri/1.0.2/}}
+
 * 1.0.1
 
   * Bug fix for subscription request handling when no response is heard from the server
