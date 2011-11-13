@@ -22,40 +22,37 @@ import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.servlet.Servlet;
 
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.onebusaway.collections.FactoryMap;
-import org.onebusaway.siri.core.SiriCommon;
 import org.onebusaway.siri.core.exceptions.SiriException;
 
 public class SiriJettyServiceImpl {
 
   private final List<Server> _servers = new ArrayList<Server>();
 
-  private final List<SiriCommon> _services;
+  private final List<ServletSource> _services;
 
-  public SiriJettyServiceImpl(List<SiriCommon> services) {
+  public SiriJettyServiceImpl(List<ServletSource> services) {
     _services = services;
   }
 
   @PostConstruct
   public void start() throws SiriException {
 
-    Map<Integer, List<SiriCommon>> servicesByPort = groupServicesByPort(_services);
+    Map<Integer, List<ServletSource>> servicesByPort = groupServicesByPort(_services);
 
     for (int port : servicesByPort.keySet()) {
 
       Server server = new Server(port);
       Context context = new Context(server, "/", Context.SESSIONS);
 
-      for (SiriCommon service : servicesByPort.get(port)) {
-
-        SubscriptionServerServlet servlet = new SubscriptionServerServlet();
-        servlet.setSiriListener(service);
-
-        URL url = service.getInternalUrlToBind(false);
+      for (ServletSource service : servicesByPort.get(port)) {
+        URL url = service.getUrl();
+        Servlet servlet = service.getServlet();
         context.addServlet(new ServletHolder(servlet), url.getPath());
       }
 
@@ -87,14 +84,14 @@ public class SiriJettyServiceImpl {
    * Private Methods
    ****/
 
-  private Map<Integer, List<SiriCommon>> groupServicesByPort(
-      List<SiriCommon> services) {
+  private Map<Integer, List<ServletSource>> groupServicesByPort(
+      List<ServletSource> services) {
 
-    Map<Integer, List<SiriCommon>> servicesByPort = new FactoryMap<Integer, List<SiriCommon>>(
-        new ArrayList<SiriCommon>());
+    Map<Integer, List<ServletSource>> servicesByPort = new FactoryMap<Integer, List<ServletSource>>(
+        new ArrayList<ServletSource>());
 
-    for (SiriCommon service : services) {
-      URL url = service.getInternalUrlToBind(false);
+    for (ServletSource service : services) {
+      URL url = service.getUrl();
       int port = url.getPort();
       servicesByPort.get(port).add(service);
     }

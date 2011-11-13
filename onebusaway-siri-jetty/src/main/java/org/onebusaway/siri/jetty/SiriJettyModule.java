@@ -15,6 +15,7 @@
  */
 package org.onebusaway.siri.jetty;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +33,7 @@ public class SiriJettyModule extends AbstractModule {
   @Override
   protected void configure() {
 
-    final List<SiriCommon> services = new ArrayList<SiriCommon>();
+    final List<ServletSource> sources = new ArrayList<ServletSource>();
 
     bindListener(Matchers.any(), new TypeListener() {
       @Override
@@ -41,26 +42,37 @@ public class SiriJettyModule extends AbstractModule {
 
         Class<? super I> type = injectableType.getRawType();
 
-        if (SiriCommon.class.isAssignableFrom(type))
-          encounter.register(new InjectionListenerImpl<I>(services));
+        if (SiriCommon.class.isAssignableFrom(type)
+            || ServletSource.class.isAssignableFrom(type)) {
+          encounter.register(new InjectionListenerImpl<I>(sources));
+        }
       }
     });
 
     bind(SiriJettyServiceImpl.class).toInstance(
-        new SiriJettyServiceImpl(services));
+        new SiriJettyServiceImpl(sources));
   }
 
   private static class InjectionListenerImpl<I> implements InjectionListener<I> {
 
-    private final List<SiriCommon> _services;
+    private final List<ServletSource> _sources;
 
-    public InjectionListenerImpl(List<SiriCommon> services) {
-      _services = services;
+    public InjectionListenerImpl(List<ServletSource> sources) {
+      _sources = sources;
     }
 
     @Override
     public void afterInjection(I injectee) {
-      _services.add((SiriCommon) injectee);
+      if (injectee instanceof SiriCommon) {
+        SiriCommon common = (SiriCommon) injectee;
+        URL url = common.getInternalUrlToBind(false);
+        SubscriptionServerServlet servlet = new SubscriptionServerServlet();
+        servlet.setSiriListener(common);
+        ServletSource source = new ServletSourceImpl(url, servlet);
+        _sources.add(source);
+      } else if (injectee instanceof ServletSource) {
+        _sources.add((ServletSource) injectee);
+      }
     }
   }
 }
