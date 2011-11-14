@@ -418,7 +418,7 @@ class TerminateSubscriptionsManager {
       TerminationResponseStatus status, SubscriptionId subId) {
 
     StringBuilder b = new StringBuilder();
-    b.append("We received an error response for a subscription request:");
+    b.append("We received an error response for a subscription termination request:");
     if (response.getAddress() != null)
       b.append(" address=").append(response.getAddress());
     if (response.getResponderRef() != null
