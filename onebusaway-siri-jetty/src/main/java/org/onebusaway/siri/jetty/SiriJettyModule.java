@@ -19,6 +19,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.Servlet;
+
 import org.onebusaway.siri.core.SiriCommon;
 
 import com.google.inject.AbstractModule;
@@ -65,14 +67,35 @@ public class SiriJettyModule extends AbstractModule {
     public void afterInjection(I injectee) {
       if (injectee instanceof SiriCommon) {
         SiriCommon common = (SiriCommon) injectee;
-        URL url = common.getInternalUrlToBind(false);
         SubscriptionServerServlet servlet = new SubscriptionServerServlet();
         servlet.setSiriListener(common);
-        ServletSource source = new ServletSourceImpl(url, servlet);
+        ServletSource source = new SiriCommonServletSource(common, servlet);
         _sources.add(source);
       } else if (injectee instanceof ServletSource) {
         _sources.add((ServletSource) injectee);
       }
     }
+  }
+  
+  private static class SiriCommonServletSource implements ServletSource {
+
+    private SiriCommon _common;
+    
+    private Servlet _servlet;
+
+    public SiriCommonServletSource(SiriCommon common, Servlet servlet) {
+      _common = common;
+      _servlet = servlet;
+    }
+    
+    @Override
+    public URL getUrl() {
+      return _common.getInternalUrlToBind(false);
+    }
+
+    @Override
+    public Servlet getServlet() {
+      return _servlet;
+    }    
   }
 }
