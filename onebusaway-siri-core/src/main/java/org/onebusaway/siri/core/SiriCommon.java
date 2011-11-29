@@ -715,8 +715,22 @@ public class SiriCommon implements SiriRawHandler {
    * @param writer
    */
   public void marshall(Object object, Writer writer) {
+    marshall(object, writer, false);
+  }
+
+  /**
+   * Marshall the specified object to the target {@link Writer} using JAXB.
+   * 
+   * @param object
+   * @param writer
+   * @param formatOutput if true, the serialized XML will be pretty-printed
+   */
+  public void marshall(Object object, Writer writer, boolean formatOutput) {
     try {
       Marshaller m = _jaxbContext.createMarshaller();
+      if (formatOutput) {
+        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+      }
       m.marshal(object, writer);
     } catch (JAXBException ex) {
       throw new SiriSerializationException(ex);
@@ -730,8 +744,19 @@ public class SiriCommon implements SiriRawHandler {
    * @return the String representation of the specified Object
    */
   public String marshallToString(Object object) {
+    return marshallToString(object, false);
+  }
+
+  /**
+   * Marshall the specified object as a String using JAXB.
+   * 
+   * @param object
+   * @param formatOutput if true, the serialized XML will be pretty-printed
+   * @return the String representation of the specified Object
+   */
+  public String marshallToString(Object object, boolean formatOutput) {
     StringWriter writer = new StringWriter();
-    marshall(object, writer);
+    marshall(object, writer, formatOutput);
     return writer.toString();
   }
 

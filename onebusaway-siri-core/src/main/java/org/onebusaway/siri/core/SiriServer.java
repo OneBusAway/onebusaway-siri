@@ -225,6 +225,13 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
           + " payload but instead received " + data.getClass());
 
     Siri siri = (Siri) data;
+
+    if (isRawDataLogged(siri)) {
+      String requestContent = marshallToString(siri, true);
+      _log.info("logging raw xml request:\n=== REQUEST BEGIN ===\n"
+          + requestContent + "\n=== REQUEST END ===");
+    }
+
     Siri siriResponse = new Siri();
 
     ServiceRequest serviceRequest = siri.getServiceRequest();
@@ -259,6 +266,13 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
      */
     Object responseData = versioning.getPayloadAsVersion(siriResponse,
         originalVersion);
+
+    if (isRawDataLogged(siri)) {
+      String responseContent = marshallToString(responseData, true);
+      _log.info("logging raw xml response:\n=== RESPONSE BEGIN ===\n"
+          + responseContent + "\n=== RESPONSE END ===");
+    }
+
     marshall(responseData, writer);
   }
 
@@ -351,7 +365,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
       String content = marshallToString(data);
       sendHttpRequest(address, content);
     } catch (SiriConnectionException ex) {
-      _log.warn("error connecting to client at " + address);
+      _log.warn("error connecting to client at " + address, ex);
       _subscriptionManager.terminateSubscriptionWithId(event.getSubscriptionId());
     }
   }
