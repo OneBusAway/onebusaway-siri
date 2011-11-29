@@ -19,7 +19,7 @@ for sharing real-time public transit operations data.
   
   * {{{./onebusaway-siri-client-cli.html}Command-line utility for querying SIRI data sources}}
   
-  * {{{./onebusaway-siri-repeater-cli.html}Command-line application SIRI repeater application}}
+  * {{{./onebusaway-siri-repeater-cli.html}Command-line SIRI repeater application}}
   
   []
 

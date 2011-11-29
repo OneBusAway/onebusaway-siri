@@ -59,7 +59,7 @@ java -jar onebusaway-siri-repeater-cli.jar [-args] request [request ...]
   
   * <<<-requestorConsumerAddressDefault>>> : set a default consumer address for a particular requestor, used when an address is not included in a subscription request.  Argument should take the form <<<requestorRef=address>>>.
    
-  * <<<-dataSource path>>> : a Spring context.xml file containing additional bean defs
+  * <<<-logRawXml path>>> : If specified, indicates the raw SIRI request and response XML should be logged to the console.  Valid values are "NONE" (the default), "DATA", "CONTROL", and "ALL".
   
   * <<<-filter filterSpec>>> : specify a filter to be applied to SIRI data passing through the repeater.  See the Filters section below for more details.
 
