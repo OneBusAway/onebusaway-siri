@@ -110,11 +110,7 @@
                   <filemode>644</filemode>
                   <username>root</username>
                   <groupname>root</groupname>
-                  <dependency>
-                    <includes>
-                      <include>org.onebusaway:onebusaway-siri-repeater-cli</include>
-                    </includes>
-                  </dependency>
+                  <artifact/>
                 </mapping>
                 <!-- Configuration files -->
                 <mapping>
