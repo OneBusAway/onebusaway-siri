@@ -67,6 +67,8 @@ public class SiriRepeaterCommandLineConfiguration {
 
   private static final String ARG_LOG_RAW_XML = "logRawXml";
 
+  private static final String ARG_FORMAT_OUTPUT_XML = "formatOutputXml";
+  
   private static final String ARG_NO_SUBSCRIPTIONS = "noSubscriptions";
 
   public Injector configure(String[] args) throws Exception {
@@ -142,6 +144,7 @@ public class SiriRepeaterCommandLineConfiguration {
     options.addOption(ARG_REQUESTOR_CONSUMER_ADDRESS_DEFAULT, true,
         "consumer address default for requestor");
     options.addOption(ARG_LOG_RAW_XML, true, "log raw xml");
+    options.addOption(ARG_FORMAT_OUTPUT_XML, false, "format output xml");
     options.addOption(ARG_NO_SUBSCRIPTIONS, false, "no subscriptions");
     options.addOption(ARG_FILTER, true, "filter specification");
   }
@@ -178,6 +181,9 @@ public class SiriRepeaterCommandLineConfiguration {
       siriServer.setLogRawXmlType(type);
     }
 
+    siriClient.setFormatOutputXmlByDefault(cli.hasOption(ARG_FORMAT_OUTPUT_XML));
+    siriServer.setFormatOutputXmlByDefault(cli.hasOption(ARG_FORMAT_OUTPUT_XML));
+    
     /**
      * Filters
      */

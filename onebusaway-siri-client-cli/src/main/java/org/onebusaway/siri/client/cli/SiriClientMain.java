@@ -71,6 +71,8 @@ public class SiriClientMain {
   private static final String ARG_NO_SUBSCRIPTIONS = "noSubscriptions";
 
   private static final String ARG_LOG_RAW_XML = "logRawXml";
+  
+  private static final String ARG_FORMAT_OUTPUT_XML = "formatOutputXml";
 
   private static final String ARG_SUBSCRIBE = "subscribe";
 
@@ -145,6 +147,8 @@ public class SiriClientMain {
       SchedulingService schedulingService = injector.getInstance(SchedulingService.class);
       schedulingService.setResponseTimeout(responseTimeout);
     }
+    
+    _client.setFormatOutputXmlByDefault(cli.hasOption(ARG_FORMAT_OUTPUT_XML));
 
     _client.addServiceDeliveryHandler(new ServiceDeliveryHandlerImpl());
 
@@ -270,6 +274,7 @@ public class SiriClientMain {
     options.addOption(ARG_OUTPUT, true, "output");
     options.addOption(ARG_RESPONSE_TIMEOUT, true, "response timeout");
     options.addOption(ARG_LOG_RAW_XML, true, "log raw xml");
+    options.addOption(ARG_FORMAT_OUTPUT_XML, false, "format output xml");
     options.addOption(ARG_NO_SUBSCRIPTIONS, false, "");
 
     options.addOption(ARG_SUBSCRIBE, false, "subscribe (vs one-time request)");

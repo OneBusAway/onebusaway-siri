@@ -120,6 +120,8 @@ public class SiriCommon implements SiriRawHandler {
 
   protected ELogRawXmlType _logRawXmlType = ELogRawXmlType.NONE;
 
+  protected boolean _formatOutputXmlByDefault = false;
+
   public SiriCommon() {
 
     try {
@@ -274,6 +276,24 @@ public class SiriCommon implements SiriRawHandler {
    */
   public void setLogRawXmlType(ELogRawXmlType logRawXmlType) {
     _logRawXmlType = logRawXmlType;
+  }
+
+  /**
+   * @return true if serialized XML messages will be pretty-print formatted by
+   *         default.
+   */
+  public boolean isFormatOutputXmlByDefault() {
+    return _formatOutputXmlByDefault;
+  }
+
+  /**
+   * Determine if serialized XML messages will be pretty-print formatted by
+   * default.
+   * 
+   * @param formatOutputXmlByDefault true if output formatting should be applied
+   */
+  public void setFormatOutputXmlByDefault(boolean formatOutputXmlByDefault) {
+    _formatOutputXmlByDefault = formatOutputXmlByDefault;
   }
 
   /**
@@ -715,7 +735,7 @@ public class SiriCommon implements SiriRawHandler {
    * @param writer
    */
   public void marshall(Object object, Writer writer) {
-    marshall(object, writer, false);
+    marshall(object, writer, _formatOutputXmlByDefault);
   }
 
   /**
@@ -744,7 +764,7 @@ public class SiriCommon implements SiriRawHandler {
    * @return the String representation of the specified Object
    */
   public String marshallToString(Object object) {
-    return marshallToString(object, false);
+    return marshallToString(object, _formatOutputXmlByDefault);
   }
 
   /**
