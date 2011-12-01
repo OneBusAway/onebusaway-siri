@@ -27,17 +27,27 @@ provides a server to rebroadcast SIRI data to other clients.
   In the this documentation, we'll often refer to <<PRIVATE>> SIRI sources, which are the SIRI data sources you wish to
 proxy, and <<PUBLIC>> SIRI clients, which will be proxied by the application.
 
+  * {{{Getting_the_Application}Getting the Application}}
 
-Getting the Application
+  * {{{Using_the_Application}Using the Application}}
+
+  * {{{Filters}Filters}}
+
+  * {{{RPM__Linux_Service}RPM + Linux Service}}
+
+{Getting the Application}
 
   You can download the latest application here:
 
 #set( $url = 'http://nexus.onebusaway.org/service/local/artifact/maven/content?r=public&g=org.onebusaway&a=onebusaway-siri-repeater-cli&v=' + ${currentVersion} )
   
-  {{{${url}}onebusaway-siri-repeater-cli-${currentVersion}.jar}}
- 
+  * {{{${url}}onebusaway-siri-repeater-cli-${currentVersion}.jar}}
+  
+  []
+  
+  Note that we also provide an {{{RPM__Linux_Service}RPM package of the application}} as well.
 
-Using the Application
+{Using the Application}
 
   You'll need a Java 1.6 runtime installed to run the client.  To run the client:
 
@@ -61,7 +71,7 @@ java -jar onebusaway-siri-repeater-cli.jar [-args] request [request ...]
    
   * <<<-logRawXml path>>> : If specified, indicates the raw SIRI request and response XML should be logged to the console.  Valid values are "NONE" (the default), "DATA", "CONTROL", and "ALL".
   
-  * <<<-filter filterSpec>>> : specify a filter to be applied to SIRI data passing through the repeater.  See the Filters section below for more details.
+  * <<<-filter filterSpec>>> : specify a filter to be applied to SIRI data passing through the repeater.  See the {{{Filters}Filters}} section below for more details.
 
 * Request Spec
 
@@ -100,7 +110,7 @@ your firewall connecting the dots).
 you want the SIRI repeater application to listen at <<<http://localhost:8080>>>, with port-forwarding linking the two.
 In such a case, you'd specify <<<-clientUrl http://yourdomain.com/>>> and <<<-privateClientUrl http://localhost:8080>>>.
 
-Filters
+{Filters}
 
   Filters provide functionality to modify and transform data as it passes through the repeater.  Filters can be conditionally
 applied and chained to provide powerful data customization.  There are two primary pieces to a filter: matching rules to
@@ -237,4 +247,79 @@ classpath so that Java can find the definition for <<<SiriModuleDeliveryFilter>>
 -filter Filter.Class=package.FilterClassName,...
 +---+
 
-  The class files for your custom filter will also need to be included in the Java classpath when running the application. 
+  The class files for your custom filter will also need to be included in the Java classpath when running the application.
+
+{RPM + Linux Service}
+
+  We also provide an RPM package of of the <<<onebusaway-siri-repeater-cli>>> SIRI repeater application.  The package
+should make it easy to deploy the repeater as a service on a Linux server.
+  
+* Downloading the RPM
+
+  You can download the latest RPM here:
+
+#set( $rpm_url = 'http://nexus.onebusaway.org/service/local/artifact/maven/content?r=public&g=org.onebusaway&a=onebusaway-siri-repeater-cli&c=rpm&p=zip&v=' + ${currentVersion} )
+  
+  * {{{${rpm_url}}onebusaway-siri-repeater-rpm-${currentVersion}-rpm.zip}}
+  
+  []
+  
+  <<Note:>> For complicated reasons, we offer a ZIP file download containing the RPM.  Extract the ZIP to get at the rpm inside.
+
+* Installing the RPM
+
+  Install the RPM like you would any other:
+  
++---+
+rpm -i onebusaway-siri-repeater-VERSION.noarch.rpm
++---+
+
+  Note that you typically need to be root to install an RPM.
+    
+* Configuring the Repeater
+  
+  The primary configuration file for the repeater is:
+  
++---+
+/etc/onebusaway-siri-repeater/onebusaway-siri-repeater.conf
++---+
+
+  The file will contain a couple of options by default.  The one you are most concerned with is <<<REPEATER_ARGS>>>:
+
++---+  
+# Custom onebusaway-siri-repeater arguments go here
+REPEATER_ARGS="..."
++---+
+
+  <<<REPEATER_ARGS>>> accepts the same command-line arguments as the stand-alone <<<onebusaway-siri-repeater-cli>>>
+application.  As a quick example, the following config sets the requestor ref to <<<me>>> and subscribes to vehicle
+monitoring messages from <<<http://host:8080/subscribe.xml>>>:
+
++---+  
+# Custom onebusaway-siri-repeater arguments go here
+REPEATER_ARGS="-id me Url=http://host:8080/subscribe.xml,ModuleType=VEHICLE_MONITORING"
++---+
+
+* Starting and Stopping the Service
+
+  You can use standard init.d scripts to start and stop the <<<onebusaway-siri-repeater>>> daemon:
+  
++---+
+/etc/init.d/onebusaway-siri-repeater {start|stop|restart|status}
++---+
+
+  You can also use the built-in <<<service>>> command to start and stop the service as well:
+
++---+
+service onebusaway-siri-repeater {start|stop|restart|status}
++---+
+
+  You can also control how the service is started on boot using the <<<chkconfig>>> command. 
+ 
+* Logging
+
+  By default, the <<<onebusaway-siri-repeater>>> daemon logs to the following location:
+  
++---+
+/var/log/onebusaway-siri-repeater/onebusaway-siri-repeater.log
++---+ 
