@@ -15,7 +15,7 @@ Getting the Client
 
   You can download the latest client here:
 
-#set( $url = 'http://nexus.onebusaway.org/service/local/artifact/maven/content?r=public&g=org.onebusaway&a=onebusaway-quickstart-assembly&v=' + ${currentVersion} )
+#set( $url = 'http://nexus.onebusaway.org/service/local/artifact/maven/content?r=public&g=org.onebusaway&a=onebusaway-siri-client-cli&v=' + ${currentVersion} )
   
   {{{${url}}onebusaway-siri-client-cli-${currentVersion}.jar}}
   
