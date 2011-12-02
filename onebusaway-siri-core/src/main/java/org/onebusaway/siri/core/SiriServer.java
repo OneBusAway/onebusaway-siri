@@ -366,7 +366,9 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
       sendHttpRequest(address, content);
     } catch (SiriConnectionException ex) {
       _log.warn("error connecting to client at " + address, ex);
-      _subscriptionManager.terminateSubscriptionWithId(event.getSubscriptionId());
+      // TODO: We don't terminate the subscription because the client has no way to check that their subscription
+      // still exists.
+      //_subscriptionManager.terminateSubscriptionWithId(event.getSubscriptionId());
     }
   }
 
