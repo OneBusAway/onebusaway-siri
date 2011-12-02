@@ -388,7 +388,9 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
         publishResponse(_event);
       } catch (Throwable ex) {
         _log.warn("error publishing to " + _event.getSubscriptionId(), ex);
-        _subscriptionManager.terminateSubscriptionWithId(_event.getSubscriptionId());
+        // TODO: We don't terminate the subscription because the client has no way to check that their subscription
+        // still exists.
+        //_subscriptionManager.terminateSubscriptionWithId(_event.getSubscriptionId());
       }
     }
   }
