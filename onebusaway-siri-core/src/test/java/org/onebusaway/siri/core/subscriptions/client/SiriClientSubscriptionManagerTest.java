@@ -66,9 +66,6 @@ public class SiriClientSubscriptionManagerTest {
   public void before() {
     _manager = new SiriClientSubscriptionManager();
 
-    _client = Mockito.mock(SiriClientHandler.class);
-    _manager.setClient(_client);
-
     _checkStatusManager = Mockito.mock(CheckStatusManager.class);
     _manager.setCheckStatusManager(_checkStatusManager);
 
@@ -135,6 +132,7 @@ public class SiriClientSubscriptionManagerTest {
         _manager.getModuleTypeForSubscriptionId(subscriptionId));
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void testHandleChannelDisconnectAndReconnect() {
 
@@ -155,9 +153,8 @@ public class SiriClientSubscriptionManagerTest {
 
     _manager.handleChannelDisconnectAndReconnect(channel);
 
-    assertFalse(_manager.isSubscriptionActive(subscriptionId));
-
-    Mockito.verify(_client).handleRequest(originalSubscriptionRequest);
+    Mockito.verify(_terminateSubscriptionsManager).requestTerminationOfSubscriptions(
+        Mockito.anyList(), Mockito.eq(true));
   }
 
   @Test

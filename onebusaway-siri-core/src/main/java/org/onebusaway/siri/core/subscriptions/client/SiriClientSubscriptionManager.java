@@ -35,7 +35,6 @@ import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.exceptions.SiriException;
-import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.slf4j.Logger;
@@ -77,8 +76,6 @@ public class SiriClientSubscriptionManager {
    */
   private ConcurrentMap<SubscriptionId, ClientSubscriptionInstance> _activeSubscriptions = new ConcurrentHashMap<SubscriptionId, ClientSubscriptionInstance>();
 
-  private SiriClientHandler _client;
-
   private SchedulingService _schedulingService;
 
   private InitiateSubscriptionsManager _initiateSubscriptionsManager;
@@ -88,11 +85,6 @@ public class SiriClientSubscriptionManager {
   private HeartbeatManager _heartbeatManager;
 
   private TerminateSubscriptionsManager _terminateSubscriptionsManager;
-
-  @Inject
-  void setClient(SiriClientHandler client) {
-    _client = client;
-  }
 
   @Inject
   public void setSchedulingService(SchedulingService schedulingService) {
@@ -399,7 +391,7 @@ public class SiriClientSubscriptionManager {
    * In response to a channel connection status failure (typically either
    * through a CheckStatus or Heartbeat failure), call this method to terminate
    * the channel and all its subscriptions. Note that subscription termination
-   * requests will NOT be sent (maybe they should be?). When the channel
+   * requests will be sent, though responses aren't required. When the channel
    * termination is complete, all the channel subscriptions requests will be
    * resent in order to establish the channel.
    * 
@@ -409,32 +401,20 @@ public class SiriClientSubscriptionManager {
 
     _log.info("channel disconnect: {}", channel.getAddress());
 
-    /**
-     * Our strategy is to iterate over the subscriptions of a channel, removing
-     * the subscription and saving the original SiriClientRequest that
-     * established the subscription.
-     */
-    List<SiriClientRequest> originalSubscriptionRequests = new ArrayList<SiriClientRequest>();
-
     Set<SubscriptionId> channelSubscriptionIds = new HashSet<SubscriptionId>(
         channel.getSubscriptions());
+
+    List<ClientSubscriptionInstance> instances = new ArrayList<ClientSubscriptionInstance>();
 
     for (SubscriptionId subscriptionId : channelSubscriptionIds) {
 
       ClientSubscriptionInstance instance = _activeSubscriptions.get(subscriptionId);
       if (instance != null)
-        originalSubscriptionRequests.add(instance.getRequest());
-
-      removeSubscription(subscriptionId);
+        instances.add(instance);
     }
 
-    /**
-     * When all the subscriptions have been removed (and the channel removed as
-     * result), we re-send all the subscription requests to reestablish the
-     * channel.
-     */
-    for (SiriClientRequest request : originalSubscriptionRequests)
-      _client.handleRequest(request);
+    _terminateSubscriptionsManager.requestTerminationOfSubscriptions(instances,
+        true);
   }
 
   /****
