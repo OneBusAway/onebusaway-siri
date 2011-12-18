@@ -71,6 +71,7 @@ import uk.org.siri.siri.ProducerResponseStructure;
 import uk.org.siri.siri.RequestStructure;
 import uk.org.siri.siri.ResponseEndpointStructure;
 import uk.org.siri.siri.ResponseStructure;
+import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
 import uk.org.siri.siri.Siri;
 import uk.org.siri.siri.SubscriptionContextStructure;
@@ -453,7 +454,7 @@ public class SiriCommon implements SiriRawHandler {
 
     fillResponseStructure(siri.getCapabilitiesResponse());
     fillResponseStructure(siri.getCheckStatusResponse());
-    fillResponseStructure(siri.getServiceDelivery());
+    fillServiceDelivery(siri.getServiceDelivery());
     fillResponseStructure(siri.getSubscriptionResponse());
     fillResponseStructure(siri.getTerminateSubscriptionResponse());
   }
@@ -601,6 +602,10 @@ public class SiriCommon implements SiriRawHandler {
       request.setRequestTimestamp(new Date());
   }
 
+  protected void fillServiceDelivery(ServiceDelivery serviceDelivery) {
+    fillResponseStructure(serviceDelivery);
+  }
+  
   /****
    * Private Methods
    ****/

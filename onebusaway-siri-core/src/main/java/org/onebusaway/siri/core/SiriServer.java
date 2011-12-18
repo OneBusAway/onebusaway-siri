@@ -182,6 +182,8 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
    * @return the number of clients the delivery is published to
    */
   public int publish(ServiceDelivery serviceDelivery) {
+    
+    fillServiceDelivery(serviceDelivery);
 
     List<SiriServerSubscriptionEvent> events = _subscriptionManager.publish(serviceDelivery);
 
