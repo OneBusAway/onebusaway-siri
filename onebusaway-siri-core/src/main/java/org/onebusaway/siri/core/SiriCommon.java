@@ -629,10 +629,10 @@ public class SiriCommon implements SiriRawHandler {
     if (response == null)
       return;
 
-    if (response.getAddress() != null)
+    if (response.getAddress() == null)
       response.setAddress(_expandedUrl);
 
-    if (response.getProducerRef() != null)
+    if (response.getProducerRef() == null)
       response.setProducerRef(SiriTypeFactory.particpantRef(_identity));
 
     if (response.getResponseMessageIdentifier() == null)
