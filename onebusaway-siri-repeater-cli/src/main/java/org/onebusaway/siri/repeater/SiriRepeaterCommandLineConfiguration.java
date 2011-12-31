@@ -44,6 +44,7 @@ import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcherFactoryImpl;
 import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionManager;
 import org.onebusaway.siri.jetty.SiriJettyModule;
+import org.onebusaway.siri.jetty.StatusServletSource;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -155,6 +156,7 @@ public class SiriRepeaterCommandLineConfiguration {
     SiriClient siriClient = injector.getInstance(SiriClient.class);
     SiriServer siriServer = injector.getInstance(SiriServer.class);
     SiriServerSubscriptionManager subscriptionManager = injector.getInstance(SiriServerSubscriptionManager.class);
+    injector.getInstance(StatusServletSource.class);
 
     /**
      * Handle command line options

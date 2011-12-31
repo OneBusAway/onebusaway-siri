@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.onebusaway.siri.core.SchedulingService;
+import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
 public class HeartbeatManagerTest {

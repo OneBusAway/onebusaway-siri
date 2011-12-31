@@ -32,10 +32,12 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Inject;
 import javax.xml.bind.JAXBContext;
@@ -58,6 +60,9 @@ import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.exceptions.SiriSerializationException;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
+import org.onebusaway.siri.core.services.HttpClientService;
+import org.onebusaway.siri.core.services.SchedulingService;
+import org.onebusaway.siri.core.services.StatusProviderService;
 import org.onebusaway.siri.core.versioning.SiriVersioning;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +90,7 @@ import uk.org.siri.siri.VehicleMonitoringSubscriptionStructure;
  * @author bdferris
  * 
  */
-public class SiriCommon implements SiriRawHandler {
+public class SiriCommon implements SiriRawHandler, StatusProviderService {
 
   public enum ELogRawXmlType {
     NONE, CONTROL, DATA, ALL
@@ -122,6 +127,8 @@ public class SiriCommon implements SiriRawHandler {
   protected ELogRawXmlType _logRawXmlType = ELogRawXmlType.NONE;
 
   protected boolean _formatOutputXmlByDefault = false;
+
+  private AtomicInteger _requestCount = new AtomicInteger();
 
   public SiriCommon() {
 
@@ -307,6 +314,16 @@ public class SiriCommon implements SiriRawHandler {
 
   }
 
+  @Override
+  public void getStatus(Map<String, String> status) {
+    status.put("siri.common.requestCounter",
+        Integer.toString(_requestCount.get()));
+  }
+
+  /****
+   * Protected Methods
+   ****/
+
   /**
    * Submit the specified {@link SiriClientRequest}, filling in any Siri
    * data-structures with appropriate default values, versioning the payload as
@@ -319,6 +336,8 @@ public class SiriCommon implements SiriRawHandler {
    */
   @SuppressWarnings("unchecked")
   protected <T> T processRequestWithResponse(SiriClientRequest request) {
+
+    _requestCount.incrementAndGet();
 
     Siri payload = request.getPayload();
 
@@ -605,7 +624,7 @@ public class SiriCommon implements SiriRawHandler {
   protected void fillServiceDelivery(ServiceDelivery serviceDelivery) {
     fillResponseStructure(serviceDelivery);
   }
-  
+
   /****
    * Private Methods
    ****/

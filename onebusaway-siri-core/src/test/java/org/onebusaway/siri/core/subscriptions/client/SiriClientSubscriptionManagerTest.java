@@ -29,11 +29,10 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.onebusaway.siri.core.ESiriModuleType;
-import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriTypeFactory;
-import org.onebusaway.siri.core.handlers.SiriClientHandler;
+import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
@@ -49,8 +48,6 @@ import uk.org.siri.siri.TerminateSubscriptionResponseStructure;
 public class SiriClientSubscriptionManagerTest {
 
   private SiriClientSubscriptionManager _manager;
-
-  private SiriClientHandler _client;
 
   private CheckStatusManager _checkStatusManager;
 

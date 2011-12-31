@@ -22,6 +22,8 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
@@ -96,6 +98,8 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    * subscriptions on {@link #stop()}.
    */
   private boolean _waitForTerminateSubscriptionResponseOnExit = true;
+
+  private AtomicInteger _serviceDeliveryCounter = new AtomicInteger();
 
   public SiriClient() {
     setUrl("http://*:8080/client.xml");
@@ -313,10 +317,23 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
   }
 
   /****
+   * {@link StatusProviderService} Interface
+   ****/
+
+  @Override
+  public void getStatus(Map<String, String> status) {
+    super.getStatus(status);
+    status.put("siri.client.serviceDeliveryCounter",
+        Integer.toString(_serviceDeliveryCounter.get()));
+  }
+
+  /****
    * Private Methods
    ****/
 
   private void handleServiceDelivery(ServiceDelivery serviceDelivery) {
+
+    _serviceDeliveryCounter.incrementAndGet();
 
     checkServiceDeliveryForUnknownSubscriptions(serviceDelivery);
 

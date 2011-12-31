@@ -30,10 +30,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.onebusaway.siri.core.ESiriModuleType;
-import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.exceptions.SiriSubscriptionModuleTypeConflictException;
+import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -360,11 +360,11 @@ class InitiateSubscriptionsManager {
               + request.getTargetUrl()
               + " subscriptionId="
               + subscriptionId
-              + " (remainingConnectionAttempts="
+              + " remainingConnectionAttempts="
               + request.getRemainingReconnectionAttempts()
               + " connectionErrorCount="
               + request.getConnectionErrorCount()
-              + ")");
+              + " timeout=" + _schedulingService.getResponseTimeout() + "s");
 
           request.incrementConnectionErrorCount();
 

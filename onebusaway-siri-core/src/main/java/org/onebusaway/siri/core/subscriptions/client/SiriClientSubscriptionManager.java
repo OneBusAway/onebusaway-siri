@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -30,11 +31,12 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.onebusaway.siri.core.ESiriModuleType;
-import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.exceptions.SiriException;
+import org.onebusaway.siri.core.services.SchedulingService;
+import org.onebusaway.siri.core.services.StatusProviderService;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.slf4j.Logger;
@@ -54,7 +56,7 @@ import uk.org.siri.siri.TerminateSubscriptionResponseStructure;
  * @author bdferris
  */
 @Singleton
-public class SiriClientSubscriptionManager {
+public class SiriClientSubscriptionManager implements StatusProviderService {
 
   private static Logger _log = LoggerFactory.getLogger(SiriClientSubscriptionManager.class);
 
@@ -129,12 +131,16 @@ public class SiriClientSubscriptionManager {
   public void registerPendingSubscription(SiriClientRequest request,
       SubscriptionRequest subscriptionRequest) {
 
+    _log.info("pending subscription: {}", request);
+
     _initiateSubscriptionsManager.registerPendingSubscription(request,
         subscriptionRequest);
   }
 
   public void clearPendingSubscription(SiriClientRequest request,
       SubscriptionRequest subscriptionRequest) {
+
+    _log.info("clear pending subscription: {}", request);
 
     _initiateSubscriptionsManager.clearPendingSubscription(request,
         subscriptionRequest);
@@ -150,9 +156,7 @@ public class SiriClientSubscriptionManager {
    * @param response
    */
   public void handleSubscriptionResponse(SubscriptionResponseStructure response) {
-
     _initiateSubscriptionsManager.handleSubscriptionResponse(response);
-
   }
 
   /**
@@ -228,6 +232,8 @@ public class SiriClientSubscriptionManager {
   public void terminateAllSubscriptions(
       boolean waitForTerminateSubscriptionResponseOnExit) {
 
+    _log.info("terminate all subscriptions");
+
     List<String> allPendings = _terminateSubscriptionsManager.requestTerminationOfSubscriptions(
         _activeSubscriptions.values(), false);
 
@@ -256,6 +262,18 @@ public class SiriClientSubscriptionManager {
       _heartbeatManager.resetHeartbeat(channel, channel.getHeartbeatInterval());
   }
 
+  /***
+   * {@link StatusProviderService} Interface
+   ****/
+
+  @Override
+  public void getStatus(Map<String, String> status) {
+    status.put("siri.client.activeChannels",
+        Integer.toString(_activeChannels.size()));
+    status.put("siri.client.activeSubscriptions",
+        Integer.toString(_activeSubscriptions.size()));
+  }
+
   /****
    * Package Methods
    * 
@@ -281,6 +299,8 @@ public class SiriClientSubscriptionManager {
       SubscriptionResponseStructure response, StatusResponseStructure status,
       SubscriptionId subscriptionId, ESiriModuleType moduleType,
       SiriClientRequest originalSubscriptionRequest) {
+
+    _log.info("upgrade pending subscription: {}", originalSubscriptionRequest);
 
     ClientSubscriptionChannel channel = getChannelForServer(
         originalSubscriptionRequest.getTargetUrl(),
@@ -523,4 +543,5 @@ public class SiriClientSubscriptionManager {
     }
     return expiration;
   }
+
 }

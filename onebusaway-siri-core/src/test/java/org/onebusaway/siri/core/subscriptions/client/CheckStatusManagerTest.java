@@ -28,10 +28,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriTypeFactory;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
+import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
 import uk.org.siri.siri.CheckStatusRequestStructure;

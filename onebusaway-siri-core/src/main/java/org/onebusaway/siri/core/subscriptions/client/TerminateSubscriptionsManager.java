@@ -32,10 +32,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.onebusaway.collections.MappingLibrary;
-import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriTypeFactory;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
+import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -459,8 +459,11 @@ class TerminateSubscriptionsManager {
       PendingTermination pending = _pendingSubscriptionTerminations.remove(_messageId);
 
       if (pending != null) {
-        _log.warn("pending subscription termination expired before receiving a subscription termination response from server: "
-            + _messageId);
+        _log.warn("pending subscription termination expired before receiving a subscription termination response "
+            + "from server: requestMessageRef="
+            + _messageId
+            + " timeout="
+            + _schedulingService.getResponseTimeout() + "s");
 
         /**
          * We still remove the subscriptions, even if we didn't receive a

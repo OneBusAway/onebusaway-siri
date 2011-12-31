@@ -34,7 +34,6 @@ import javax.xml.datatype.Duration;
 import org.onebusaway.collections.tuple.T2;
 import org.onebusaway.collections.tuple.Tuples;
 import org.onebusaway.siri.core.ESiriModuleType;
-import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriLibrary;
 import org.onebusaway.siri.core.SiriServer;
@@ -46,6 +45,8 @@ import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.handlers.SiriSubscriptionManagerListener;
+import org.onebusaway.siri.core.services.SchedulingService;
+import org.onebusaway.siri.core.services.StatusProviderService;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.slf4j.Logger;
@@ -66,7 +67,7 @@ import uk.org.siri.siri.TerminateSubscriptionRequestStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure.TerminationResponseStatus;
 
 @Singleton
-public class SiriServerSubscriptionManager {
+public class SiriServerSubscriptionManager implements StatusProviderService {
 
   /****
    * Implementation Note:
@@ -117,6 +118,7 @@ public class SiriServerSubscriptionManager {
   private String _consumerAddressDefault = null;
 
   public SiriServerSubscriptionManager() {
+    System.out.println(SiriServerSubscriptionManager.class);
     for (ESiriModuleType moduleType : ESiriModuleType.values()) {
       ConcurrentHashMap<SubscriptionId, ServerSubscriptionInstance> m = new ConcurrentHashMap<SubscriptionId, ServerSubscriptionInstance>();
       _subscriptionsByModuleType.put(moduleType, m);
@@ -452,9 +454,8 @@ public class SiriServerSubscriptionManager {
         return;
 
       } else {
-        /**
-         * TODO: What do we do with a new subscription on the same channel?
-         */
+        _log.warn("overwriting existing subscription: id={} address={}", id,
+            consumerAddress);
       }
     }
 
@@ -470,10 +471,6 @@ public class SiriServerSubscriptionManager {
     Set<SubscriptionId> channelSubscriptions = channel.getSubscriptions();
     channelSubscriptions.add(id);
 
-    if (existing != null) {
-      _log.warn("existing subscription?  What do we do here?");
-    }
-
     /**
      * Subscriptions by SubscriberId
      */
@@ -488,11 +485,7 @@ public class SiriServerSubscriptionManager {
      * Subscriptions by module type
      */
     ConcurrentMap<SubscriptionId, ServerSubscriptionInstance> subscriptionsForModule = _subscriptionsByModuleType.get(moduleType);
-    ServerSubscriptionInstance otherExisting = subscriptionsForModule.put(id,
-        instance);
-    if (otherExisting != null) {
-      _log.warn("other existing subscription?  What do we do here?");
-    }
+    subscriptionsForModule.put(id, instance);
 
     updateChannel(subscriptionRequest, channel);
 
@@ -722,5 +715,13 @@ public class SiriServerSubscriptionManager {
         terminateSubscriptionChannelWithAddress(_channel.getAddress());
       }
     }
+  }
+
+  @Override
+  public synchronized void getStatus(Map<String, String> status) {
+    status.put("siri.server.activeChannels",
+        Integer.toString(_channelsByAddress.size()));
+    status.put("siri.server.activeSubscriptions",
+        Integer.toString(_activeSubscriptionsById.size()));
   }
 }

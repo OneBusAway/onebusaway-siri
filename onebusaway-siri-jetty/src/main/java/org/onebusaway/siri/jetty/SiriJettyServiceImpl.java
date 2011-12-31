@@ -96,6 +96,33 @@ public class SiriJettyServiceImpl {
       servicesByPort.get(port).add(service);
     }
 
+    /**
+     * Services with a URL port of -1 indicate that no port has been specified.
+     * If URLs of this form are present, determining the port to use for these
+     * services depends on what other services have been specified.
+     */
+    List<ServletSource> servicesWithDefaultPort = servicesByPort.remove(-1);
+    if (servicesWithDefaultPort != null) {
+      if (servicesByPort.isEmpty()) {
+        /**
+         * If no other services have been specified, we just use the default
+         * port 80 for the services with a default port value.
+         */
+        servicesByPort.put(80, servicesWithDefaultPort);
+      } else {
+        /**
+         * If other services HAVE been specified, we bind the default port
+         * services to EACH of the ports mentioned by other services. A little
+         * bit counter-intuitive, I agree, but it allows the user to change a
+         * primary client or server port and have secondary services
+         * automatically use that new port.
+         */
+        for (List<ServletSource> sources : servicesByPort.values()) {
+          sources.addAll(servicesWithDefaultPort);
+        }
+      }
+    }
+
     return servicesByPort;
   }
 

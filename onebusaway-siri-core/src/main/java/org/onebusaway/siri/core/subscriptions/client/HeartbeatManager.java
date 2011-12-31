@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import org.onebusaway.siri.core.SchedulingService;
+import org.onebusaway.siri.core.services.SchedulingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

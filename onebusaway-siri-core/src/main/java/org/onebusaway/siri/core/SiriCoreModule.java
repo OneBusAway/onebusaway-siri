@@ -19,28 +19,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.onebusaway.siri.core.guice.JSR250Module;
-import org.onebusaway.siri.core.handlers.SiriClientHandler;
+import org.onebusaway.siri.core.services.SiriServicesModule;
 import org.onebusaway.siri.core.subscriptions.client.SiriClientSubscriptionModule;
+import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionModule;
 
-import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 
-public class SiriCoreModule extends AbstractModule {
+public class SiriCoreModule {
 
   public static List<Module> getModules() {
     List<Module> modules = new ArrayList<Module>();
-    modules.add(new SiriCoreModule());
+    modules.add(new SiriClientModule());
+    modules.add(new SiriServerModule());
+    modules.add(new SiriServicesModule());
     modules.add(new SiriClientSubscriptionModule());
+    modules.add(new SiriServerSubscriptionModule());
     modules.add(new JSR250Module());
     return modules;
-  }
-
-  @Override
-  protected void configure() {
-    bind(SiriClient.class);
-    bind(SiriServer.class);
-    bind(SiriClientHandler.class).to(SiriClient.class);
-    bind(SchedulingService.class).to(SchedulingServiceImpl.class);
-    bind(HttpClientService.class).to(HttpClientServiceImpl.class);
   }
 }

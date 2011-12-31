@@ -26,10 +26,10 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.onebusaway.siri.core.ESiriModuleType;
-import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriTypeFactory;
 import org.onebusaway.siri.core.exceptions.SiriSubscriptionModuleTypeConflictException;
+import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 
 import uk.org.siri.siri.SituationExchangeSubscriptionStructure;
@@ -242,7 +242,7 @@ public class InitiateSubscriptionsManagerTest {
     assertEquals(1, request.getConnectionErrorCount());
 
     Mockito.verifyNoMoreInteractions(_subscriptionManager,
-        _terminateSubscriptionsManager, _schedulingService);
+        _terminateSubscriptionsManager);
   }
 
   /**
@@ -305,7 +305,7 @@ public class InitiateSubscriptionsManagerTest {
     assertEquals(0, request.getRemainingReconnectionAttempts());
 
     Mockito.verifyNoMoreInteractions(_subscriptionManager,
-        _terminateSubscriptionsManager, _schedulingService);
+        _terminateSubscriptionsManager);
   }
 
   /**

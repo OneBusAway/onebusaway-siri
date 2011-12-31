@@ -259,4 +259,11 @@ public class SiriClientRequest {
     this.payload = payload;
   }
 
+  @Override
+  public String toString() {
+    StringBuilder b = new StringBuilder();
+    if( targetUrl != null)
+      b.append("targetUrl=").append(targetUrl);
+    return b.toString();
+  }
 }

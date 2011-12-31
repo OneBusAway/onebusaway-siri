@@ -21,6 +21,8 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -91,13 +93,17 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
 
   private static Logger _log = LoggerFactory.getLogger(SiriServer.class);
 
-  private SiriServerSubscriptionManager _subscriptionManager = new SiriServerSubscriptionManager();
+  private SiriServerSubscriptionManager _subscriptionManager;
 
   private List<SiriRequestResponseHandler> _requestResponseHandlers = new ArrayList<SiriRequestResponseHandler>();
 
   private List<SiriSubscriptionRequestHandler> _subscriptionRequestHandlers = new ArrayList<SiriSubscriptionRequestHandler>();
 
   private long _serviceStartedTimestamp;
+
+  private AtomicInteger _publishIncomingCount = new AtomicInteger();
+
+  private AtomicInteger _publishOutgoingCount = new AtomicInteger();
 
   public SiriServer() {
     setUrl("http://*:8080/server.xml");
@@ -182,7 +188,9 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
    * @return the number of clients the delivery is published to
    */
   public int publish(ServiceDelivery serviceDelivery) {
-    
+
+    _publishIncomingCount.incrementAndGet();
+
     fillServiceDelivery(serviceDelivery);
 
     List<SiriServerSubscriptionEvent> events = _subscriptionManager.publish(serviceDelivery);
@@ -191,8 +199,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
 
     if (!events.isEmpty()) {
 
-      if (_log.isDebugEnabled())
-        _log.debug("SiriPublishEvents=" + events.size());
+      _publishOutgoingCount.addAndGet(events.size());
 
       for (SiriServerSubscriptionEvent event : events)
         _schedulingService.submit(new PublishEventTask(event));
@@ -276,6 +283,19 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
     }
 
     marshall(responseData, writer);
+  }
+
+  /****
+   * {@link StatusProviderService} Interface
+   ****/
+
+  @Override
+  public void getStatus(Map<String, String> status) {
+    super.getStatus(status);
+    status.put("siri.server.publishIncomingCounter",
+        Integer.toString(_publishIncomingCount.get()));
+    status.put("siri.server.publishOutgoingCounter",
+        Integer.toString(_publishOutgoingCount.get()));
   }
 
   /****
@@ -368,9 +388,10 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
       sendHttpRequest(address, content);
     } catch (SiriConnectionException ex) {
       _log.warn("error connecting to client at " + address, ex);
-      // TODO: We don't terminate the subscription because the client has no way to check that their subscription
+      // TODO: We don't terminate the subscription because the client has no way
+      // to check that their subscription
       // still exists.
-      //_subscriptionManager.terminateSubscriptionWithId(event.getSubscriptionId());
+      // _subscriptionManager.terminateSubscriptionWithId(event.getSubscriptionId());
     }
   }
 
@@ -392,9 +413,10 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
         publishResponse(_event);
       } catch (Throwable ex) {
         _log.warn("error publishing to " + _event.getSubscriptionId(), ex);
-        // TODO: We don't terminate the subscription because the client has no way to check that their subscription
+        // TODO: We don't terminate the subscription because the client has no
+        // way to check that their subscription
         // still exists.
-        //_subscriptionManager.terminateSubscriptionWithId(_event.getSubscriptionId());
+        // _subscriptionManager.terminateSubscriptionWithId(_event.getSubscriptionId());
       }
     }
   }

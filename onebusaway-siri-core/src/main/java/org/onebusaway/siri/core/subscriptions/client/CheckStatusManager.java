@@ -25,11 +25,11 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriTypeFactory;
 import org.onebusaway.siri.core.exceptions.SiriMissingArgumentException;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
+import org.onebusaway.siri.core.services.SchedulingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -302,7 +302,9 @@ class CheckStatusManager {
        * The check status did not succeed, so we attempt to reconnect the
        * channel
        */
-      _log.warn("check status failed: address=" + _channel.getAddress());
+      _log.warn("no check status response received: address="
+          + _channel.getAddress() + " messageId=" + _messageId + "timeout="
+          + _schedulingService.getResponseTimeout() + "s");
       _subscriptionManager.handleChannelDisconnectAndReconnect(_channel);
     }
   }

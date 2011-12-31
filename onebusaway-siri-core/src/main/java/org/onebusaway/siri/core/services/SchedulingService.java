@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.onebusaway.siri.core;
+package org.onebusaway.siri.core.services;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
@@ -39,11 +39,24 @@ public interface SchedulingService {
 
   public Future<?> submit(Runnable task);
 
-  public <T> ScheduledFuture<T> schedule(Runnable command, long delay, TimeUnit unit);
+  public <T> ScheduledFuture<T> schedule(Runnable command, long delay,
+      TimeUnit unit);
 
   public <T> ScheduledFuture<T> scheduleAtFixedRate(Runnable command,
       long initialDelay, long period, TimeUnit unit);
 
+  /**
+   * Schedule a task to run in N seconds, where N is the response timeout
+   * interval as returned by {@link #getResponseTimeout()}. This method is
+   * useful for configuring a task to run if no response is received from some
+   * remote endpoint in the response-timeout-interval. If a response IS
+   * received, the timeout task can be canceled using the returned
+   * {@link ScheduledFuture} object.
+   * 
+   * @param <T>
+   * @param task
+   * @return
+   */
   public <T> ScheduledFuture<T> scheduleResponseTimeoutTask(Runnable task);
 
 }

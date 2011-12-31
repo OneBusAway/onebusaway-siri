@@ -15,6 +15,7 @@
  */
 package org.onebusaway.siri.jetty;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,7 @@ import org.onebusaway.siri.core.SiriCommon;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
+import com.google.inject.name.Names;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
@@ -34,6 +36,18 @@ public class SiriJettyModule extends AbstractModule {
 
   @Override
   protected void configure() {
+
+    bind(StatusServletSource.class);
+
+    try {
+      bind(URL.class).annotatedWith(Names.named(StatusServletSource.URL_NAME)).toInstance(
+          new URL("http://localhost/status"));
+    } catch (MalformedURLException e) {
+      throw new IllegalStateException(e);
+    }
+
+    bind(Servlet.class).annotatedWith(
+        Names.named(StatusServletSource.SERVLET_NAME)).to(StatusServlet.class);
 
     final List<ServletSource> sources = new ArrayList<ServletSource>();
 
@@ -76,18 +90,18 @@ public class SiriJettyModule extends AbstractModule {
       }
     }
   }
-  
+
   private static class SiriCommonServletSource implements ServletSource {
 
     private SiriCommon _common;
-    
+
     private Servlet _servlet;
 
     public SiriCommonServletSource(SiriCommon common, Servlet servlet) {
       _common = common;
       _servlet = servlet;
     }
-    
+
     @Override
     public URL getUrl() {
       return _common.getInternalUrlToBind(false);
@@ -96,6 +110,6 @@ public class SiriJettyModule extends AbstractModule {
     @Override
     public Servlet getServlet() {
       return _servlet;
-    }    
+    }
   }
 }

@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.onebusaway.siri.core;
-
-import javax.inject.Singleton;
+package org.onebusaway.siri.core.services;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -23,22 +21,23 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 
 /**
- * Simple implementation of {@link HttpClientService}.
+ * We encapsulate {@link HttpClient} operations, primarily to assist with unit
+ * testing but also as an extension point for anyone who wants to tweak the
+ * client behavior.
  * 
  * @author bdferris
  * 
  */
-@Singleton
-class HttpClientServiceImpl implements HttpClientService {
+public interface HttpClientService {
 
-  @Override
+  /**
+   * Execute the specified HTTP request on the specified client.
+   * 
+   * @param client
+   * @param request
+   * @return the response
+   * @throws SiriConnectionException
+   */
   public HttpResponse executeHttpMethod(HttpClient client,
-      HttpUriRequest request) throws SiriConnectionException {
-    try {
-      return client.execute(request);
-    } catch (Exception ex) {
-      throw new SiriConnectionException("error connecting to url "
-          + request.getURI(), ex);
-    }
-  }
+      HttpUriRequest request) throws SiriConnectionException;
 }

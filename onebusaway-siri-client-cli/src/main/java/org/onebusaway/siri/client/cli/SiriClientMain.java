@@ -27,10 +27,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
-import org.onebusaway.siri.core.SchedulingService;
 import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClient;
 import org.onebusaway.siri.core.SiriClientRequest;
@@ -42,8 +43,10 @@ import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.exceptions.SiriUnknownVersionException;
 import org.onebusaway.siri.core.guice.LifecycleService;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
+import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.onebusaway.siri.jetty.SiriJettyModule;
+import org.onebusaway.siri.jetty.StatusServletSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +74,7 @@ public class SiriClientMain {
   private static final String ARG_NO_SUBSCRIPTIONS = "noSubscriptions";
 
   private static final String ARG_LOG_RAW_XML = "logRawXml";
-  
+
   private static final String ARG_FORMAT_OUTPUT_XML = "formatOutputXml";
 
   private static final String ARG_SUBSCRIBE = "subscribe";
@@ -81,6 +84,10 @@ public class SiriClientMain {
   private static final String ARG_TERMINATE_SUBSCRIPTION = "terminateSubscription";
 
   private SiriClient _client;
+
+  private SchedulingService _schedulingService;
+
+  private LifecycleService _lifecycleService;
 
   private String _outputFormat;
 
@@ -97,6 +104,30 @@ public class SiriClientMain {
       ex.printStackTrace();
       System.exit(-1);
     }
+  }
+
+  @Inject
+  public void setClient(SiriClient client) {
+    _client = client;
+  }
+
+  @Inject
+  public void setScheduleService(SchedulingService schedulingService) {
+    _schedulingService = schedulingService;
+  }
+
+  @Inject
+  public void setLifecycleService(LifecycleService lifecycleService) {
+    _lifecycleService = lifecycleService;
+  }
+
+  @Inject
+  public void setStatusServletSource(StatusServletSource statusServletSource) {
+    /**
+     * Right now, this is a noop that is here mostly to guarantee that the
+     * StatusServletSource is instantiated. However, it could be used in the
+     * future to override the default uri for the servlet if desired.
+     */
   }
 
   public void run(String[] args) throws Exception {
@@ -119,7 +150,7 @@ public class SiriClientMain {
     modules.add(new SiriJettyModule());
     Injector injector = Guice.createInjector(modules);
 
-    _client = injector.getInstance(SiriClient.class);
+    injector.injectMembers(this);
 
     if (cli.hasOption(ARG_ID))
       _client.setIdentity(cli.getOptionValue(ARG_ID));
@@ -144,10 +175,9 @@ public class SiriClientMain {
 
     if (cli.hasOption(ARG_RESPONSE_TIMEOUT)) {
       int responseTimeout = Integer.parseInt(cli.getOptionValue(ARG_RESPONSE_TIMEOUT));
-      SchedulingService schedulingService = injector.getInstance(SchedulingService.class);
-      schedulingService.setResponseTimeout(responseTimeout);
+      _schedulingService.setResponseTimeout(responseTimeout);
     }
-    
+
     _client.setFormatOutputXmlByDefault(cli.hasOption(ARG_FORMAT_OUTPUT_XML));
 
     _client.addServiceDeliveryHandler(new ServiceDeliveryHandlerImpl());
@@ -162,8 +192,7 @@ public class SiriClientMain {
      * annotations. The @PreDestroy annotations are automatically included in a
      * shutdown hook.
      */
-    LifecycleService lifecycleService = injector.getInstance(LifecycleService.class);
-    lifecycleService.start();
+    _lifecycleService.start();
 
     ERequestType requestType = getRequestType(cli);
     SiriClientRequestFactory factory = new SiriClientRequestFactory();
