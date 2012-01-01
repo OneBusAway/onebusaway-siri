@@ -35,7 +35,7 @@ public class SubscriptionExpirationTask implements Runnable {
 
   @Override
   public void run() {
-    _log.debug("expiring subscription " + _id);
+    _log.info("expiring subscription " + _id);
     _manager.requestSubscriptionTerminationAndResubscription(_id);
   }
 }

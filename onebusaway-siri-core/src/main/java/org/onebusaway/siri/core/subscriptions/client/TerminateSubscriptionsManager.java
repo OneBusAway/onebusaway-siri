@@ -290,9 +290,8 @@ class TerminateSubscriptionsManager {
           subscriberId);
 
       if (status.isStatus()) {
-
+        _log.info("removing subscription after terminate-subscription-response received: id={}", id);
         _subscriptionManager.removeSubscription(id);
-
       } else {
         logErrorInTerminateSubscriptionResponse(response, status, id);
       }
