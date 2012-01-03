@@ -2,7 +2,27 @@ Release Notes
 
 * ${currentVersion}
 
-  * Better SIRI channel matching for an incoming ServiceDelivery
+  * Added {{{./onebusaway-siri-repeater-cli.html}SIRI repeater}} RPM and Linux service.
+  
+  * Added option to both the {{{./onebusaway-siri-client-cli.html}SIRI command-line client}} and
+    {{{./onebusaway-siri-repeater-cli.html}SIRI repeater}} to format output XML.
+
+  * Better SIRI channel matching for an incoming ServiceDelivery.
+  
+  * Better disconnect / reconnect behavior for SIRI channels.
+  
+  * Better fill a number of default SIRI request and response parameters.
+  
+  * Additional logging.
+  
+  * Refactor the location of a number of service classes.
+
+  * Support for exporting generic servlets by {{{./apidocs/index.html?org/onebusaway/siri/jetty/ServletSource.html}SiriJettyServiceImpl}}
+    through {{{./apidocs/index.html?org/onebusaway/siri/jetty/ServletSource.html}ServletSource}} interface.
+  
+  * Support for {{{./apidocs/index.html?org/onebusaway/siri/core/services/StatusService.html}StatusService}} for
+    querying diagnostic information about the current SIRI process.  See {{{./apidocs/index.html?org/onebusaway/siri/jetty/StatusServletSource.html}StatusServletSource}}
+    for details on how the status information can be exposed through a simple web interface.
   
   * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
 
