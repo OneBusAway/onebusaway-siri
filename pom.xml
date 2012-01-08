@@ -5,7 +5,6 @@
     <groupId>org.onebusaway</groupId>
     <version>1.1.2</version>
   </parent>
-  <groupId>org.onebusaway</groupId>
   <artifactId>onebusaway-siri</artifactId>
   <version>1.0.4-SNAPSHOT</version>
   <packaging>pom</packaging>
@@ -142,29 +141,6 @@
       </plugins>
     </pluginManagement>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-enforcer-plugin</artifactId>
-        <version>1.0</version>
-        <executions>
-          <execution>
-            <id>enforce-plugin-versions</id>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <requireJavaVersion>
-                  <version>1.6</version>
-                </requireJavaVersion>
-                <requireReleaseDeps>
-                  <onlyWhenRelease>true</onlyWhenRelease>
-                </requireReleaseDeps>
-              </rules>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
