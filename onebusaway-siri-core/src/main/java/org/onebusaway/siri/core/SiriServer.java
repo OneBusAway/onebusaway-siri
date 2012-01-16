@@ -28,12 +28,13 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import org.onebusaway.guice.jsr250.LifecycleService;
 import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriException;
-import org.onebusaway.siri.core.guice.LifecycleService;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.handlers.SiriRequestResponseHandler;
 import org.onebusaway.siri.core.handlers.SiriSubscriptionRequestHandler;
+import org.onebusaway.siri.core.services.StatusProviderService;
 import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionEvent;
 import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionManager;
 import org.onebusaway.siri.core.versioning.ESiriVersion;

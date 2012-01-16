@@ -15,10 +15,9 @@
  */
 package org.onebusaway.siri.repeater;
 
-import org.onebusaway.siri.core.guice.LifecycleService;
+import org.onebusaway.guice.jsr250.LifecycleService;
 
 import com.google.inject.Injector;
-
 
 public class SiriRepeaterMain {
 

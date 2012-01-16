@@ -18,7 +18,7 @@ package org.onebusaway.siri.repeater;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
-import org.onebusaway.siri.core.guice.LifecycleService;
+import org.onebusaway.guice.jsr250.LifecycleService;
 
 import com.google.inject.Injector;
 

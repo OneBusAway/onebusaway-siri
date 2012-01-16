@@ -103,6 +103,12 @@
         <artifactId>guice</artifactId>
         <version>3.0</version>
       </dependency>
+      
+      <dependency>
+        <groupId>org.onebusaway</groupId>
+        <artifactId>onebusaway-guice-jsr250</artifactId>
+        <version>1.0.0</version>
+      </dependency>
 
       <dependency>
         <groupId>org.slf4j</groupId>

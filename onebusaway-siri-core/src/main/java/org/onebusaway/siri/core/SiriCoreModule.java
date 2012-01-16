@@ -18,7 +18,7 @@ package org.onebusaway.siri.core;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.onebusaway.siri.core.guice.JSR250Module;
+import org.onebusaway.guice.jsr250.JSR250Module;
 import org.onebusaway.siri.core.services.SiriServicesModule;
 import org.onebusaway.siri.core.subscriptions.client.SiriClientSubscriptionModule;
 import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionModule;
