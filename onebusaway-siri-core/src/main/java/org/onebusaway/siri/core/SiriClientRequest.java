@@ -31,6 +31,20 @@ public class SiriClientRequest {
   private ESiriVersion targetVersion;
 
   /**
+   * By default, we assume that the client request indicates a publish-subscribe
+   * request. If false, indicates that we should instead periodically poll the
+   * SIRI endpoint using request-response.
+   */
+  private boolean subscribe = true;
+
+  /**
+   * When subscribe=false, indicates how often we should poll the SIRI endpoint
+   * with request-response, in seconds. A value of zero indicates that request
+   * should only be sent once and never polled again.
+   */
+  private int pollInterval = 0;
+
+  /**
    * The number of times to attempt to reconnect when a client request fails.
    * Zero indicates that no reconnection attempts will be made while -1
    * indicates that an indefinite number of reconnection attempts will be made.
@@ -75,6 +89,8 @@ public class SiriClientRequest {
     this.manageSubscriptionUrl = request.manageSubscriptionUrl;
     this.checkStatusUrl = request.checkStatusUrl;
     this.targetVersion = request.targetVersion;
+    this.subscribe = request.subscribe;
+    this.pollInterval = request.pollInterval;
     this.reconnectionAttempts = request.reconnectionAttempts;
     this.reconnectionInterval = request.reconnectionInterval;
     this.checkStatusInterval = request.checkStatusInterval;
@@ -125,6 +141,45 @@ public class SiriClientRequest {
 
   public void setTargetVersion(ESiriVersion targetVersion) {
     this.targetVersion = targetVersion;
+  }
+
+  /**
+   * If true, indicates that the client request is a publish-subscribe request.
+   * If false, indicates that we should instead periodically poll the SIRI
+   * endpoint using request-response instead.
+   */
+  public boolean isSubscribe() {
+    return subscribe;
+  }
+
+  /**
+   * 
+   * @param subscribe if true, indicates that the client request is a
+   *          publish-subscribe request. If false, indicates that we should
+   *          instead periodically poll the SIRI endpoint using request-response
+   *          instead.
+   */
+  public void setSubscribe(boolean subscribe) {
+    this.subscribe = subscribe;
+  }
+
+  /**
+   * When {@link #isSubscribe()} is false, indicates how often we should poll
+   * the SIRI endpoint with request-response, in seconds. A value of zero (the
+   * default) indicates that request should only be sent once and never polled
+   * again.
+   */
+  public int getPollInterval() {
+    return pollInterval;
+  }
+
+  /**
+   * When {@link #isSubscribe()} is false, indicates how often we should poll
+   * the SIRI endpoint with request-response, in seconds. A value of zero
+   * indicates that request should only be sent once and never polled again.
+   */
+  public void setPollInterval(int pollInterval) {
+    this.pollInterval = pollInterval;
   }
 
   /**
@@ -262,7 +317,7 @@ public class SiriClientRequest {
   @Override
   public String toString() {
     StringBuilder b = new StringBuilder();
-    if( targetUrl != null)
+    if (targetUrl != null)
       b.append("targetUrl=").append(targetUrl);
     return b.toString();
   }

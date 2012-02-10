@@ -22,6 +22,7 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.servlet.Servlet;
 
+import org.onebusaway.guice.jetty_exporter.ServletSource;
 import org.onebusaway.siri.core.services.StatusService;
 
 /**

@@ -228,9 +228,17 @@ public class SiriClientMain {
         case CHECK_STATUS:
           return factory.createCheckStatusRequest(subArgs);
         case SERVICE_REQUEST:
-          return factory.createServiceRequest(subArgs);
         case SUBSCRIPTION:
-          return factory.createSubscriptionRequest(subArgs);
+          /**
+           * If the user hasn't specifically specified a "Subscribe" arg in
+           * their client request args, we use the general service request vs
+           * subscription direction to indicate what should be done.
+           */
+          if (!subArgs.containsKey(SiriClientRequestFactory.ARG_SUBSCRIBE)) {
+            subArgs.put(SiriClientRequestFactory.ARG_SUBSCRIBE,
+                Boolean.toString(requestType == ERequestType.SUBSCRIPTION));
+          }
+          return factory.createRequest(subArgs);
         case TERMINATE_SUBSCRIPTION:
           return factory.createTerminateSubscriptionRequest(subArgs);
         default:

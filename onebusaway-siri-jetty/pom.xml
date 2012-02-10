@@ -19,9 +19,9 @@
 
     <!-- For incoming connections -->
     <dependency>
-      <groupId>org.mortbay.jetty</groupId>
-      <artifactId>jetty-embedded</artifactId>
-      <version>6.1.26</version>
+      <groupId>org.onebusaway</groupId>
+      <artifactId>onebusaway-guice-jetty-exporter</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
     </dependency>
 
     <dependency>

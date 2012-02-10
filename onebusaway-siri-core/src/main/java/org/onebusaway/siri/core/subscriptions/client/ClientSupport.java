@@ -33,6 +33,15 @@ import uk.org.siri.siri.SubscriptionQualifierStructure;
  */
 class ClientSupport {
 
+  public static boolean hasSubscriptionId(ParticipantRefStructure subscriberRef,
+      SubscriptionQualifierStructure subscriptionRef) {
+    if (subscriberRef == null || subscriberRef.getValue() == null)
+      return false;
+    if (subscriptionRef == null || subscriptionRef.getValue() == null)
+      return false;
+    return true;
+  }
+
   public static SubscriptionId getSubscriptionId(
       ParticipantRefStructure subscriberRef,
       SubscriptionQualifierStructure subscriptionRef) {
@@ -60,13 +69,17 @@ class ClientSupport {
       b.append(" errorText=").append(code.getErrorText());
   }
 
-  public static SubscriptionId getSubscriptionIdForModuleDelivery(
+  public static boolean hasSubscriptionIdForModuleDelivery(
       AbstractServiceDeliveryStructure moduleDelivery) {
-  
     ParticipantRefStructure subscriberRef = moduleDelivery.getSubscriberRef();
     SubscriptionQualifierStructure subscriptionRef = moduleDelivery.getSubscriptionRef();
-  
-    return getSubscriptionId(subscriberRef, subscriptionRef);
+    return hasSubscriptionId(subscriberRef, subscriptionRef);
   }
 
+  public static SubscriptionId getSubscriptionIdForModuleDelivery(
+      AbstractServiceDeliveryStructure moduleDelivery) {
+    ParticipantRefStructure subscriberRef = moduleDelivery.getSubscriberRef();
+    SubscriptionQualifierStructure subscriptionRef = moduleDelivery.getSubscriptionRef();
+    return getSubscriptionId(subscriberRef, subscriptionRef);
+  }
 }

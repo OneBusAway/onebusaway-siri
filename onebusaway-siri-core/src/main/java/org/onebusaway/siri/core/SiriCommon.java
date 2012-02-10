@@ -332,10 +332,19 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
    * 
    * @param <T>
    * @param request the SIRI client request
+   * @param asynchronous true if this is an asynchronous request
    * @return any response from the endpoint, or null if none received
    */
   @SuppressWarnings("unchecked")
-  protected <T> T processRequestWithResponse(SiriClientRequest request) {
+  protected <T> T processRequestWithResponse(SiriClientRequest request,
+      boolean asynchronous) {
+
+    if (!request.isSubscribe() && request.getPollInterval() > 0) {
+      AsynchronousClientRequest asyncAttempt = new AsynchronousClientRequest(
+          request);
+      _schedulingService.schedule(asyncAttempt, request.getPollInterval(),
+          TimeUnit.SECONDS);
+    }
 
     _requestCount.incrementAndGet();
 
@@ -415,7 +424,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
             + responseContent + "\n=== RESPONSE END ===");
       }
 
-      handleSiriResponse(siri, false);
+      handleSiriResponse(siri, asynchronous);
     }
 
     return (T) responseData;
@@ -429,8 +438,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
   protected void processRequestWithAsynchronousResponse(
       SiriClientRequest request) {
 
-    AsynchronousClientConnectionAttempt attempt = new AsynchronousClientConnectionAttempt(
-        request);
+    AsynchronousClientRequest attempt = new AsynchronousClientRequest(request);
     _schedulingService.submit(attempt);
   }
 
@@ -999,7 +1007,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
      */
     request.decrementRemainingReconnctionAttempts();
 
-    AsynchronousClientConnectionAttempt asyncAttempt = new AsynchronousClientConnectionAttempt(
+    AsynchronousClientRequest asyncAttempt = new AsynchronousClientRequest(
         request);
     _schedulingService.schedule(asyncAttempt,
         request.getReconnectionInterval(), TimeUnit.SECONDS);
@@ -1086,23 +1094,27 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
 
   /**
    * A runnable task that attempts a connection from a SIRI client to a SIRI
-   * server. Handles reconnection semantics.
+   * server.
    * 
    * @author bdferris
    */
-  private class AsynchronousClientConnectionAttempt implements Runnable {
+  class AsynchronousClientRequest implements Runnable {
 
     private final SiriClientRequest request;
 
-    public AsynchronousClientConnectionAttempt(SiriClientRequest request) {
+    public AsynchronousClientRequest(SiriClientRequest request) {
       this.request = request;
+    }
+    
+    SiriClientRequest getRequest() {
+      return request;
     }
 
     @Override
     public void run() {
 
       try {
-        processRequestWithResponse(request);
+        processRequestWithResponse(request, true);
       } catch (Throwable ex) {
         _log.error("error executing asynchronous client request", ex);
       }

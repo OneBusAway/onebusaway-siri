@@ -61,106 +61,54 @@ import uk.org.siri.siri.VehicleRefStructure;
 
 public class SiriClientRequestFactory {
 
-  private static final String ARG_URL = "Url";
-  private static final String ARG_MANAGE_SUBSCRIPTION_URL = "ManageSubscriptionUrl";
-  private static final String ARG_CHECK_STATUS_URL = "CheckStatusUrl";
+  public static final String ARG_URL = "Url";
+  public static final String ARG_MANAGE_SUBSCRIPTION_URL = "ManageSubscriptionUrl";
+  public static final String ARG_CHECK_STATUS_URL = "CheckStatusUrl";
 
-  private static final String ARG_VERSION = "Version";
-  private static final String ARG_MODULE_TYPE = "ModuleType";
+  public static final String ARG_VERSION = "Version";
+  public static final String ARG_MODULE_TYPE = "ModuleType";
+  public static final String ARG_SUBSCRIBE = "Subscribe";
+  public static final String ARG_POLL_INTERVAL = "PollInterval";
 
-  private static final String ARG_RECONNECTION_ATTEMPTS = "ReconnectionAttempts";
-  private static final String ARG_RECONNECTION_INTERVAL = "ReconnectionInterval";
+  public static final String ARG_RECONNECTION_ATTEMPTS = "ReconnectionAttempts";
+  public static final String ARG_RECONNECTION_INTERVAL = "ReconnectionInterval";
 
-  private static final String ARG_HEARTBEAT_INTERVAL = "HeartbeatInterval";
-  private static final String ARG_CHECK_STATUS_INTERVAL = "CheckStatusInterval";
-  private static final String ARG_INITIAL_TERMINATION_TIME = "InitialTerminationTime";
+  public static final String ARG_HEARTBEAT_INTERVAL = "HeartbeatInterval";
+  public static final String ARG_CHECK_STATUS_INTERVAL = "CheckStatusInterval";
+  public static final String ARG_INITIAL_TERMINATION_TIME = "InitialTerminationTime";
 
-  private static final String ARG_MESSAGE_IDENTIFIER = "MessageIdentifier";
-  private static final String ARG_SUBSCRIPTION_IDENTIFIER = "SubscriptionIdentifier";
-  private static final String ARG_MAXIMUM_VEHICLES = "MaximumVehicles";
-  private static final String ARG_VEHICLE_REF = "VehicleRef";
-  private static final String ARG_LINE_REF = "LineRef";
-  private static final String ARG_DIRECTION_REF = "DirectionRef";
-  private static final String ARG_VEHICLE_MONITORING_REF = "VehicleMonitoringRef";
+  public static final String ARG_MESSAGE_IDENTIFIER = "MessageIdentifier";
+  public static final String ARG_SUBSCRIPTION_IDENTIFIER = "SubscriptionIdentifier";
+  public static final String ARG_MAXIMUM_VEHICLES = "MaximumVehicles";
+  public static final String ARG_VEHICLE_REF = "VehicleRef";
+  public static final String ARG_LINE_REF = "LineRef";
+  public static final String ARG_DIRECTION_REF = "DirectionRef";
+  public static final String ARG_VEHICLE_MONITORING_REF = "VehicleMonitoringRef";
 
   private static final DatatypeFactory _dataTypeFactory = SiriTypeFactory.createDataTypeFactory();
 
-  public SiriClientRequest createServiceRequest(Map<String, String> args) {
-
+  public SiriClientRequest createRequest(Map<String, String> args) {
     SiriClientRequest request = new SiriClientRequest();
-
     processCommonArgs(args, request);
-
-    ServiceRequest serviceRequest = new ServiceRequest();
-    Siri payload = new Siri();
-    payload.setServiceRequest(serviceRequest);
-    request.setPayload(payload);
-
-    String messageIdentifierValue = args.get(ARG_MESSAGE_IDENTIFIER);
-    if (messageIdentifierValue != null) {
-      MessageQualifierStructure messageIdentifier = new MessageQualifierStructure();
-      messageIdentifier.setValue(messageIdentifierValue);
-      serviceRequest.setMessageIdentifier(messageIdentifier);
+    if (request.isSubscribe()) {
+      processSubscriptionRequestArgs(args, request);
+    } else {
+      processServiceRequestArgs(args, request);
     }
+    return request;
+  }
 
-    String moduleTypeValue = args.get(ARG_MODULE_TYPE);
-
-    if (moduleTypeValue != null) {
-
-      ESiriModuleType moduleType = ESiriModuleType.valueOf(moduleTypeValue.toUpperCase());
-      AbstractServiceRequestStructure moduleRequest = createServiceRequestForModuleType(moduleType);
-
-      handleModuleServiceRequestSpecificArguments(moduleType, moduleRequest,
-          args);
-
-      List<AbstractServiceRequestStructure> moduleRequests = SiriLibrary.getServiceRequestsForModule(
-          serviceRequest, moduleType);
-      moduleRequests.add(moduleRequest);
-
-    }
-
+  public SiriClientRequest createServiceRequest(Map<String, String> args) {
+    SiriClientRequest request = new SiriClientRequest();
+    processCommonArgs(args, request);
+    processServiceRequestArgs(args, request);
     return request;
   }
 
   public SiriClientRequest createSubscriptionRequest(Map<String, String> args) {
-
     SiriClientRequest request = new SiriClientRequest();
     processCommonArgs(args, request);
-
-    SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
-    Siri payload = new Siri();
-    payload.setSubscriptionRequest(subscriptionRequest);
-    request.setPayload(payload);
-
-    String messageIdentifierValue = args.get(ARG_MESSAGE_IDENTIFIER);
-    if (messageIdentifierValue != null) {
-      MessageQualifierStructure messageIdentifier = new MessageQualifierStructure();
-      messageIdentifier.setValue(messageIdentifierValue);
-      subscriptionRequest.setMessageIdentifier(messageIdentifier);
-    }
-
-    String moduleTypeValue = args.get(ARG_MODULE_TYPE);
-
-    if (moduleTypeValue != null) {
-
-      ESiriModuleType moduleType = ESiriModuleType.valueOf(moduleTypeValue.toUpperCase());
-      AbstractSubscriptionStructure moduleSubscription = createSubscriptionForModuleType(moduleType);
-
-      String subscriptionIdentifierValue = args.get(ARG_SUBSCRIPTION_IDENTIFIER);
-      if (subscriptionIdentifierValue != null) {
-        SubscriptionQualifierStructure value = new SubscriptionQualifierStructure();
-        value.setValue(subscriptionIdentifierValue);
-        moduleSubscription.setSubscriptionIdentifier(value);
-      }
-
-      handleModuleSubscriptionSpecificArguments(moduleType, moduleSubscription,
-          args);
-
-      List<AbstractSubscriptionStructure> moduleSubscriptions = SiriLibrary.getSubscriptionRequestsForModule(
-          subscriptionRequest, moduleType);
-      moduleSubscriptions.add(moduleSubscription);
-    }
-
+    processSubscriptionRequestArgs(args, request);
     return request;
   }
 
@@ -233,9 +181,20 @@ public class SiriClientRequestFactory {
         throw new SiriUnknownVersionException(versionId);
       }
       request.setTargetVersion(version);
-    }
-    else {
+    } else {
       request.setTargetVersion(ESiriVersion.V1_3);
+    }
+
+    String subscribeValue = args.get(ARG_SUBSCRIBE);
+    if (subscribeValue != null) {
+      boolean subscribe = Boolean.parseBoolean(subscribeValue);
+      request.setSubscribe(subscribe);
+    }
+
+    String pollIntervalValue = args.get(ARG_POLL_INTERVAL);
+    if (pollIntervalValue != null) {
+      int pollInterval = Integer.parseInt(pollIntervalValue);
+      request.setPollInterval(pollInterval);
     }
 
     String initialTerminationTime = args.get(ARG_INITIAL_TERMINATION_TIME);
@@ -247,7 +206,8 @@ public class SiriClientRequestFactory {
         try {
           Date time = getIso8601StringAsTime(initialTerminationTime,
               TimeZone.getDefault());
-          request.setInitialTerminationDuration(time.getTime() - System.currentTimeMillis());
+          request.setInitialTerminationDuration(time.getTime()
+              - System.currentTimeMillis());
         } catch (ParseException e) {
           throw new SiriException(
               "error parsing initial termination time (ISO 8601)");
@@ -259,7 +219,8 @@ public class SiriClientRequestFactory {
        */
       Calendar c = Calendar.getInstance();
       c.add(Calendar.DAY_OF_YEAR, 1);
-      request.setInitialTerminationDuration(c.getTimeInMillis() - System.currentTimeMillis());
+      request.setInitialTerminationDuration(c.getTimeInMillis()
+          - System.currentTimeMillis());
     }
 
     String reconnectionAttempts = args.get(ARG_RECONNECTION_ATTEMPTS);
@@ -287,6 +248,36 @@ public class SiriClientRequestFactory {
     }
   }
 
+  private void processServiceRequestArgs(Map<String, String> args,
+      SiriClientRequest request) {
+    ServiceRequest serviceRequest = new ServiceRequest();
+    Siri payload = new Siri();
+    payload.setServiceRequest(serviceRequest);
+    request.setPayload(payload);
+
+    String messageIdentifierValue = args.get(ARG_MESSAGE_IDENTIFIER);
+    if (messageIdentifierValue != null) {
+      MessageQualifierStructure messageIdentifier = new MessageQualifierStructure();
+      messageIdentifier.setValue(messageIdentifierValue);
+      serviceRequest.setMessageIdentifier(messageIdentifier);
+    }
+
+    String moduleTypeValue = args.get(ARG_MODULE_TYPE);
+
+    if (moduleTypeValue != null) {
+
+      ESiriModuleType moduleType = ESiriModuleType.valueOf(moduleTypeValue.toUpperCase());
+      AbstractServiceRequestStructure moduleRequest = createServiceRequestForModuleType(moduleType);
+
+      handleModuleServiceRequestSpecificArguments(moduleType, moduleRequest,
+          args);
+
+      List<AbstractServiceRequestStructure> moduleRequests = SiriLibrary.getServiceRequestsForModule(
+          serviceRequest, moduleType);
+      moduleRequests.add(moduleRequest);
+    }
+  }
+
   private AbstractServiceRequestStructure createServiceRequestForModuleType(
       ESiriModuleType moduleType) {
 
@@ -305,6 +296,43 @@ public class SiriClientRequestFactory {
         return new SituationExchangeRequestStructure();
       default:
         throw new UnsupportedOperationException();
+    }
+  }
+
+  private void processSubscriptionRequestArgs(Map<String, String> args,
+      SiriClientRequest request) {
+    SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
+    Siri payload = new Siri();
+    payload.setSubscriptionRequest(subscriptionRequest);
+    request.setPayload(payload);
+
+    String messageIdentifierValue = args.get(ARG_MESSAGE_IDENTIFIER);
+    if (messageIdentifierValue != null) {
+      MessageQualifierStructure messageIdentifier = new MessageQualifierStructure();
+      messageIdentifier.setValue(messageIdentifierValue);
+      subscriptionRequest.setMessageIdentifier(messageIdentifier);
+    }
+
+    String moduleTypeValue = args.get(ARG_MODULE_TYPE);
+
+    if (moduleTypeValue != null) {
+
+      ESiriModuleType moduleType = ESiriModuleType.valueOf(moduleTypeValue.toUpperCase());
+      AbstractSubscriptionStructure moduleSubscription = createSubscriptionForModuleType(moduleType);
+
+      String subscriptionIdentifierValue = args.get(ARG_SUBSCRIPTION_IDENTIFIER);
+      if (subscriptionIdentifierValue != null) {
+        SubscriptionQualifierStructure value = new SubscriptionQualifierStructure();
+        value.setValue(subscriptionIdentifierValue);
+        moduleSubscription.setSubscriptionIdentifier(value);
+      }
+
+      handleModuleSubscriptionSpecificArguments(moduleType, moduleSubscription,
+          args);
+
+      List<AbstractSubscriptionStructure> moduleSubscriptions = SiriLibrary.getSubscriptionRequestsForModule(
+          subscriptionRequest, moduleType);
+      moduleSubscriptions.add(moduleSubscription);
     }
   }
 

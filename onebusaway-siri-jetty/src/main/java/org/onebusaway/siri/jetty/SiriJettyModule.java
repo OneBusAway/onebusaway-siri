@@ -17,14 +17,14 @@ package org.onebusaway.siri.jetty;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.Servlet;
 
+import org.onebusaway.guice.jetty_exporter.JettyExporterModule;
+import org.onebusaway.guice.jetty_exporter.ServletSource;
 import org.onebusaway.siri.core.SiriCommon;
 
-import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.name.Names;
@@ -32,10 +32,11 @@ import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 
-public class SiriJettyModule extends AbstractModule {
+public class SiriJettyModule extends JettyExporterModule {
 
   @Override
   protected void configure() {
+    super.configure();
 
     bind(StatusServletSource.class);
 
@@ -49,8 +50,14 @@ public class SiriJettyModule extends AbstractModule {
     bind(Servlet.class).annotatedWith(
         Names.named(StatusServletSource.SERVLET_NAME)).to(StatusServlet.class);
 
-    final List<ServletSource> sources = new ArrayList<ServletSource>();
+    final List<ServletSource> sources = getSources();
 
+    /**
+     * The underlying {@link JettyExporterModule} will listen for
+     * {@link ServletSource} instances, but we also want to listen for
+     * {@link SiriCommon} instances which we wrap with a servlet source wrapper
+     * of our own and add to the source so they'll be properly exported.
+     */
     bindListener(Matchers.any(), new TypeListener() {
       @Override
       public <I> void hear(TypeLiteral<I> injectableType,
@@ -58,15 +65,11 @@ public class SiriJettyModule extends AbstractModule {
 
         Class<? super I> type = injectableType.getRawType();
 
-        if (SiriCommon.class.isAssignableFrom(type)
-            || ServletSource.class.isAssignableFrom(type)) {
+        if (SiriCommon.class.isAssignableFrom(type)) {
           encounter.register(new InjectionListenerImpl<I>(sources));
         }
       }
     });
-
-    bind(SiriJettyServiceImpl.class).toInstance(
-        new SiriJettyServiceImpl(sources));
   }
 
   private static class InjectionListenerImpl<I> implements InjectionListener<I> {
@@ -79,15 +82,11 @@ public class SiriJettyModule extends AbstractModule {
 
     @Override
     public void afterInjection(I injectee) {
-      if (injectee instanceof SiriCommon) {
-        SiriCommon common = (SiriCommon) injectee;
-        SubscriptionServerServlet servlet = new SubscriptionServerServlet();
-        servlet.setSiriListener(common);
-        ServletSource source = new SiriCommonServletSource(common, servlet);
-        _sources.add(source);
-      } else if (injectee instanceof ServletSource) {
-        _sources.add((ServletSource) injectee);
-      }
+      SiriCommon common = (SiriCommon) injectee;
+      SubscriptionServerServlet servlet = new SubscriptionServerServlet();
+      servlet.setSiriListener(common);
+      ServletSource source = new SiriCommonServletSource(common, servlet);
+      _sources.add(source);
     }
   }
 

@@ -19,6 +19,7 @@ import static junit.framework.Assert.assertEquals;
 import static org.custommonkey.xmlunit.XMLAssert.assertXpathEvaluatesTo;
 import static org.custommonkey.xmlunit.XMLAssert.assertXpathExists;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -47,7 +49,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.onebusaway.siri.core.SiriCommon.AsynchronousClientRequest;
 import org.onebusaway.siri.core.services.HttpClientService;
+import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.subscriptions.client.SiriClientSubscriptionManager;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.w3c.dom.Document;
@@ -64,6 +68,8 @@ public class SiriClientTest {
   private HttpClientService _httpClientService;
 
   private SiriClientSubscriptionManager _subscriptionManager;
+
+  private SchedulingService _schedulingService;
 
   @BeforeClass
   public static void setupOnce() {
@@ -83,11 +89,14 @@ public class SiriClientTest {
 
     _subscriptionManager = Mockito.mock(SiriClientSubscriptionManager.class);
     _client.setSubscriptionManager(_subscriptionManager);
+
+    _schedulingService = Mockito.mock(SchedulingService.class);
+    _client.setSchedulingService(_schedulingService);
   }
 
   @Test
-  public void testHandleRequestWithResponseForCheckStatusRequestAndResponse() throws IllegalStateException,
-      IOException, XpathException, SAXException {
+  public void testHandleRequestWithResponseForCheckStatusRequestAndResponse()
+      throws IllegalStateException, IOException, XpathException, SAXException {
 
     SiriClientRequest request = new SiriClientRequest();
     request.setTargetUrl("http://localhost/");
@@ -163,6 +172,88 @@ public class SiriClientTest {
      */
     CheckStatusResponseStructure checkStatusResponse = siriResponse.getCheckStatusResponse();
     assertNotNull(checkStatusResponse);
+  }
+
+  @Test
+  public void testHandleRequestWithNoPolling() throws Exception {
+
+    SiriClientRequest request = new SiriClientRequest();
+    request.setTargetUrl("http://localhost/");
+    request.setTargetVersion(ESiriVersion.V1_3);
+    request.setSubscribe(false);
+    request.setPollInterval(0);
+
+    Siri payload = new Siri();
+    request.setPayload(payload);
+
+    CheckStatusRequestStructure checkStatusRequest = new CheckStatusRequestStructure();
+    payload.setCheckStatusRequest(checkStatusRequest);
+
+    StringBuilder b = new StringBuilder();
+    b.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+    b.append("<Siri xmlns=\"http://www.siri.org.uk/siri\" version=\"1.3\">");
+    b.append("</Siri>");
+
+    HttpResponse response = createResponse();
+    response.setEntity(new StringEntity(b.toString()));
+
+    Mockito.when(
+        _httpClientService.executeHttpMethod(Mockito.any(HttpClient.class),
+            Mockito.any(HttpUriRequest.class))).thenReturn(response);
+
+    _client.handleRequestWithResponse(request);
+
+    /**
+     * Verify that the http client was called and capture the request
+     */
+    ArgumentCaptor<HttpUriRequest> captor = ArgumentCaptor.forClass(HttpUriRequest.class);
+    Mockito.verify(_httpClientService).executeHttpMethod(
+        Mockito.any(HttpClient.class), captor.capture());
+
+    Mockito.verifyNoMoreInteractions(_schedulingService);
+  }
+
+  @Test
+  public void testHandleRequestWithPolling() throws Exception {
+
+    SiriClientRequest request = new SiriClientRequest();
+    request.setTargetUrl("http://localhost/");
+    request.setTargetVersion(ESiriVersion.V1_3);
+    request.setSubscribe(false);
+    request.setPollInterval(30);
+
+    Siri payload = new Siri();
+    request.setPayload(payload);
+
+    CheckStatusRequestStructure checkStatusRequest = new CheckStatusRequestStructure();
+    payload.setCheckStatusRequest(checkStatusRequest);
+
+    StringBuilder b = new StringBuilder();
+    b.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+    b.append("<Siri xmlns=\"http://www.siri.org.uk/siri\" version=\"1.3\">");
+    b.append("</Siri>");
+
+    HttpResponse response = createResponse();
+    response.setEntity(new StringEntity(b.toString()));
+
+    Mockito.when(
+        _httpClientService.executeHttpMethod(Mockito.any(HttpClient.class),
+            Mockito.any(HttpUriRequest.class))).thenReturn(response);
+
+    _client.handleRequestWithResponse(request);
+
+    /**
+     * Verify that the http client was called and capture the request
+     */
+    ArgumentCaptor<HttpUriRequest> captor = ArgumentCaptor.forClass(HttpUriRequest.class);
+    Mockito.verify(_httpClientService).executeHttpMethod(
+        Mockito.any(HttpClient.class), captor.capture());
+
+    ArgumentCaptor<Runnable> taskCaptor = ArgumentCaptor.forClass(Runnable.class);
+    Mockito.verify(_schedulingService).schedule(taskCaptor.capture(),
+        Mockito.eq(30L), Mockito.eq(TimeUnit.SECONDS));
+    SiriCommon.AsynchronousClientRequest task = (AsynchronousClientRequest) taskCaptor.getValue();
+    assertSame(request, task.getRequest());
   }
 
   /*

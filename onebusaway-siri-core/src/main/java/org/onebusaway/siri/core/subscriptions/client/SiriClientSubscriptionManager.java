@@ -202,10 +202,12 @@ public class SiriClientSubscriptionManager implements StatusProviderService {
         List<AbstractServiceDeliveryStructure> moduleDeliveries = SiriLibrary.getServiceDeliveriesForModule(
             serviceDelivery, moduleType);
         for (AbstractServiceDeliveryStructure moduleDelivery : moduleDeliveries) {
-          SubscriptionId subscriptionId = ClientSupport.getSubscriptionIdForModuleDelivery(moduleDelivery);
-          ClientSubscriptionInstance instance = _activeSubscriptions.get(subscriptionId);
-          if (instance != null) {
-            channels.add(instance.getChannel());
+          if (ClientSupport.hasSubscriptionIdForModuleDelivery(moduleDelivery)) {
+            SubscriptionId subscriptionId = ClientSupport.getSubscriptionIdForModuleDelivery(moduleDelivery);
+            ClientSubscriptionInstance instance = _activeSubscriptions.get(subscriptionId);
+            if (instance != null) {
+              channels.add(instance.getChannel());
+            }
           }
         }
       }

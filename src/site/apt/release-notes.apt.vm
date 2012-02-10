@@ -2,6 +2,10 @@ Release Notes
 
 * ${currentVersion}
 
+  * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
+
+* 1.0.3
+
   * Added {{{./onebusaway-siri-repeater-cli.html}SIRI repeater}} RPM and Linux service.
   
   * Added option to both the {{{./onebusaway-siri-client-cli.html}SIRI command-line client}} and
@@ -24,7 +28,7 @@ Release Notes
     querying diagnostic information about the current SIRI process.  See {{{./apidocs/index.html?org/onebusaway/siri/jetty/StatusServletSource.html}StatusServletSource}}
     for details on how the status information can be exposed through a simple web interface.
   
-  * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
+  * Full Documentation: {{${site_base_url}/onebusaway-siri/1.0.3/}}
 
 * 1.0.2
 

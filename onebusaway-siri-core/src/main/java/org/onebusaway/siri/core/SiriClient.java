@@ -164,7 +164,7 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
   public Siri handleRequestWithResponse(SiriClientRequest request) {
     checkRequest(request);
     request.resetConnectionStatistics();
-    return processRequestWithResponse(request);
+    return processRequestWithResponse(request, false);
   }
 
   /**

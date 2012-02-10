@@ -69,7 +69,7 @@ public class SiriRepeaterCommandLineConfiguration {
   private static final String ARG_LOG_RAW_XML = "logRawXml";
 
   private static final String ARG_FORMAT_OUTPUT_XML = "formatOutputXml";
-  
+
   private static final String ARG_NO_SUBSCRIPTIONS = "noSubscriptions";
 
   public Injector configure(String[] args) throws Exception {
@@ -185,7 +185,7 @@ public class SiriRepeaterCommandLineConfiguration {
 
     siriClient.setFormatOutputXmlByDefault(cli.hasOption(ARG_FORMAT_OUTPUT_XML));
     siriServer.setFormatOutputXmlByDefault(cli.hasOption(ARG_FORMAT_OUTPUT_XML));
-    
+
     /**
      * Filters
      */
@@ -211,7 +211,7 @@ public class SiriRepeaterCommandLineConfiguration {
 
     for (String arg : cli.getArgs()) {
       Map<String, String> subArgs = SiriLibrary.getLineAsMap(arg);
-      SiriClientRequest request = factory.createSubscriptionRequest(subArgs);
+      SiriClientRequest request = factory.createRequest(subArgs);
       siriRepeater.addStartupRequest(request);
     }
   }
