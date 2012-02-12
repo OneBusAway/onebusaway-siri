@@ -3,7 +3,7 @@
   <parent>
     <artifactId>onebusaway</artifactId>
     <groupId>org.onebusaway</groupId>
-    <version>1.1.2</version>
+    <version>1.1.6</version>
   </parent>
   <artifactId>onebusaway-siri</artifactId>
   <version>1.0.4-SNAPSHOT</version>
@@ -11,6 +11,7 @@
 
   <name>onebusaway-siri</name>
   <description>Support for the SIRI api for real-time transit data</description>
+  <url>https://github.com/OneBusAway/onebusaway-siri/wiki/</url>
 
   <properties>
     <onebusaway_siri_api_v10_version>1.0.0</onebusaway_siri_api_v10_version>
@@ -30,10 +31,15 @@
   </repositories>
 
   <scm>
-    <connection>scm:svn:http://onebusaway.googlecode.com/svn/onebusaway-siri/trunk</connection>
-    <developerConnection>scm:svn:https://onebusaway.googlecode.com/svn/onebusaway-siri/trunk</developerConnection>
-    <url>http://code.google.com/p/onebusaway/source/browse/#svn/onebusaway-siri/trunk</url>
+    <connection>scm:git:http://github.com/OneBusAway/onebusaway-siri.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/OneBusAway/onebusaway-siri.git</developerConnection>
+    <url>http://github.com/OneBusAway/onebusaway-siri</url>
   </scm>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/OneBusAway/onebusaway-siri/issues</url>
+  </issueManagement>
 
   <distributionManagement>
     <!-- Even though we specify this in the parent pom, we need to specify it here to have full control over the url -->
