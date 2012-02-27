@@ -11,5 +11,6 @@
       <item name="API Javadoc" href="/apidocs/index.html" />
     </menu>
     <menu ref="reports" />
+    <menu ref="modules" />
   </body>
 </project>

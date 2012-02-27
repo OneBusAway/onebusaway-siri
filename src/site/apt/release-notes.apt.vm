@@ -2,6 +2,14 @@ Release Notes
 
 * ${currentVersion}
 
+  * Add support for repeated polling of request-response SIRI endpoints.
+  
+  * Refactor a couple of common libraries into their own modules:
+  
+    * onebusaway-guice-jetty-exporter
+    
+    * onebusaway-guice-jsr250
+
   * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
 
 * 1.0.3
