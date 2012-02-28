@@ -14,8 +14,8 @@
   <url>https://github.com/OneBusAway/onebusaway-siri/wiki/</url>
 
   <properties>
-    <onebusaway_siri_api_v10_version>1.0.0</onebusaway_siri_api_v10_version>
-    <onebusaway_siri_api_v13_version>1.0.0</onebusaway_siri_api_v13_version>
+    <onebusaway_siri_api_v10_version>1.0.1</onebusaway_siri_api_v10_version>
+    <onebusaway_siri_api_v13_version>1.0.1</onebusaway_siri_api_v13_version>
     <!-- We don't want to release these to the main Maven repo, so we deploy to the OBA repo by default -->
     <distribution_id>nexus.onebusaway.org-releases</distribution_id>
     <distribution_url>http://nexus.onebusaway.org/content/repositories/releases/</distribution_url>
