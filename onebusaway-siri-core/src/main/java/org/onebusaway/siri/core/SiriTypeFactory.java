@@ -26,6 +26,7 @@ import javax.xml.datatype.Duration;
 
 import uk.org.siri.siri.BlockRefStructure;
 import uk.org.siri.siri.DataFrameRefStructure;
+import uk.org.siri.siri.EntryQualifierStructure;
 import uk.org.siri.siri.ErrorDescriptionStructure;
 import uk.org.siri.siri.JourneyPatternRefStructure;
 import uk.org.siri.siri.LineRefStructure;
@@ -82,6 +83,12 @@ public class SiriTypeFactory {
     ErrorDescriptionStructure desc = new ErrorDescriptionStructure();
     desc.setValue(value);
     return desc;
+  }
+  
+  public static EntryQualifierStructure entryQualifier(String value) {
+    EntryQualifierStructure s = new EntryQualifierStructure();
+    s.setValue(value);
+    return s;
   }
 
   public static NaturalLanguageStringStructure nls(String value) {
