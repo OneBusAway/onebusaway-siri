@@ -424,7 +424,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
             + responseContent + "\n=== RESPONSE END ===");
       }
 
-      handleSiriResponse(siri, asynchronous);
+      handleSiriResponse(siri, asynchronous, request);
     }
 
     return (T) responseData;
@@ -445,12 +445,12 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
   /**
    * Override this method to provide custom behavior for processing a response
    * from a SIRI endoint.
-   * 
    * @param siri the payload
    * @param asynchronousResponse true if the response was received
    *          asynchronously, otherwise false
+   * @param siriClientRequest the request that initiated this response, or potentially null if asynchronous
    */
-  protected void handleSiriResponse(Siri siri, boolean asynchronousResponse) {
+  protected void handleSiriResponse(Siri siri, boolean asynchronousResponse, SiriClientRequest siriClientRequest) {
 
   }
 

@@ -229,7 +229,7 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
         _log.info("logging raw xml response:\n=== PUBLISHED BEGIN ===\n"
             + responseContent + "\n=== PUBLISHED END ===");
       }
-      handleSiriResponse(siri, true);
+      handleSiriResponse(siri, true, null);
     }
   }
 
@@ -290,9 +290,10 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    * takes appropriate action.
    */
   @Override
-  protected void handleSiriResponse(Siri siri, boolean asynchronousResponse) {
+  protected void handleSiriResponse(Siri siri, boolean asynchronousResponse,
+      SiriClientRequest siriClientRequest) {
 
-    super.handleSiriResponse(siri, asynchronousResponse);
+    super.handleSiriResponse(siri, asynchronousResponse, siriClientRequest);
 
     if (siri.getSubscriptionResponse() != null)
       _subscriptionManager.handleSubscriptionResponse(siri.getSubscriptionResponse());
@@ -313,7 +314,7 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
        * directly.
        */
       if (siri.getServiceDelivery() != null)
-        handleServiceDelivery(siri.getServiceDelivery());
+        handleServiceDelivery(siri.getServiceDelivery(), siriClientRequest);
     }
   }
 
@@ -332,13 +333,19 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    * Private Methods
    ****/
 
-  private void handleServiceDelivery(ServiceDelivery serviceDelivery) {
+  private void handleServiceDelivery(ServiceDelivery serviceDelivery,
+      SiriClientRequest siriClientRequest) {
 
     _serviceDeliveryCounter.incrementAndGet();
 
     checkServiceDeliveryForUnknownSubscriptions(serviceDelivery);
 
     SiriChannelInfo channelInfo = _subscriptionManager.getChannelInfoForServiceDelivery(serviceDelivery);
+
+    if (siriClientRequest != null
+        && !channelInfo.getSiriClientRequests().contains(siriClientRequest)) {
+      channelInfo.getSiriClientRequests().add(siriClientRequest);
+    }
 
     for (SiriServiceDeliveryHandler handler : _serviceDeliveryHandlers)
       handler.handleServiceDelivery(channelInfo, serviceDelivery);

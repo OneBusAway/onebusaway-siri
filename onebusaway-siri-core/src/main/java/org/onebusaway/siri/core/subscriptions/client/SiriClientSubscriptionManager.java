@@ -184,43 +184,47 @@ public class SiriClientSubscriptionManager implements StatusProviderService {
 
     SiriChannelInfo channelInfo = new SiriChannelInfo();
 
-    ClientSubscriptionChannel clientSubscriptionChannel = null;
+    Set<ClientSubscriptionChannel> channels = new HashSet<ClientSubscriptionChannel>();
+    Set<SiriClientRequest> requests = new HashSet<SiriClientRequest>();
 
     /**
      * First, try looking up by address
      */
     String address = serviceDelivery.getAddress();
-    if (address != null)
-      clientSubscriptionChannel = _activeChannels.get(address);
-
-    /**
-     * If that fails, try looking up by a specific subscription
-     */
-    if (clientSubscriptionChannel == null) {
-      Set<ClientSubscriptionChannel> channels = new HashSet<ClientSubscriptionChannel>();
-      for (ESiriModuleType moduleType : ESiriModuleType.values()) {
-        List<AbstractServiceDeliveryStructure> moduleDeliveries = SiriLibrary.getServiceDeliveriesForModule(
-            serviceDelivery, moduleType);
-        for (AbstractServiceDeliveryStructure moduleDelivery : moduleDeliveries) {
-          if (ClientSupport.hasSubscriptionIdForModuleDelivery(moduleDelivery)) {
-            SubscriptionId subscriptionId = ClientSupport.getSubscriptionIdForModuleDelivery(moduleDelivery);
-            ClientSubscriptionInstance instance = _activeSubscriptions.get(subscriptionId);
-            if (instance != null) {
-              channels.add(instance.getChannel());
-            }
-          }
-        }
-      }
-      if (!channels.isEmpty()) {
-        if (channels.size() > 1)
-          _log.warn("multiple channels found for a single service delivery");
-        else
-          clientSubscriptionChannel = channels.iterator().next();
+    if (address != null) {
+      ClientSubscriptionChannel channel = _activeChannels.get(address);
+      if (channel != null) {
+        channels.add(channel);
       }
     }
 
-    if (clientSubscriptionChannel != null) {
-      channelInfo.setContext(clientSubscriptionChannel.getContext());
+    /**
+     * Also try looking up by a specific subscription
+     */
+    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
+      List<AbstractServiceDeliveryStructure> moduleDeliveries = SiriLibrary.getServiceDeliveriesForModule(
+          serviceDelivery, moduleType);
+      for (AbstractServiceDeliveryStructure moduleDelivery : moduleDeliveries) {
+        if (ClientSupport.hasSubscriptionIdForModuleDelivery(moduleDelivery)) {
+          SubscriptionId subscriptionId = ClientSupport.getSubscriptionIdForModuleDelivery(moduleDelivery);
+          ClientSubscriptionInstance instance = _activeSubscriptions.get(subscriptionId);
+          if (instance != null) {
+            channels.add(instance.getChannel());
+            requests.add(instance.getRequest());
+          }
+        }
+      }
+    }
+
+    channelInfo.setSiriClientRequests(new ArrayList<SiriClientRequest>(requests));
+
+    if (!channels.isEmpty()) {
+      if (channels.size() > 1) {
+        _log.warn("multiple channels found for a single service delivery");
+      } else {
+        ClientSubscriptionChannel channel = channels.iterator().next();
+        channelInfo.setContext(channel.getContext());
+      }
     }
 
     return channelInfo;

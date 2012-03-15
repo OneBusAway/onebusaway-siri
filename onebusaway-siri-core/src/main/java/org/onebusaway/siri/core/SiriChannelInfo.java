@@ -15,6 +15,11 @@
  */
 package org.onebusaway.siri.core;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import uk.org.siri.siri.ServiceDelivery;
+
 /**
  * Information associated with a particular SIRI channel. Every SIRI
  * subscription has a data channel associated with it. Multiple subscriptions
@@ -25,7 +30,25 @@ package org.onebusaway.siri.core;
  */
 public class SiriChannelInfo {
 
+  private List<SiriClientRequest> siriClientRequests = new ArrayList<SiriClientRequest>();
+
   private Object context;
+
+  /**
+   * Recall that a particular {@link ServiceDelivery} can potentially be
+   * associated with multiple client requests, as the SIRI endpoint may group
+   * responses to multiple requests into a single delivery.
+   * 
+   * @return the set of client requests associated with deliveries on this
+   *         channel
+   */
+  public List<SiriClientRequest> getSiriClientRequests() {
+    return siriClientRequests;
+  }
+
+  public void setSiriClientRequests(List<SiriClientRequest> siriClientRequests) {
+    this.siriClientRequests = siriClientRequests;
+  }
 
   /**
    * User-supplied context data associated with this channel. See
