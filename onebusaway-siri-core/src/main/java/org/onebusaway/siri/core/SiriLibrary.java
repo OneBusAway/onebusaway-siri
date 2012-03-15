@@ -16,6 +16,7 @@
 package org.onebusaway.siri.core;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +32,14 @@ import org.onebusaway.siri.core.versioning.VersionConverter;
 import uk.org.siri.siri.AbstractServiceDeliveryStructure;
 import uk.org.siri.siri.AbstractServiceRequestStructure;
 import uk.org.siri.siri.AbstractSubscriptionStructure;
+import uk.org.siri.siri.HalfOpenTimestampRangeStructure;
+import uk.org.siri.siri.PtSituationElementStructure;
 import uk.org.siri.siri.ServiceDelivery;
 import uk.org.siri.siri.ServiceRequest;
 import uk.org.siri.siri.Siri;
 import uk.org.siri.siri.SubscriptionRequest;
+import uk.org.siri.siri.WorkflowStatusEnumeration;
+import uk.org.siri.siri.RoadSituationElementStructure.ValidityPeriod;
 
 /**
  * SIRI utility functions
@@ -115,7 +120,7 @@ public class SiriLibrary {
 
     return matches;
   }
-  
+
   public static Siri copy(Siri payload) {
     return (Siri) _copier.convert(payload);
   }
@@ -145,6 +150,146 @@ public class SiriLibrary {
     to.addAll(from);
   }
 
+  /****
+   * 
+   ****/
+
+  /**
+   * Determine if the specified situation is closed according to its workflow
+   * status.
+   * 
+   * @param situation
+   * @return true if the situation's workflow status is 'CLOSING' or 'CLOSED'
+   */
+  public static boolean isSituationClosed(PtSituationElementStructure situation) {
+    WorkflowStatusEnumeration progress = situation.getProgress();
+    return progress != null
+        && (progress == WorkflowStatusEnumeration.CLOSING || progress == WorkflowStatusEnumeration.CLOSED);
+  }
+
+  /**
+   * Determine if the specified situation is expired, as indicated by the
+   * publication windows and validity periods of the situation all ending before
+   * the current time. If a situation has no publication window or validity
+   * periods, it is considered active.
+   * 
+   * @param situation
+   * @param currentTime
+   * @return true if the situation has expired before the specified time.
+   */
+  public static boolean isSituationExpired(
+      PtSituationElementStructure situation, Date currentTime) {
+    HalfOpenTimestampRangeStructure publicationWindow = situation.getPublicationWindow();
+    if (publicationWindow != null) {
+      if (SiriLibrary.isTimeRangeActiveOrUpcoming(publicationWindow,
+          currentTime)) {
+        return false;
+      }
+    }
+    List<ValidityPeriod> periods = situation.getValidityPeriod();
+    if (periods != null) {
+      for (ValidityPeriod period : periods) {
+        if (SiriLibrary.isTimeRangeActiveOrUpcoming(period, currentTime)) {
+          return false;
+        }
+      }
+    }
+
+    /**
+     * If the situation has no publication window or valid periods defined, we
+     * consider the alert to be active.
+     */
+    if (publicationWindow == null && (periods == null || periods.isEmpty())) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Determine if the specified situation is active, as indicated by the
+   * publication windows and validity periods of the situation and the current
+   * time. If a situation has no publication window or validity periods, it is
+   * considered active.
+   * 
+   * @param situation
+   * @param currentTime
+   * @return true if the situation is active at the specified time
+   */
+  public static boolean isSituationPublishedOrValid(
+      PtSituationElementStructure situation, Date currentTime) {
+    HalfOpenTimestampRangeStructure publicationWindow = situation.getPublicationWindow();
+    if (publicationWindow != null) {
+      if (SiriLibrary.isTimeRangeActive(publicationWindow, currentTime)) {
+        return true;
+      }
+    }
+    List<ValidityPeriod> periods = situation.getValidityPeriod();
+    if (periods != null) {
+      for (ValidityPeriod period : periods) {
+        if (SiriLibrary.isTimeRangeActive(period, currentTime)) {
+          return true;
+        }
+      }
+    }
+
+    /**
+     * If the situation has no publication window or valid periods defined, we
+     * consider the alert to be active.
+     */
+    if (publicationWindow == null && (periods == null || periods.isEmpty())) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Returns true if the the specified time range is active at the specified
+   * time. We do not consider an empty time range to ever be active.
+   * 
+   * @param range
+   * @param time
+   * @return true if the specified time falls within the specified time range
+   */
+  public static boolean isTimeRangeActive(
+      HalfOpenTimestampRangeStructure range, Date time) {
+    /**
+     * We do not consider an empty time range to be active. Technically, the
+     * range should always have a start time anyway, but just in case.
+     */
+    if (range.getStartTime() == null && range.getEndTime() == null) {
+      return false;
+    }
+    boolean from = range.getStartTime() == null
+        || !range.getStartTime().after(time);
+    boolean to = range.getEndTime() == null || !range.getEndTime().before(time);
+    return from && to;
+  }
+
+  /**
+   * Returns true if the specified time range is active at the specified time or
+   * will become active at some point in the future. We do not consider an empty
+   * time range to ever be active.
+   * 
+   * @param range
+   * @param time
+   * @return true if the specified time range is active at the specified time or
+   *         will become active at some point in the future
+   */
+  public static boolean isTimeRangeActiveOrUpcoming(
+      HalfOpenTimestampRangeStructure range, Date time) {
+    /**
+     * We do not consider an empty time range to be active or upcoming.
+     * Technically, the range should always have a start time anyway, but just
+     * in case.
+     */
+    if (range.getStartTime() == null && range.getEndTime() == null) {
+      return false;
+    }
+    return range.getEndTime() == null || !time.after(range.getEndTime());
+  }
+
   public static Map<String, String> getLineAsMap(String line) {
     String[] tokens = line.split(",");
     Map<String, String> subArgs = new HashMap<String, String>();
@@ -160,7 +305,7 @@ public class SiriLibrary {
     }
     return subArgs;
   }
-  
+
   public static boolean needsHelp(String[] args) {
     for (String arg : args) {
       if (arg.equals("-h") || arg.equals("--help") || arg.equals("-help"))
