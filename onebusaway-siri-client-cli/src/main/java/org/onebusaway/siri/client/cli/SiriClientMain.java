@@ -16,6 +16,7 @@
 package org.onebusaway.siri.client.cli;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -273,6 +274,11 @@ public class SiriClientMain {
         _outputName = outputName;
         if (_output != null) {
           _output.close();
+        }
+        File outputFile = new File(_outputName);
+        File parentDirectory = outputFile.getParentFile();
+        if( parentDirectory != null && !parentDirectory.exists()) {
+          parentDirectory.mkdirs();
         }
         _output = new PrintWriter(new FileWriter(_outputName));
       }
