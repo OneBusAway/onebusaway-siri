@@ -2,6 +2,23 @@ Release Notes
 
 * ${currentVersion}
 
+  * In the SIRI command-line tool, when writing SIRI output to disk, automatically create the parent directory if it
+    doesn't exist.  This will let you do cool things like create a directory using the elements of the current time or
+    date automatically.  See the {{{./onebusaway-siri-client-cli.html}command-line tool documentation}} for more
+    details.
+
+  * Include support for adding {{{./apidocs/org/onebusaway/siri/core/SiriClientRequest.html}SiriClientRequest}} details to
+    the {{{./apidocs/org/onebusaway/siri/core/SiriChannelInfo.html}SiriChannelInfo}} object included with service
+    deliveries.  This will allow a SIRI client to determine the original request responsible for a specific service
+    delivery.
+
+  * Add methods to {{{./apidocs/org/onebusaway/siri/core/SiriLibrary.html}SiriLibrary}} for examining the expiration
+    status of SIRI SX situations.  
+
+  * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
+
+* 1.0.4
+
   * Add support for repeated polling of request-response SIRI endpoints.
   
   * Refactor a couple of common libraries into their own modules:
@@ -10,7 +27,7 @@ Release Notes
     
     * onebusaway-guice-jsr250
 
-  * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
+  * Full Documentation: {{${site_base_url}/onebusaway-siri/1.0.4/}}
 
 * 1.0.3
 
