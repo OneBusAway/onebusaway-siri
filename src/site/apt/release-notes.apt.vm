@@ -2,6 +2,10 @@ Release Notes
 
 * ${currentVersion}
 
+  * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
+  
+* 1.0.5
+
   * In the SIRI command-line tool, when writing SIRI output to disk, automatically create the parent directory if it
     doesn't exist.  This will let you do cool things like create a directory using the elements of the current time or
     date automatically.  See the {{{./onebusaway-siri-client-cli.html}command-line tool documentation}} for more
@@ -15,7 +19,7 @@ Release Notes
   * Add methods to {{{./apidocs/org/onebusaway/siri/core/SiriLibrary.html}SiriLibrary}} for examining the expiration
     status of SIRI SX situations.  
 
-  * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
+  * Full Documentation: {{${site_base_url}/onebusaway-siri/1.0.5/}}
 
 * 1.0.4
 
