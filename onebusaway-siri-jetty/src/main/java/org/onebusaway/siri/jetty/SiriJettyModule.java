@@ -18,6 +18,7 @@ package org.onebusaway.siri.jetty;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.Set;
 
 import javax.servlet.Servlet;
 
@@ -25,6 +26,8 @@ import org.onebusaway.guice.jetty_exporter.JettyExporterModule;
 import org.onebusaway.guice.jetty_exporter.ServletSource;
 import org.onebusaway.siri.core.SiriCommon;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.name.Names;
@@ -32,11 +35,21 @@ import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 
-public class SiriJettyModule extends JettyExporterModule {
+public class SiriJettyModule extends AbstractModule {
+
+  public static void addModuleAndDependencies(Set<Module> modules) {
+    JettyExporterModule module = JettyExporterModule.addModuleAndDependencies(modules);
+    modules.add(new SiriJettyModule(module.getSources()));
+  }
+
+  final List<ServletSource> _sources;
+
+  public SiriJettyModule(List<ServletSource> sources) {
+    _sources = sources;
+  }
 
   @Override
   protected void configure() {
-    super.configure();
 
     bind(StatusServletSource.class);
 
@@ -49,8 +62,6 @@ public class SiriJettyModule extends JettyExporterModule {
 
     bind(Servlet.class).annotatedWith(
         Names.named(StatusServletSource.SERVLET_NAME)).to(StatusServlet.class);
-
-    final List<ServletSource> sources = getSources();
 
     /**
      * The underlying {@link JettyExporterModule} will listen for
@@ -66,10 +77,28 @@ public class SiriJettyModule extends JettyExporterModule {
         Class<? super I> type = injectableType.getRawType();
 
         if (SiriCommon.class.isAssignableFrom(type)) {
-          encounter.register(new InjectionListenerImpl<I>(sources));
+          encounter.register(new InjectionListenerImpl<I>(_sources));
         }
       }
     });
+  }
+
+  /**
+   * Implement hashCode() and equals() such that two instances of the module
+   * will be equal.
+   */
+  @Override
+  public int hashCode() {
+    return this.getClass().hashCode();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null)
+      return false;
+    return this.getClass().equals(o.getClass());
   }
 
   private static class InjectionListenerImpl<I> implements InjectionListener<I> {
