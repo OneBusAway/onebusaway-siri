@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.xml.datatype.Duration;
@@ -45,6 +46,7 @@ import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.handlers.SiriSubscriptionManagerListener;
+import org.onebusaway.siri.core.services.ExponentialWeightedAverageForTimeWindow;
 import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.services.StatusProviderService;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
@@ -118,7 +120,6 @@ public class SiriServerSubscriptionManager implements StatusProviderService {
   private String _consumerAddressDefault = null;
 
   public SiriServerSubscriptionManager() {
-    System.out.println(SiriServerSubscriptionManager.class);
     for (ESiriModuleType moduleType : ESiriModuleType.values()) {
       ConcurrentHashMap<SubscriptionId, ServerSubscriptionInstance> m = new ConcurrentHashMap<SubscriptionId, ServerSubscriptionInstance>();
       _subscriptionsByModuleType.put(moduleType, m);
@@ -179,6 +180,16 @@ public class SiriServerSubscriptionManager implements StatusProviderService {
 
   public void setServer(SiriServer server) {
     _server = server;
+  }
+
+  @PreDestroy
+  public void stop() {
+    _activeSubscriptionsById.clear();
+    _activeSubscriptionsBySubscriberId.clear();
+    _channelsByAddress.clear();
+    for (ConcurrentMap<SubscriptionId, ServerSubscriptionInstance> m : _subscriptionsByModuleType.values()) {
+      m.clear();
+    }
   }
 
   /****
@@ -337,6 +348,24 @@ public class SiriServerSubscriptionManager implements StatusProviderService {
     return events;
   }
 
+  public void recordPublicationStatistics(SiriServerSubscriptionEvent event,
+      long timeNeededToPublish) {
+    ServerSubscriptionChannel channel = _channelsByAddress.get(event.getAddress());
+    if (channel == null) {
+      return;
+    }
+    long now = System.currentTimeMillis();
+
+    ExponentialWeightedAverageForTimeWindow timeWindow = channel.getAverageTimeNeededToPublish();
+    timeWindow.addValueAtTime(timeNeededToPublish, now);
+
+    ServiceDelivery delivery = event.getDelivery();
+    Date responseTimestamp = delivery.getResponseTimestamp();
+    long delay = now - responseTimestamp.getTime();
+    ExponentialWeightedAverageForTimeWindow delayWindow = channel.getAveragePublicationDelay();
+    delayWindow.addValueAtTime(delay, now);
+  }
+
   /****
    * Private Methods
    ****/
@@ -430,6 +459,9 @@ public class SiriServerSubscriptionManager implements StatusProviderService {
     String subscriptionId = subscriptionRef.getValue();
 
     SubscriptionId id = new SubscriptionId(subscriberId, subscriptionId);
+
+    _log.info("subscription request: subscriberId=" + subscriberId
+        + " subscriptionId=" + subscriptionId + " address=" + consumerAddress);
 
     ServerSubscriptionInstance existing = _activeSubscriptionsById.get(id);
 
@@ -723,5 +755,25 @@ public class SiriServerSubscriptionManager implements StatusProviderService {
         Integer.toString(_channelsByAddress.size()));
     status.put("siri.server.activeSubscriptions",
         Integer.toString(_activeSubscriptionsById.size()));
+
+    for (ServerSubscriptionInstance instance : _activeSubscriptionsById.values()) {
+      SubscriptionId id = instance.getId();
+      String prefix = "siri.server.activeSubscription["
+          + id.getSubscriptionId() + "," + id.getSubscriptionId() + "]";
+      status.put(prefix + ".address", instance.getChannel().getAddress());
+      status.put(prefix + ".module_type", instance.getModuleType().toString());
+    }
+
+    for (ServerSubscriptionChannel channel : _channelsByAddress.values()) {
+
+      ExponentialWeightedAverageForTimeWindow timeNeededToPublish = channel.getAverageTimeNeededToPublish();
+      status.put(
+          "siri.server.averageTimeNeededToPublish[" + channel.getAddress()
+              + "]", Long.toString((long) timeNeededToPublish.getAverage()));
+
+      ExponentialWeightedAverageForTimeWindow publicationDelay = channel.getAveragePublicationDelay();
+      status.put("siri.server.averagePublicationDelay[" + channel.getAddress()
+          + "]", Long.toString((long) publicationDelay.getAverage()));
+    }
   }
 }

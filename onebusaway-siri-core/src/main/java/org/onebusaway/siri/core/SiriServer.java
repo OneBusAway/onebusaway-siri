@@ -386,12 +386,14 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
 
     try {
       String content = marshallToString(data);
+      long tStart = System.currentTimeMillis();
       sendHttpRequest(address, content);
+      long tStop = System.currentTimeMillis();
+      _subscriptionManager.recordPublicationStatistics(event, tStop - tStart);
     } catch (SiriConnectionException ex) {
       _log.warn("error connecting to client at " + address, ex);
       // TODO: We don't terminate the subscription because the client has no way
-      // to check that their subscription
-      // still exists.
+      // to check that their subscription still exists.
       // _subscriptionManager.terminateSubscriptionWithId(event.getSubscriptionId());
     }
   }

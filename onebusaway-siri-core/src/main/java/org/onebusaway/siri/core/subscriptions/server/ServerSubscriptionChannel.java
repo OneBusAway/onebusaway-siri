@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 
+import org.onebusaway.siri.core.services.ExponentialWeightedAverageForTimeWindow;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
@@ -37,6 +38,22 @@ class ServerSubscriptionChannel {
   private long heartbeatInterval = 0;
 
   private ScheduledFuture<?> heartbeatTask;
+
+  /**
+   * A measure of how long on average (in ms) it takes to publish something to a
+   * channel. The exponentially weighted average is computed over ~ the last
+   * five minutes.
+   */
+  private final ExponentialWeightedAverageForTimeWindow _averageTimeNeededToPublish = new ExponentialWeightedAverageForTimeWindow(
+      5 * 60 * 1000);
+
+  /**
+   * A measure of how long on average (in ms) a delivery is delayed between when
+   * publication is requested and when it actually occurs. The exponentially
+   * weighted average is computed over ~ the last five minutes.
+   */
+  private final ExponentialWeightedAverageForTimeWindow _averagePublicationDelay = new ExponentialWeightedAverageForTimeWindow(
+      5 * 60 * 1000);
 
   public ServerSubscriptionChannel(String address, ESiriVersion targetVersion) {
     this.address = address;
@@ -69,5 +86,13 @@ class ServerSubscriptionChannel {
 
   public void setHeartbeatTask(ScheduledFuture<?> heartbeatTask) {
     this.heartbeatTask = heartbeatTask;
+  }
+
+  public ExponentialWeightedAverageForTimeWindow getAverageTimeNeededToPublish() {
+    return _averageTimeNeededToPublish;
+  }
+
+  public ExponentialWeightedAverageForTimeWindow getAveragePublicationDelay() {
+    return _averagePublicationDelay;
   }
 }
