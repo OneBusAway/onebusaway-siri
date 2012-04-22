@@ -23,10 +23,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -146,9 +146,9 @@ public class SiriClientMain {
 
     args = cli.getArgs();
 
-    List<Module> modules = new ArrayList<Module>();
-    modules.addAll(SiriCoreModule.getModules());
-    modules.add(new SiriJettyModule());
+    Set<Module> modules = new HashSet<Module>();
+    SiriCoreModule.addModuleAndDependencies(modules);
+    SiriJettyModule.addModuleAndDependencies(modules);
     Injector injector = Guice.createInjector(modules);
 
     injector.injectMembers(this);

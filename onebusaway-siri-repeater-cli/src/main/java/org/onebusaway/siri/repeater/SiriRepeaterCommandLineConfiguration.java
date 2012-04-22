@@ -22,8 +22,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -96,9 +98,9 @@ public class SiriRepeaterCommandLineConfiguration {
       System.exit(-1);
     }
 
-    List<Module> modules = new ArrayList<Module>();
-    modules.addAll(SiriCoreModule.getModules());
-    modules.add(new SiriJettyModule());
+    Set<Module> modules = new HashSet<Module>();
+    SiriCoreModule.addModuleAndDependencies(modules);
+    SiriJettyModule.addModuleAndDependencies(modules);
     Injector injector = Guice.createInjector(modules);
 
     handleCommandLineOptions(cli, injector);

@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2012 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +18,7 @@ package org.onebusaway.siri.core;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.onebusaway.guice.jsr250.JSR250Module;
 import org.onebusaway.siri.core.services.SiriServicesModule;
@@ -26,6 +28,12 @@ import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionModul
 import com.google.inject.Module;
 
 public class SiriCoreModule {
+
+  public static void addModuleAndDependencies(Set<Module> modules) {
+    for (Module module : getModules()) {
+      modules.add(module);
+    }
+  }
 
   public static List<Module> getModules() {
     List<Module> modules = new ArrayList<Module>();

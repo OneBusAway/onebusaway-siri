@@ -28,4 +28,18 @@ public class SiriClientSubscriptionModule extends AbstractModule {
     bind(InitiateSubscriptionsManager.class);
     bind(TerminateSubscriptionsManager.class);
   }
+
+  @Override
+  public int hashCode() {
+    return this.getClass().hashCode();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null)
+      return false;
+    return this.getClass().equals(o.getClass());
+  }
 }

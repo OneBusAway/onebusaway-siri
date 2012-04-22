@@ -26,4 +26,18 @@ public class SiriClientModule extends AbstractModule {
     bind(SiriClient.class);
     bind(SiriClientHandler.class).to(SiriClient.class);
   }
+
+  @Override
+  public int hashCode() {
+    return this.getClass().hashCode();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null)
+      return false;
+    return this.getClass().equals(o.getClass());
+  }
 }
