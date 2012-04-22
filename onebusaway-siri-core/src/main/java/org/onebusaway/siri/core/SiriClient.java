@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
+import org.onebusaway.siri.core.services.ExponentialWeightedAverageForTimeWindow;
 import org.onebusaway.siri.core.services.StatusProviderService;
 import org.onebusaway.siri.core.subscriptions.client.SiriClientSubscriptionManager;
 import org.onebusaway.siri.core.versioning.SiriVersioning;
@@ -101,6 +103,9 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
   private boolean _waitForTerminateSubscriptionResponseOnExit = true;
 
   private AtomicInteger _serviceDeliveryCounter = new AtomicInteger();
+
+  private ExponentialWeightedAverageForTimeWindow _serviceDeliveryDelay = new ExponentialWeightedAverageForTimeWindow(
+      5 * 60 * 1000);
 
   public SiriClient() {
     setUrl("http://*:8080/client.xml");
@@ -327,6 +332,8 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
     super.getStatus(status);
     status.put("siri.client.serviceDeliveryCounter",
         Integer.toString(_serviceDeliveryCounter.get()));
+    status.put("siri.client.serviceDeliveryDelay",
+        Long.toString((long) _serviceDeliveryDelay.getAverage()));
   }
 
   /****
@@ -337,6 +344,11 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
       SiriClientRequest siriClientRequest) {
 
     _serviceDeliveryCounter.incrementAndGet();
+    Date timestamp = serviceDelivery.getResponseTimestamp();
+    if (timestamp != null) {
+      long now = System.currentTimeMillis();
+      _serviceDeliveryDelay.addValueAtTime((now - timestamp.getTime()), now);
+    }
 
     checkServiceDeliveryForUnknownSubscriptions(serviceDelivery);
 
