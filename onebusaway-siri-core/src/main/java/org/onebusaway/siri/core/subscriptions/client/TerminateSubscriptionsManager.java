@@ -290,11 +290,24 @@ class TerminateSubscriptionsManager {
           subscriberId);
 
       if (status.isStatus()) {
-        _log.info("removing subscription after terminate-subscription-response received: id={}", id);
-        _subscriptionManager.removeSubscription(id);
+        _log.info(
+            "removing subscription after terminate-subscription-response received: id={}",
+            id);
+
       } else {
         logErrorInTerminateSubscriptionResponse(response, status, id);
       }
+
+      /**
+       * Remove the subscription from the manager whether the response indicated
+       * success or not. A typical failure response is "unkonwn subscription"
+       * after the remote endpoint reset.
+       * 
+       * TODO: Is there ever a case where we wouldn't want to remove the
+       * subscription? A case where we ask the server to terminate and it
+       * replies "I'd rather not."
+       */
+      _subscriptionManager.removeSubscription(id);
     }
 
     /**
