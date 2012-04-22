@@ -1,0 +1,37 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>onebusaway-siri</artifactId>
+    <groupId>org.onebusaway</groupId>
+    <version>1.0.6-SNAPSHOT</version>
+    <relativePath>..</relativePath>
+  </parent>
+  <artifactId>onebusaway-siri-integration-tests</artifactId>
+  <name>onebusaway-siri-integration-tests</name>
+  <description>Integration tests of combined SIRI libraries.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.onebusaway</groupId>
+      <artifactId>onebusaway-siri-jetty</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

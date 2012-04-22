@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>onebusaway</artifactId>
@@ -21,6 +22,8 @@
     <distribution_url>http://nexus.onebusaway.org/content/repositories/releases/</distribution_url>
     <snapshot_distribution_id>nexus.onebusaway.org-snapshots</snapshot_distribution_id>
     <snapshot_distribution_url>http://nexus.onebusaway.org/content/repositories/snapshots/</snapshot_distribution_url>
+    <!--  These properties are primarily used in configuring integration tests -->
+    <org_onebusaway_test_port>9900</org_onebusaway_test_port>
   </properties>
 
   <repositories>
@@ -55,6 +58,7 @@
     <module>onebusaway-siri-repeater</module>
     <module>onebusaway-siri-repeater-cli</module>
     <module>onebusaway-siri-repeater-webapp</module>
+    <module>onebusaway-siri-integration-tests</module>
   </modules>
 
   <!-- This is where we control the master dependency version used by all modules -->
@@ -108,11 +112,11 @@
         <artifactId>guice</artifactId>
         <version>3.0</version>
       </dependency>
-      
+
       <dependency>
         <groupId>org.onebusaway</groupId>
         <artifactId>onebusaway-guice-jsr250</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.2-SNAPSHOT</version>
       </dependency>
 
       <dependency>
@@ -143,6 +147,15 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables combine.children="append">
+            <org_onebusaway_test_port>${org_onebusaway_test_port}</org_onebusaway_test_port>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
