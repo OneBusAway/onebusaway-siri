@@ -303,7 +303,7 @@ class CheckStatusManager {
        * channel
        */
       _log.warn("no check status response received: address="
-          + _channel.getAddress() + " messageId=" + _messageId + "timeout="
+          + _channel.getAddress() + " messageId=" + _messageId + " timeout="
           + _schedulingService.getResponseTimeout() + "s");
       _subscriptionManager.handleChannelDisconnectAndReconnect(_channel);
     }
