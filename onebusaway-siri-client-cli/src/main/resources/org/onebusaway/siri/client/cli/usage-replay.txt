@@ -1,0 +1,10 @@
+Usage:
+  [-args] data_dir
+
+Args:
+  -id value                       the server's SIRI participant id
+  -serverUrl url                  the url your server publishes to a server in publish/subscribe
+  -privateClientUrl url           the internal url your server will actually bind to, if specified (default=serverUrl)
+  -noWaitForSubscription          when set, does not wait for an active subscription before starting replay
+  -inRealtime                     when set, deliveries are replayed in realtime, with replicated pauses
+  -defaultDelay                   when not replaying in realtime, the default delay between deliveries
