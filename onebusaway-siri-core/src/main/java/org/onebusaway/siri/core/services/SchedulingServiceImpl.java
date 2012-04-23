@@ -15,6 +15,7 @@
  */
 package org.onebusaway.siri.core.services;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,7 +29,15 @@ import javax.inject.Singleton;
 @Singleton
 class SchedulingServiceImpl implements SchedulingService {
 
-  private ScheduledExecutorService _executor = null;
+  /**
+   * For executing one-time tasks.
+   */
+  private ExecutorService _executor = null;
+
+  /**
+   * For executing recurring tasks.
+   */
+  private ScheduledExecutorService _scheduledExecutor = null;
 
   /**
    * Timeout, in seconds, in which we expect to receive a response for a pending
@@ -39,13 +48,18 @@ class SchedulingServiceImpl implements SchedulingService {
 
   @PostConstruct
   public void start() {
-    _executor = Executors.newSingleThreadScheduledExecutor();
+    _executor = Executors.newCachedThreadPool();
+    _scheduledExecutor = Executors.newScheduledThreadPool(1);
   }
 
   @PreDestroy
   public void stop() {
-    if (_executor != null)
+    if (_executor != null) {
       _executor.shutdownNow();
+    }
+    if (_scheduledExecutor != null) {
+      _scheduledExecutor.shutdownNow();
+    }
   }
 
   /****
@@ -69,25 +83,29 @@ class SchedulingServiceImpl implements SchedulingService {
 
   @Override
   public Future<?> submit(Runnable task) {
-    return _executor.submit(task);
+    return _scheduledExecutor.submit(task);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> ScheduledFuture<T> schedule(Runnable command, long delay, TimeUnit unit) {
-    return (ScheduledFuture<T>) _executor.schedule(command, delay, unit);
+  public <T> ScheduledFuture<T> schedule(Runnable command, long delay,
+      TimeUnit unit) {
+    return (ScheduledFuture<T>) _scheduledExecutor.schedule(command, delay,
+        unit);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public <T> ScheduledFuture<T> scheduleAtFixedRate(Runnable command,
       long initialDelay, long period, TimeUnit unit) {
-    return (ScheduledFuture<T>) _executor.scheduleAtFixedRate(command, initialDelay, period, unit);
+    return (ScheduledFuture<T>) _scheduledExecutor.scheduleAtFixedRate(command,
+        initialDelay, period, unit);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public <T> ScheduledFuture<T> scheduleResponseTimeoutTask(Runnable task) {
-    return (ScheduledFuture<T>) _executor.schedule(task, _responseTimeout, TimeUnit.SECONDS);
+    return (ScheduledFuture<T>) _scheduledExecutor.schedule(task,
+        _responseTimeout, TimeUnit.SECONDS);
   }
 }
