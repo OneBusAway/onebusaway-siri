@@ -83,7 +83,7 @@ class SchedulingServiceImpl implements SchedulingService {
 
   @Override
   public Future<?> submit(Runnable task) {
-    return _scheduledExecutor.submit(task);
+    return _executor.submit(task);
   }
 
   @SuppressWarnings("unchecked")
