@@ -44,15 +44,20 @@ import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterFactoryImpl;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcherFactoryImpl;
+import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionManager;
 import org.onebusaway.siri.jetty.SiriJettyModule;
 import org.onebusaway.siri.jetty.StatusServletSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 
 public class SiriRepeaterCommandLineConfiguration {
+
+  private static final Logger _log = LoggerFactory.getLogger(SiriRepeaterCommandLineConfiguration.class);
 
   private static final String ARG_ID = "id";
 
@@ -71,6 +76,10 @@ public class SiriRepeaterCommandLineConfiguration {
   private static final String ARG_LOG_RAW_XML = "logRawXml";
 
   private static final String ARG_FORMAT_OUTPUT_XML = "formatOutputXml";
+
+  private static final String ARG_RESPONSE_TIMEOUT = "responseTimeout";
+
+  private static final String ARG_CONNECTION_TIMEOUT = "connectionTimeout";
 
   private static final String ARG_NO_SUBSCRIPTIONS = "noSubscriptions";
 
@@ -148,6 +157,8 @@ public class SiriRepeaterCommandLineConfiguration {
         "consumer address default for requestor");
     options.addOption(ARG_LOG_RAW_XML, true, "log raw xml");
     options.addOption(ARG_FORMAT_OUTPUT_XML, false, "format output xml");
+    options.addOption(ARG_RESPONSE_TIMEOUT, true, "response timeout");
+    options.addOption(ARG_CONNECTION_TIMEOUT, true, "connection timeout");
     options.addOption(ARG_NO_SUBSCRIPTIONS, false, "no subscriptions");
     options.addOption(ARG_FILTER, true, "filter specification");
   }
@@ -158,6 +169,7 @@ public class SiriRepeaterCommandLineConfiguration {
     SiriClient siriClient = injector.getInstance(SiriClient.class);
     SiriServer siriServer = injector.getInstance(SiriServer.class);
     SiriServerSubscriptionManager subscriptionManager = injector.getInstance(SiriServerSubscriptionManager.class);
+    SchedulingService schedulingService = injector.getInstance(SchedulingService.class);
     injector.getInstance(StatusServletSource.class);
 
     /**
@@ -187,6 +199,18 @@ public class SiriRepeaterCommandLineConfiguration {
 
     siriClient.setFormatOutputXmlByDefault(cli.hasOption(ARG_FORMAT_OUTPUT_XML));
     siriServer.setFormatOutputXmlByDefault(cli.hasOption(ARG_FORMAT_OUTPUT_XML));
+
+    if (cli.hasOption(ARG_RESPONSE_TIMEOUT)) {
+      int responseTimeout = Integer.parseInt(cli.getOptionValue(ARG_RESPONSE_TIMEOUT));
+      _log.info("setting responseTimeout=" + responseTimeout);
+      schedulingService.setResponseTimeout(responseTimeout);
+    }
+    if (cli.hasOption(ARG_CONNECTION_TIMEOUT)) {
+      int connectionTimeout = Integer.parseInt(cli.getOptionValue(ARG_CONNECTION_TIMEOUT));
+      _log.info("setting connectionTimeout=" + connectionTimeout);
+      siriClient.setConnectionTimeout(connectionTimeout);
+      siriServer.setConnectionTimeout(connectionTimeout);
+    }
 
     /**
      * Filters

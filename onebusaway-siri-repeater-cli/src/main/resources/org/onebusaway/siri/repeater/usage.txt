@@ -8,6 +8,7 @@ Args:
   -repeaterUrl=url                url your repeater server binds to and listens to for incoming client requests
   -privateRepeaterUrl=url         internal url your repeater server will actually bind to, if specified (default=repeaterUrl)
   -responseTimeout=time           time, in seconds, to wait for a response from a SIRI endpoint after a request
+  -connectionTimeout=time         time, in seconds, to wait when establishing or reading from an HTTP connection
   -logRawXml=..                   if specified, indicates the raw SIRI request and response XML should be logged to the console
                                   valid values are "NONE" (the default), "DATA", "CONTROL", and "ALL"
   -filter=...                     specifies a SIRI data filter (see below)

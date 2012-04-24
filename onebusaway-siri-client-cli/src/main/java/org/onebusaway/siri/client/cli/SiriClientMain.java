@@ -71,6 +71,8 @@ public class SiriClientMain {
   private static final String ARG_OUTPUT = "output";
 
   private static final String ARG_RESPONSE_TIMEOUT = "responseTimeout";
+  
+  private static final String ARG_CONNECTION_TIMEOUT = "connectionTimeout";
 
   private static final String ARG_NO_SUBSCRIPTIONS = "noSubscriptions";
 
@@ -177,6 +179,10 @@ public class SiriClientMain {
     if (cli.hasOption(ARG_RESPONSE_TIMEOUT)) {
       int responseTimeout = Integer.parseInt(cli.getOptionValue(ARG_RESPONSE_TIMEOUT));
       _schedulingService.setResponseTimeout(responseTimeout);
+    }    
+    if (cli.hasOption(ARG_CONNECTION_TIMEOUT)) {
+      int connectionTimeout = Integer.parseInt(cli.getOptionValue(ARG_CONNECTION_TIMEOUT));
+      _client.setConnectionTimeout(connectionTimeout);
     }
 
     _client.setFormatOutputXmlByDefault(cli.hasOption(ARG_FORMAT_OUTPUT_XML));
@@ -316,6 +322,7 @@ public class SiriClientMain {
     options.addOption(ARG_PRIVATE_CLIENT_URL, true, "siri private client url");
     options.addOption(ARG_OUTPUT, true, "output");
     options.addOption(ARG_RESPONSE_TIMEOUT, true, "response timeout");
+    options.addOption(ARG_CONNECTION_TIMEOUT, true, "connection timeout");
     options.addOption(ARG_LOG_RAW_XML, true, "log raw xml");
     options.addOption(ARG_FORMAT_OUTPUT_XML, false, "format output xml");
     options.addOption(ARG_NO_SUBSCRIPTIONS, false, "");

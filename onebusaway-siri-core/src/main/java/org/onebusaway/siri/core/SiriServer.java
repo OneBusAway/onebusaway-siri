@@ -174,6 +174,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
    */
   @PostConstruct
   public void start() {
+    super.start();
     _serviceStartedTimestamp = System.currentTimeMillis();
   }
 

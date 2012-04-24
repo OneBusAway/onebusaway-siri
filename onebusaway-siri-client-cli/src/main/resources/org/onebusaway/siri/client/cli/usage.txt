@@ -7,6 +7,7 @@ Args:
   -privateClientUrl url           the internal url your client will actually bind to, if specified (default=clientUrl)
   -output path                    write SIRI payload output to the specified path
   -responseTimeout time           time, in seconds, to wait for a response from a SIRI endpoint after a request
+  -connectionTimeout=time         time, in seconds, to wait when establishing or reading from an HTTP connection
   -logRawXml ...                  if specified, indicates the raw SIRI request and response XML should be logged to the console
                                   valid values are "NONE" (the default), "DATA", "CONTROL", and "ALL"
   

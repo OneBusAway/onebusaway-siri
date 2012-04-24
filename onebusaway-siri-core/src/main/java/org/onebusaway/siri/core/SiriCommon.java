@@ -39,6 +39,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -55,6 +56,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.onebusaway.siri.core.exceptions.SiriConnectionException;
 import org.onebusaway.siri.core.exceptions.SiriException;
@@ -109,6 +111,8 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
    */
   protected HttpClientService _httpClientService;
 
+  private DefaultHttpClient _client;
+
   private String _identity;
 
   private String _url;
@@ -129,6 +133,8 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
   protected boolean _formatOutputXmlByDefault = false;
 
   private AtomicInteger _requestCount = new AtomicInteger();
+
+  private int _connectionTimeout = 0;
 
   public SiriCommon() {
 
@@ -305,6 +311,54 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
   }
 
   /**
+   * When specified, indicates connection timeout to be used when establishing
+   * connections to a remote endpoint using an HTTP client and for socket
+   * timeouts once that connection is established.
+   * 
+   * @param connectionTimeout time, in seconds
+   */
+  public void setConnectionTimeout(int connectionTimeout) {
+    _connectionTimeout = connectionTimeout;
+  }
+
+  /****
+   * Setup Methods
+   ****/
+
+  @PostConstruct
+  public void start() {
+    _client = new DefaultHttpClient();
+    HttpParams params = _client.getParams();
+
+    /**
+     * Override the default local address used for outgoing http client
+     * connections, if specified
+     */
+    if (_localAddress != null) {
+      params.setParameter(ConnRoutePNames.LOCAL_ADDRESS, _localAddress);
+    }
+
+    if (_connectionTimeout != 0) {
+      HttpConnectionParams.setConnectionTimeout(params, _connectionTimeout * 1000);
+      HttpConnectionParams.setSoTimeout(params, _connectionTimeout * 1000);
+    }
+  }
+
+  /****
+   * {@link StatusProviderService} Interface
+   ****/
+
+  @Override
+  public void getStatus(Map<String, String> status) {
+    status.put("siri.common.requestCounter",
+        Integer.toString(_requestCount.get()));
+  }
+
+  /***
+   * Core Methods
+   ****/
+
+  /**
    * It's up to sub-classes to implement this properly. We just provide it here
    * to make {@link SiriCommon} appropriate as for exporting, as opposed to
    * working with SiriClient and SiriServer by themselves.
@@ -312,12 +366,6 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
   @Override
   public void handleRawRequest(Reader reader, Writer writer) {
 
-  }
-
-  @Override
-  public void getStatus(Map<String, String> status) {
-    status.put("siri.common.requestCounter",
-        Integer.toString(_requestCount.get()));
   }
 
   /****
@@ -445,12 +493,15 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
   /**
    * Override this method to provide custom behavior for processing a response
    * from a SIRI endoint.
+   * 
    * @param siri the payload
    * @param asynchronousResponse true if the response was received
    *          asynchronously, otherwise false
-   * @param siriClientRequest the request that initiated this response, or potentially null if asynchronous
+   * @param siriClientRequest the request that initiated this response, or
+   *          potentially null if asynchronous
    */
-  protected void handleSiriResponse(Siri siri, boolean asynchronousResponse, SiriClientRequest siriClientRequest) {
+  protected void handleSiriResponse(Siri siri, boolean asynchronousResponse,
+      SiriClientRequest siriClientRequest) {
 
   }
 
@@ -920,17 +971,6 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
    */
   protected HttpResponse sendHttpRequest(String url, String content) {
 
-    DefaultHttpClient client = new DefaultHttpClient();
-
-    /**
-     * Override the default local address used for outgoing http client
-     * connections, if specified
-     */
-    if (_localAddress != null) {
-      HttpParams params = client.getParams();
-      params.setParameter(ConnRoutePNames.LOCAL_ADDRESS, _localAddress);
-    }
-
     HttpPost post = new HttpPost(url);
 
     try {
@@ -939,7 +979,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
       throw new SiriSerializationException(ex);
     }
 
-    HttpResponse response = _httpClientService.executeHttpMethod(client, post);
+    HttpResponse response = _httpClientService.executeHttpMethod(_client, post);
     StatusLine statusLine = response.getStatusLine();
 
     if (statusLine.getStatusCode() != HttpStatus.SC_OK) {
@@ -1105,7 +1145,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
     public AsynchronousClientRequest(SiriClientRequest request) {
       this.request = request;
     }
-    
+
     SiriClientRequest getRequest() {
       return request;
     }
