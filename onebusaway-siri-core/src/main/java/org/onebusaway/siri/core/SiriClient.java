@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -153,8 +152,9 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    * any open subscriptions. Note that this method is typically called
    * automatically by the {@link LifecycleService}.
    */
-  @PreDestroy
+  @Override
   public void stop() {
+    super.stop();
     _subscriptionManager.terminateAllSubscriptions(_waitForTerminateSubscriptionResponseOnExit);
   }
 

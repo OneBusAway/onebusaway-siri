@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -53,9 +54,17 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.params.ConnManagerParams;
 import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.onebusaway.siri.core.exceptions.SiriConnectionException;
@@ -327,8 +336,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
 
   @PostConstruct
   public void start() {
-    _client = new DefaultHttpClient();
-    HttpParams params = _client.getParams();
+    HttpParams params = new BasicHttpParams();
 
     /**
      * Override the default local address used for outgoing http client
@@ -338,10 +346,40 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
       params.setParameter(ConnRoutePNames.LOCAL_ADDRESS, _localAddress);
     }
 
+    /**
+     * Set the timeout for both connections to a socket and for reading from a
+     * socket.
+     */
     if (_connectionTimeout != 0) {
-      HttpConnectionParams.setConnectionTimeout(params, _connectionTimeout * 1000);
+      HttpConnectionParams.setConnectionTimeout(params,
+          _connectionTimeout * 1000);
       HttpConnectionParams.setSoTimeout(params, _connectionTimeout * 1000);
     }
+
+    /**
+     * We want to allow a fair-amount of concurrent connections. TODO: Can we
+     * auto-tune this somehow?
+     */
+    ConnManagerParams.setMaxTotalConnections(params, 50);
+
+    /**
+     * We want to create a connection manager that can pool multiple
+     * connections.
+     */
+    SchemeRegistry schemeRegistry = new SchemeRegistry();
+    schemeRegistry.register(new Scheme("http",
+        PlainSocketFactory.getSocketFactory(), 80));
+    schemeRegistry.register(new Scheme("https",
+        SSLSocketFactory.getSocketFactory(), 443));
+    ClientConnectionManager connectionManager = new ThreadSafeClientConnManager(
+        params, schemeRegistry);
+
+    _client = new DefaultHttpClient(connectionManager, params);
+  }
+
+  @PreDestroy
+  public void stop() {
+    _client.getConnectionManager().shutdown();
   }
 
   /****
@@ -461,6 +499,12 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
 
     } catch (Exception ex) {
       throw new SiriSerializationException(ex);
+    } finally {
+      try {
+        entity.consumeContent();
+      } catch (IOException ex) {
+
+      }
     }
 
     if (responseData != null && responseData instanceof Siri) {
@@ -873,7 +917,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
 
   /**
    * This method encapsulates our reconnection behavior around the call to
-   * {@link #sendHttpRequest(String, String)}.
+   * {@link #sendHttpRequestWithResponse(String, String)}.
    * 
    * @param request
    * @param payload
@@ -889,7 +933,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
 
       try {
 
-        HttpResponse response = sendHttpRequest(url, content);
+        HttpResponse response = sendHttpRequestWithResponse(url, content);
 
         /**
          * Reset our connection error count and note that we've successfully
@@ -935,7 +979,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
 
     } else {
 
-      return sendHttpRequest(url, content);
+      return sendHttpRequestWithResponse(url, content);
     }
   }
 
@@ -959,6 +1003,29 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
   }
 
   /**
+   * Construct an HTTP POST request, send it, and ignore any content in the
+   * response.
+   * 
+   * @param url the target url where we will POST
+   * @param content the content of the POST request
+   */
+  protected void sendHttpRequest(String url, String content) {
+    HttpResponse response = sendHttpRequestWithResponse(url, content);
+    /**
+     * Make sure we consume the response content so that the connection might be
+     * reused.
+     */
+    HttpEntity entity = response.getEntity();
+    if (entity != null) {
+      try {
+        entity.consumeContent();
+      } catch (IOException e) {
+
+      }
+    }
+  }
+
+  /**
    * Construct an HTTP POST request, send it, and decode the response.
    * 
    * TODO: We could probably encapsulate this even further to make it easier to
@@ -969,7 +1036,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
    * @param content the content of the POST request
    * @return the response
    */
-  protected HttpResponse sendHttpRequest(String url, String content) {
+  protected HttpResponse sendHttpRequestWithResponse(String url, String content) {
 
     HttpPost post = new HttpPost(url);
 
@@ -996,6 +1063,7 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
           _log.warn("error connecting to url " + post.getURI() + " statusCode="
               + statusLine.getStatusCode() + "\nrequestBody=" + content
               + "\nresponseBody=" + b.toString());
+          entity.consumeContent();
         } catch (IOException ex) {
           _log.warn("error reading http response", ex);
         }

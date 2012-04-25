@@ -22,7 +22,6 @@
     <dependency>
       <groupId>org.onebusaway</groupId>
       <artifactId>onebusaway-guice-jetty-exporter</artifactId>
-      <version>1.0.1-SNAPSHOT</version>
     </dependency>
 
     <dependency>

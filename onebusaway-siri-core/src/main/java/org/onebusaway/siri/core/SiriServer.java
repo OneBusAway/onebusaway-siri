@@ -385,7 +385,7 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
     SiriVersioning versioning = SiriVersioning.getInstance();
     Object data = versioning.getPayloadAsVersion(siri, targetVersion);
     String content = marshallToString(data);
-    
+
     long tStart = System.currentTimeMillis();
     boolean connectionError = false;
     try {
@@ -397,9 +397,10 @@ public class SiriServer extends SiriCommon implements SiriRawHandler {
       // to check that their subscription still exists.
       // _subscriptionManager.terminateSubscriptionWithId(event.getSubscriptionId());
     }
-    
+
     long tStop = System.currentTimeMillis();
-    _subscriptionManager.recordPublicationStatistics(event, tStop - tStart, connectionError);
+    _subscriptionManager.recordPublicationStatistics(event, tStop - tStart,
+        connectionError);
   }
 
   /****
