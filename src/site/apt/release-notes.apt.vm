@@ -2,6 +2,21 @@ Release Notes
 
 * ${currentVersion}
 
+  * Initial entries for SIRI replay tool, which can simulate a SIRI server using a log of SIRI XML messages
+    previously stored using onebusaway-siri-client.
+    
+  * Add better support for resource management when dealing with multiple, potentially slow endpoints.  This includes
+    thread and HTTP connection pools for concurrent operations and support for connection timeout parameters for
+    slow HTTP connections.
+    
+  * Fix a bug where a subscription was not properly cleaned up, even if the SIRI endpoint indicates that the
+    subscription termination might not have been successful.
+  
+  * More per-connection statistics to measure connection errors, the average time needed to send a ServiceDelivery
+    to a client, the average delay between when a ServiceDelivery was generated and when we actually
+    send it to the client, and the average delay between when a ServiceDelivery was generated and when we actually
+    receive it in the client.
+
   * Full Documentation: {{${site_base_url}/onebusaway-siri/${currentVersion}/}}
   
 * 1.0.5
