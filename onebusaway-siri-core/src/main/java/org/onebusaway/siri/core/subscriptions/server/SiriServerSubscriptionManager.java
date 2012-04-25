@@ -46,7 +46,6 @@ import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcher;
 import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.handlers.SiriSubscriptionManagerListener;
-import org.onebusaway.siri.core.services.ExponentialWeightedAverageForTimeWindow;
 import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.services.StatusProviderService;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
@@ -349,21 +348,12 @@ public class SiriServerSubscriptionManager implements StatusProviderService {
   }
 
   public void recordPublicationStatistics(SiriServerSubscriptionEvent event,
-      long timeNeededToPublish) {
+      long timeNeededToPublish, boolean connectionError) {
     ServerSubscriptionChannel channel = _channelsByAddress.get(event.getAddress());
     if (channel == null) {
       return;
     }
-    long now = System.currentTimeMillis();
-
-    ExponentialWeightedAverageForTimeWindow timeWindow = channel.getAverageTimeNeededToPublish();
-    timeWindow.addValueAtTime(timeNeededToPublish, now);
-
-    ServiceDelivery delivery = event.getDelivery();
-    Date responseTimestamp = delivery.getResponseTimestamp();
-    long delay = now - responseTimestamp.getTime();
-    ExponentialWeightedAverageForTimeWindow delayWindow = channel.getAveragePublicationDelay();
-    delayWindow.addValueAtTime(delay, now);
+    channel.updatePublicationStatistics(event, timeNeededToPublish, connectionError);
   }
 
   /****
@@ -765,15 +755,8 @@ public class SiriServerSubscriptionManager implements StatusProviderService {
     }
 
     for (ServerSubscriptionChannel channel : _channelsByAddress.values()) {
-
-      ExponentialWeightedAverageForTimeWindow timeNeededToPublish = channel.getAverageTimeNeededToPublish();
-      status.put(
-          "siri.server.averageTimeNeededToPublish[" + channel.getAddress()
-              + "]", Long.toString((long) timeNeededToPublish.getAverage()));
-
-      ExponentialWeightedAverageForTimeWindow publicationDelay = channel.getAveragePublicationDelay();
-      status.put("siri.server.averagePublicationDelay[" + channel.getAddress()
-          + "]", Long.toString((long) publicationDelay.getAverage()));
+      String prefix = "siri.server.channel[" + channel.getAddress() + "]";
+      channel.getStatus(prefix, status);
     }
   }
 }

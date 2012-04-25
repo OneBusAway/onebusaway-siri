@@ -15,13 +15,17 @@
  */
 package org.onebusaway.siri.core.subscriptions.server;
 
+import java.util.Date;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 
 import org.onebusaway.siri.core.services.ExponentialWeightedAverageForTimeWindow;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
+
+import uk.org.siri.siri.ServiceDelivery;
 
 class ServerSubscriptionChannel {
 
@@ -54,6 +58,8 @@ class ServerSubscriptionChannel {
    */
   private final ExponentialWeightedAverageForTimeWindow _averagePublicationDelay = new ExponentialWeightedAverageForTimeWindow(
       5 * 60 * 1000);
+
+  private int _connectionErrorCount = 0;
 
   public ServerSubscriptionChannel(String address, ESiriVersion targetVersion) {
     this.address = address;
@@ -88,11 +94,30 @@ class ServerSubscriptionChannel {
     this.heartbeatTask = heartbeatTask;
   }
 
-  public ExponentialWeightedAverageForTimeWindow getAverageTimeNeededToPublish() {
-    return _averageTimeNeededToPublish;
+  public synchronized void updatePublicationStatistics(
+      SiriServerSubscriptionEvent event, long timeNeededToPublish,
+      boolean connectionError) {
+
+    long now = System.currentTimeMillis();
+
+    _averageTimeNeededToPublish.addValueAtTime(timeNeededToPublish, now);
+
+    ServiceDelivery delivery = event.getDelivery();
+    Date responseTimestamp = delivery.getResponseTimestamp();
+    long delay = now - responseTimestamp.getTime();
+    _averagePublicationDelay.addValueAtTime(delay, now);
+
+    if (connectionError) {
+      _connectionErrorCount++;
+    }
   }
 
-  public ExponentialWeightedAverageForTimeWindow getAveragePublicationDelay() {
-    return _averagePublicationDelay;
+  public synchronized void getStatus(String prefix, Map<String, String> status) {
+    status.put(prefix + ".averageTimeNeededToPublish",
+        Long.toString((long) _averageTimeNeededToPublish.getAverage()));
+    status.put(prefix + ".averagePublicationDelay",
+        Long.toString((long) _averagePublicationDelay.getAverage()));
+    status.put(prefix + ".connectionErrorCount",
+        Integer.toString(_connectionErrorCount));
   }
 }

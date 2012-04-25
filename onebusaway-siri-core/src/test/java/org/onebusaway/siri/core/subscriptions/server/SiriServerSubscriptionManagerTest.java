@@ -63,15 +63,17 @@ public class SiriServerSubscriptionManagerTest {
     SiriServerSubscriptionEvent event = new SiriServerSubscriptionEvent(
         new SubscriptionId("alpha", "beta"), "10.0.0.1", ESiriVersion.V1_3,
         delivery);
-    _manager.recordPublicationStatistics(event, 1000);
+    _manager.recordPublicationStatistics(event, 1000, true);
 
     Map<String, String> status = new HashMap<String, String>();
     _manager.getStatus(status);
 
     assertEquals("1000",
-        status.get("siri.server.averageTimeNeededToPublish[10.0.0.1]"));
-    long delay = Long.parseLong(status.get("siri.server.averagePublicationDelay[10.0.0.1]"));
+        status.get("siri.server.channel[10.0.0.1].averageTimeNeededToPublish"));
+    long delay = Long.parseLong(status.get("siri.server.channel[10.0.0.1].averagePublicationDelay"));
     assertEquals(delay, 2000.0, 10.0);
+    assertEquals("1",
+        status.get("siri.server.channel[10.0.0.1].connectionErrorCount"));
   }
 
 }
