@@ -33,6 +33,7 @@ import javax.inject.Inject;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
+import org.onebusaway.cli.Daemonizer;
 import org.onebusaway.guice.jsr250.LifecycleService;
 import org.onebusaway.siri.core.SiriChannelInfo;
 import org.onebusaway.siri.core.SiriClient;
@@ -142,9 +143,13 @@ public class SiriClientMain {
 
     Options options = new Options();
     buildOptions(options);
+    
+    Daemonizer.buildOptions(options);
 
     PosixParser parser = new PosixParser();
     CommandLine cli = parser.parse(options, args);
+    
+    Daemonizer.handleDaemonization(cli);
 
     args = cli.getArgs();
 
