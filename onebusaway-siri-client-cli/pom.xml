@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>onebusaway-siri</artifactId>
@@ -23,7 +24,7 @@
     <dependency>
       <groupId>org.onebusaway</groupId>
       <artifactId>onebusaway-cli</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
@@ -69,4 +70,106 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>rpm</id>
+      <activation>
+        <file>
+          <exists>/usr/bin/rpmbuild</exists>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>rpm-maven-plugin</artifactId>
+            <version>2.1-alpha-1</version>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>rpm</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <name>onebusaway-siri-client</name>
+              <copyright>Apache License V2</copyright>
+              <group>Application/Transit</group>
+              <packager>OneBusAway</packager>
+              <prefix>/usr</prefix>
+              <release>0</release>
+              <mappings>
+                <!-- The JAR file -->
+                <mapping>
+                  <directory>/usr/share/onebusaway-siri-client</directory>
+                  <filemode>644</filemode>
+                  <username>root</username>
+                  <groupname>root</groupname>
+                  <artifact />
+                </mapping>
+                <!-- Configuration files -->
+                <mapping>
+                  <directory>/etc/onebusaway-siri-client</directory>
+                  <configuration>true</configuration>
+                  <filemode>640</filemode>
+                  <username>root</username>
+                  <groupname>root</groupname>
+                  <sources>
+                    <source>
+                      <location>src/main/rpm/etc/onebusaway-siri-client</location>
+                    </source>
+                  </sources>
+                </mapping>
+                <!-- Init.d Scripts -->
+                <mapping>
+                  <directory>/etc/init.d</directory>
+                  <directoryIncluded>false</directoryIncluded>
+                  <filemode>755</filemode>
+                  <username>root</username>
+                  <groupname>root</groupname>
+                  <sources>
+                    <source>
+                      <location>src/main/rpm/etc/init.d</location>
+                    </source>
+                  </sources>
+                </mapping>
+                <!-- Log Directory -->
+                <mapping>
+                  <directory>/var/log/onebusaway-siri-client</directory>
+                  <filemode>750</filemode>
+                  <username>root</username>
+                  <groupname>root</groupname>
+                </mapping>
+              </mappings>
+              <postinstallScriptlet>
+                <script>chkconfig --add onebusaway-siri-client</script>
+              </postinstallScriptlet>
+              <preremoveScriptlet>
+                <script>chkconfig --del onebusaway-siri-client</script>
+              </preremoveScriptlet>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+                <configuration>
+                  <descriptors>
+                    <descriptor>assembly.xml</descriptor>
+                  </descriptors>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
