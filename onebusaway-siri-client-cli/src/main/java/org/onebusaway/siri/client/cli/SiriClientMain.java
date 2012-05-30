@@ -177,6 +177,7 @@ public class SiriClientMain {
 
     if (cli.hasOption(ARG_OUTPUT)) {
       _outputFormat = cli.getOptionValue(ARG_OUTPUT);
+      _log.info("setting output=" + _outputFormat);
     } else {
       _output = new PrintWriter(System.out);
     }
