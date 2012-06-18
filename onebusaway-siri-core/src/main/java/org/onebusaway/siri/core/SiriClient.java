@@ -154,8 +154,9 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
    */
   @Override
   public void stop() {
-    super.stop();
+    _log.info("stopping SiriClient");
     _subscriptionManager.terminateAllSubscriptions(_waitForTerminateSubscriptionResponseOnExit);
+    super.stop();    
   }
 
   /****
@@ -351,7 +352,8 @@ public class SiriClient extends SiriCommon implements SiriClientHandler,
     }
 
     checkServiceDeliveryForUnknownSubscriptions(serviceDelivery);
-
+    
+    _subscriptionManager.recordServiceDeliveryStatistics(serviceDelivery);
     SiriChannelInfo channelInfo = _subscriptionManager.getChannelInfoForServiceDelivery(serviceDelivery);
 
     if (siriClientRequest != null
