@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2012 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +24,7 @@ import java.util.concurrent.ScheduledFuture;
 
 import org.onebusaway.siri.core.services.ExponentialWeightedAverageForTimeWindow;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
+import org.onebusaway.siri.core.subscriptions.SubscriptionSupport;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
 import uk.org.siri.siri.ServiceDelivery;
@@ -38,6 +40,8 @@ class ServerSubscriptionChannel {
   private final ESiriVersion targetVersion;
 
   private final Set<SubscriptionId> subscriptions = new HashSet<SubscriptionId>();
+
+  private final Date creationTime = new Date();
 
   private long heartbeatInterval = 0;
 
@@ -119,5 +123,7 @@ class ServerSubscriptionChannel {
         Long.toString((long) _averagePublicationDelay.getAverage()));
     status.put(prefix + ".connectionErrorCount",
         Integer.toString(_connectionErrorCount));
+    status.put(prefix + ".creationTime",
+        SubscriptionSupport.getDateAsString(creationTime));
   }
 }

@@ -179,6 +179,13 @@ public class SiriClientSubscriptionManager implements StatusProviderService {
     return isSubscriptionActive(id);
   }
 
+  public void recordServiceDeliveryStatistics(ServiceDelivery serviceDelivery) {
+    Set<ClientSubscriptionInstance> instances = getSubscriptionInstancesForServiceDelivery(serviceDelivery);
+    for (ClientSubscriptionInstance instance : instances) {
+      instance.recordServiceDeliveryStatistics(serviceDelivery);
+    }
+  }
+
   public SiriChannelInfo getChannelInfoForServiceDelivery(
       ServiceDelivery serviceDelivery) {
 
@@ -201,19 +208,10 @@ public class SiriClientSubscriptionManager implements StatusProviderService {
     /**
      * Also try looking up by a specific subscription
      */
-    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
-      List<AbstractServiceDeliveryStructure> moduleDeliveries = SiriLibrary.getServiceDeliveriesForModule(
-          serviceDelivery, moduleType);
-      for (AbstractServiceDeliveryStructure moduleDelivery : moduleDeliveries) {
-        if (ClientSupport.hasSubscriptionIdForModuleDelivery(moduleDelivery)) {
-          SubscriptionId subscriptionId = ClientSupport.getSubscriptionIdForModuleDelivery(moduleDelivery);
-          ClientSubscriptionInstance instance = _activeSubscriptions.get(subscriptionId);
-          if (instance != null) {
-            channels.add(instance.getChannel());
-            requests.add(instance.getRequest());
-          }
-        }
-      }
+    Set<ClientSubscriptionInstance> instances = getSubscriptionInstancesForServiceDelivery(serviceDelivery);
+    for (ClientSubscriptionInstance instance : instances) {
+      channels.add(instance.getChannel());
+      requests.add(instance.getRequest());
     }
 
     channelInfo.setSiriClientRequests(new ArrayList<SiriClientRequest>(requests));
@@ -278,6 +276,18 @@ public class SiriClientSubscriptionManager implements StatusProviderService {
         Integer.toString(_activeChannels.size()));
     status.put("siri.client.activeSubscriptions",
         Integer.toString(_activeSubscriptions.size()));
+
+    for (ClientSubscriptionChannel channel : _activeChannels.values()) {
+      String prefix = "siri.client.activeChannel[" + channel.getAddress() + "]";
+      channel.getStatus(prefix, status);
+    }
+
+    for (ClientSubscriptionInstance instance : _activeSubscriptions.values()) {
+      SubscriptionId id = instance.getSubscriptionId();
+      String prefix = "siri.server.activeSubscription["
+          + id.getSubscriptionId() + "," + id.getSubscriptionId() + "]";
+      instance.getStatus(prefix, status);
+    }
   }
 
   /****
@@ -505,6 +515,33 @@ public class SiriClientSubscriptionManager implements StatusProviderService {
   }
 
   /**
+   * 
+   * @param serviceDelivery
+   * @return the set of
+   */
+  private Set<ClientSubscriptionInstance> getSubscriptionInstancesForServiceDelivery(
+      ServiceDelivery serviceDelivery) {
+    Set<ClientSubscriptionInstance> instances = new HashSet<ClientSubscriptionInstance>();
+    /**
+     * Also try looking up by a specific subscription
+     */
+    for (ESiriModuleType moduleType : ESiriModuleType.values()) {
+      List<AbstractServiceDeliveryStructure> moduleDeliveries = SiriLibrary.getServiceDeliveriesForModule(
+          serviceDelivery, moduleType);
+      for (AbstractServiceDeliveryStructure moduleDelivery : moduleDeliveries) {
+        if (ClientSupport.hasSubscriptionIdForModuleDelivery(moduleDelivery)) {
+          SubscriptionId subscriptionId = ClientSupport.getSubscriptionIdForModuleDelivery(moduleDelivery);
+          ClientSubscriptionInstance instance = _activeSubscriptions.get(subscriptionId);
+          if (instance != null) {
+            instances.add(instance);
+          }
+        }
+      }
+    }
+    return instances;
+  }
+
+  /**
    * When a subscription is updated to active, we register an expiration task
    * that will terminate and reestablish a subscription when its expiration time
    * is reached, based on either the
@@ -549,5 +586,4 @@ public class SiriClientSubscriptionManager implements StatusProviderService {
     }
     return expiration;
   }
-
 }

@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2012 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +16,17 @@
  */
 package org.onebusaway.siri.core.subscriptions.client;
 
+import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.onebusaway.siri.core.ESiriModuleType;
 import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
+import org.onebusaway.siri.core.subscriptions.SubscriptionSupport;
 
+import uk.org.siri.siri.ServiceDelivery;
 
 /**
  * Captures information about an active client-to-server subscription.
@@ -39,6 +45,10 @@ class ClientSubscriptionInstance {
   private final ESiriModuleType moduleType;
 
   private final ScheduledFuture<?> expirationTask;
+
+  private final Date creationTime = new Date();
+  
+  private AtomicInteger serviceDeliveryCount = new AtomicInteger();
 
   public ClientSubscriptionInstance(ClientSubscriptionChannel channel,
       SubscriptionId subscriptionId, SiriClientRequest request,
@@ -68,5 +78,20 @@ class ClientSubscriptionInstance {
 
   public ScheduledFuture<?> getExpirationTask() {
     return expirationTask;
+  }
+
+  public Date getCreationTime() {
+    return creationTime;
+  }
+
+  public synchronized void getStatus(String prefix, Map<String, String> status) {
+    status.put(prefix + ".address", channel.getAddress());
+    status.put(prefix + ".moduleType", moduleType.toString());
+    status.put(prefix + ".creationTime", SubscriptionSupport.getDateAsString(creationTime));
+    status.put(prefix + ".serviceDeliveryCount", Integer.toString(serviceDeliveryCount.get()));
+  }
+
+  public void recordServiceDeliveryStatistics(ServiceDelivery serviceDelivery) {
+    serviceDeliveryCount.incrementAndGet();
   }
 }

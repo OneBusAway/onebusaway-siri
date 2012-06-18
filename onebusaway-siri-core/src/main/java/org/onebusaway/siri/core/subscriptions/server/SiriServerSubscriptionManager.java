@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2012 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -750,12 +751,11 @@ public class SiriServerSubscriptionManager implements StatusProviderService {
       SubscriptionId id = instance.getId();
       String prefix = "siri.server.activeSubscription["
           + id.getSubscriptionId() + "," + id.getSubscriptionId() + "]";
-      status.put(prefix + ".address", instance.getChannel().getAddress());
-      status.put(prefix + ".module_type", instance.getModuleType().toString());
+      instance.getStatus(prefix, status);
     }
 
     for (ServerSubscriptionChannel channel : _channelsByAddress.values()) {
-      String prefix = "siri.server.channel[" + channel.getAddress() + "]";
+      String prefix = "siri.server.activeChannel[" + channel.getAddress() + "]";
       channel.getStatus(prefix, status);
     }
   }

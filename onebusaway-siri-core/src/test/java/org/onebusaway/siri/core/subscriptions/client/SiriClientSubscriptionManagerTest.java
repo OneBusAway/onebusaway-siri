@@ -21,6 +21,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -34,6 +36,7 @@ import org.onebusaway.siri.core.SiriClientRequest;
 import org.onebusaway.siri.core.SiriTypeFactory;
 import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
+import org.onebusaway.siri.core.subscriptions.SubscriptionSupport;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
 import uk.org.siri.siri.AbstractServiceDeliveryStructure;
@@ -44,6 +47,7 @@ import uk.org.siri.siri.StatusResponseStructure;
 import uk.org.siri.siri.SubscriptionRequest;
 import uk.org.siri.siri.SubscriptionResponseStructure;
 import uk.org.siri.siri.TerminateSubscriptionResponseStructure;
+import uk.org.siri.siri.VehicleMonitoringDeliveryStructure;
 
 public class SiriClientSubscriptionManagerTest {
 
@@ -437,5 +441,41 @@ public class SiriClientSubscriptionManagerTest {
 
     ClientSubscriptionChannel channel = captor.getValue();
     assertEquals("http://localhost/checkStatus", channel.getCheckStatusUrl());
+  }
+  
+  @Test
+  public void testStatus() {
+
+    SubscriptionResponseStructure response = new SubscriptionResponseStructure();
+    StatusResponseStructure statusResponse = new StatusResponseStructure();
+    SubscriptionId subscriptionId = new SubscriptionId("subscriberA",
+        "subscriptionB");
+    ESiriModuleType moduleType = ESiriModuleType.VEHICLE_MONITORING;
+    SiriClientRequest originalSubscriptionRequest = new SiriClientRequest();
+    originalSubscriptionRequest.setTargetUrl("http://localhost/");
+
+    Date when = new Date();
+    _manager.upgradePendingSubscription(response, statusResponse, subscriptionId,
+        moduleType, originalSubscriptionRequest);
+
+    ServiceDelivery serviceDelivery = new ServiceDelivery();
+    serviceDelivery.setAddress("http://localhost/");
+    VehicleMonitoringDeliveryStructure vmDelivery = new VehicleMonitoringDeliveryStructure();
+    vmDelivery.setSubscriberRef(SiriTypeFactory.particpantRef("subscriberA"));
+    vmDelivery.setSubscriptionRef(SiriTypeFactory.subscriptionId("subscriptionB"));
+    serviceDelivery.getVehicleMonitoringDelivery().add(vmDelivery);
+
+    _manager.recordServiceDeliveryStatistics(serviceDelivery);
+    
+    Map<String,String> status = new HashMap<String, String>();
+    _manager.getStatus(status);
+    
+    assertEquals("1", status.get("siri.client.activeSubscriptions"));
+    assertEquals(SubscriptionSupport.getDateAsString(when), status.get("siri.server.activeSubscription[subscriptionB,subscriptionB].creationTime"));
+    assertEquals("http://localhost/", status.get("siri.server.activeSubscription[subscriptionB,subscriptionB].address"));
+    assertEquals("VEHICLE_MONITORING", status.get("siri.server.activeSubscription[subscriptionB,subscriptionB].moduleType"));
+    assertEquals("1", status.get("siri.server.activeSubscription[subscriptionB,subscriptionB].serviceDeliveryCount"));
+    assertEquals("1", status.get("siri.client.activeChannels"));
+    assertEquals(SubscriptionSupport.getDateAsString(when), status.get("siri.client.activeChannel[http://localhost/].creationTime"));
   }
 }

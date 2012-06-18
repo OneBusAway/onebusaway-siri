@@ -18,10 +18,12 @@ package org.onebusaway.siri.core.subscriptions.client;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
+import org.onebusaway.siri.core.subscriptions.SubscriptionSupport;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
 class ClientSubscriptionChannel {
@@ -31,6 +33,8 @@ class ClientSubscriptionChannel {
   private final ESiriVersion targetVersion;
 
   private final Set<SubscriptionId> _subscriptions = new HashSet<SubscriptionId>();
+
+  private final Date creationTime = new Date();
 
   private Date lastServiceStartedTime = null;
 
@@ -147,6 +151,15 @@ class ClientSubscriptionChannel {
 
   public void setContext(Object context) {
     this.context = context;
+  }
+
+  public synchronized void getStatus(String prefix, Map<String, String> status) {
+    status.put(prefix + ".creationTime",
+        SubscriptionSupport.getDateAsString(creationTime));
+    if (lastServiceStartedTime != null) {
+      status.put(prefix + ".lastServiceStartedTime",
+          SubscriptionSupport.getDateAsString(lastServiceStartedTime));
+    }
   }
 
   @Override

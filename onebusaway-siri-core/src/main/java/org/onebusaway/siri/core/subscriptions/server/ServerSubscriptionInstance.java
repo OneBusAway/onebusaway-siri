@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2012 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +16,19 @@
  */
 package org.onebusaway.siri.core.subscriptions.server;
 
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.onebusaway.siri.core.ESiriModuleType;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
+import org.onebusaway.siri.core.subscriptions.SubscriptionSupport;
 
 import uk.org.siri.siri.AbstractSubscriptionStructure;
 
 class ServerSubscriptionInstance {
-
+  
   private final SubscriptionId id;
 
   private final ServerSubscriptionChannel channel;
@@ -36,6 +40,8 @@ class ServerSubscriptionInstance {
   private final AbstractSubscriptionStructure moduleSubscription;
 
   private final List<SiriModuleDeliveryFilter> filters;
+  
+  private final Date creationTime = new Date();
 
   public ServerSubscriptionInstance(SubscriptionId id,
       ServerSubscriptionChannel channel, ESiriModuleType moduleType,
@@ -71,6 +77,12 @@ class ServerSubscriptionInstance {
 
   public List<SiriModuleDeliveryFilter> getFilters() {
     return filters;
+  }
+  
+  public synchronized void getStatus(String prefix, Map<String, String> status) {
+    status.put(prefix + ".address", channel.getAddress());
+    status.put(prefix + ".moduleType", moduleType.toString());
+    status.put(prefix + ".creationTime", SubscriptionSupport.getDateAsString(creationTime));
   }
 
   @Override

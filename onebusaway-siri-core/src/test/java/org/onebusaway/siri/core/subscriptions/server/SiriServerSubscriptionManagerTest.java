@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.onebusaway.siri.core.SiriTypeFactory;
 import org.onebusaway.siri.core.subscriptions.SubscriptionId;
+import org.onebusaway.siri.core.subscriptions.SubscriptionSupport;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 
 import uk.org.siri.siri.ServiceDelivery;
@@ -55,6 +56,7 @@ public class SiriServerSubscriptionManagerTest {
     request.getVehicleMonitoringSubscriptionRequest().add(vmRequest);
 
     List<StatusResponseStructure> statuses = new ArrayList<StatusResponseStructure>();
+    Date when = new Date();
     _manager.handleSubscriptionRequest(request, ESiriVersion.V1_3, statuses);
 
     ServiceDelivery delivery = new ServiceDelivery();
@@ -68,12 +70,15 @@ public class SiriServerSubscriptionManagerTest {
     Map<String, String> status = new HashMap<String, String>();
     _manager.getStatus(status);
 
-    assertEquals("1000",
-        status.get("siri.server.channel[10.0.0.1].averageTimeNeededToPublish"));
-    long delay = Long.parseLong(status.get("siri.server.channel[10.0.0.1].averagePublicationDelay"));
+    assertEquals(
+        "1000",
+        status.get("siri.server.activeChannel[10.0.0.1].averageTimeNeededToPublish"));
+    long delay = Long.parseLong(status.get("siri.server.activeChannel[10.0.0.1].averagePublicationDelay"));
     assertEquals(delay, 2000.0, 10.0);
     assertEquals("1",
-        status.get("siri.server.channel[10.0.0.1].connectionErrorCount"));
+        status.get("siri.server.activeChannel[10.0.0.1].connectionErrorCount"));
+    assertEquals(SubscriptionSupport.getDateAsString(when),
+        status.get("siri.server.activeChannel[10.0.0.1].creationTime"));
   }
 
 }
