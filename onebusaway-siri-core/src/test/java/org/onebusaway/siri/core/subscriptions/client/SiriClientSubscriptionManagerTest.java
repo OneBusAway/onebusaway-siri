@@ -471,10 +471,10 @@ public class SiriClientSubscriptionManagerTest {
     _manager.getStatus(status);
     
     assertEquals("1", status.get("siri.client.activeSubscriptions"));
-    assertEquals(SubscriptionSupport.getDateAsString(when), status.get("siri.server.activeSubscription[subscriptionB,subscriptionB].creationTime"));
-    assertEquals("http://localhost/", status.get("siri.server.activeSubscription[subscriptionB,subscriptionB].address"));
-    assertEquals("VEHICLE_MONITORING", status.get("siri.server.activeSubscription[subscriptionB,subscriptionB].moduleType"));
-    assertEquals("1", status.get("siri.server.activeSubscription[subscriptionB,subscriptionB].serviceDeliveryCount"));
+    assertEquals(SubscriptionSupport.getDateAsString(when), status.get("siri.server.activeSubscription[subscriberA,subscriptionB].creationTime"));
+    assertEquals("http://localhost/", status.get("siri.server.activeSubscription[subscriberA,subscriptionB].address"));
+    assertEquals("VEHICLE_MONITORING", status.get("siri.server.activeSubscription[subscriberA,subscriptionB].moduleType"));
+    assertEquals("1", status.get("siri.server.activeSubscription[subscriberA,subscriptionB].serviceDeliveryCount"));
     assertEquals("1", status.get("siri.client.activeChannels"));
     assertEquals(SubscriptionSupport.getDateAsString(when), status.get("siri.client.activeChannel[http://localhost/].creationTime"));
   }
