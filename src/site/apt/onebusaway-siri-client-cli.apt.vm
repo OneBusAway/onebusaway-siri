@@ -17,7 +17,17 @@ Getting the Client
 
 #set( $url = 'http://nexus.onebusaway.org/service/local/artifact/maven/content?r=public&g=org.onebusaway&a=onebusaway-siri-client-cli&v=' + ${currentVersion} )
   
-  {{{${url}}onebusaway-siri-client-cli-${currentVersion}.jar}}
+  * {{{${url}}onebusaway-siri-client-cli-${currentVersion}.jar}}
+  
+  []
+
+  Also available as RPM-packaged Linux service:
+  
+#set( $rpm_url = 'http://nexus.onebusaway.org/service/local/artifact/maven/content?r=public&g=org.onebusaway&a=onebusaway-siri-client-cli&c=rpm&p=zip&v=' + ${currentVersion} )
+  
+  * {{{${rpm_url}}onebusaway-siri-client-cli-${currentVersion}-rpm.zip}}
+  
+  []
   
 Using the Client
 
