@@ -750,7 +750,7 @@ public class SiriServerSubscriptionManager implements StatusProviderService {
     for (ServerSubscriptionInstance instance : _activeSubscriptionsById.values()) {
       SubscriptionId id = instance.getId();
       String prefix = "siri.server.activeSubscription["
-          + id.getSubscriptionId() + "," + id.getSubscriptionId() + "]";
+          + id.getSubscriberId() + "," + id.getSubscriptionId() + "]";
       instance.getStatus(prefix, status);
     }
 
