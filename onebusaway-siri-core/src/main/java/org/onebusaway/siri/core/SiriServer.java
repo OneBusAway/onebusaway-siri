@@ -34,11 +34,11 @@ import org.onebusaway.siri.core.exceptions.SiriException;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.handlers.SiriRequestResponseHandler;
 import org.onebusaway.siri.core.handlers.SiriSubscriptionRequestHandler;
-import org.onebusaway.siri.core.services.StatusProviderService;
 import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionEvent;
 import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionManager;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.onebusaway.siri.core.versioning.SiriVersioning;
+import org.onebusaway.status_exporter.StatusProviderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

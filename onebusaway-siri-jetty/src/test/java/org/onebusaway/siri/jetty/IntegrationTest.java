@@ -32,6 +32,7 @@ import org.junit.Test;
 import org.onebusaway.guice.jsr250.LifecycleService;
 import org.onebusaway.siri.core.SiriCommon;
 import org.onebusaway.siri.core.SiriCoreModule;
+import org.onebusaway.status_exporter.StatusServletSource;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;

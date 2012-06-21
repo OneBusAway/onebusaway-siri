@@ -35,9 +35,9 @@ import org.onebusaway.siri.core.handlers.SiriClientHandler;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.handlers.SiriServiceDeliveryHandler;
 import org.onebusaway.siri.core.services.ExponentialWeightedAverageForTimeWindow;
-import org.onebusaway.siri.core.services.StatusProviderService;
 import org.onebusaway.siri.core.subscriptions.client.SiriClientSubscriptionManager;
 import org.onebusaway.siri.core.versioning.SiriVersioning;
+import org.onebusaway.status_exporter.StatusProviderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

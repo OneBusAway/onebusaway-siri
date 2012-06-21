@@ -47,7 +47,7 @@ import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionManag
 import org.onebusaway.siri.core.versioning.ESiriVersion;
 import org.onebusaway.siri.core.versioning.SiriVersioning;
 import org.onebusaway.siri.jetty.SiriJettyModule;
-import org.onebusaway.siri.jetty.StatusServletSource;
+import org.onebusaway.status_exporter.StatusServletSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

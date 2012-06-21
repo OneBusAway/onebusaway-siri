@@ -73,8 +73,8 @@ import org.onebusaway.siri.core.exceptions.SiriSerializationException;
 import org.onebusaway.siri.core.handlers.SiriRawHandler;
 import org.onebusaway.siri.core.services.HttpClientService;
 import org.onebusaway.siri.core.services.SchedulingService;
-import org.onebusaway.siri.core.services.StatusProviderService;
 import org.onebusaway.siri.core.versioning.SiriVersioning;
+import org.onebusaway.status_exporter.StatusProviderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -26,6 +26,10 @@
       <artifactId>onebusaway-cli</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.onebusaway</groupId>
+      <artifactId>onebusaway-status-jetty-exporter</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
     </dependency>
@@ -51,7 +55,8 @@
             <configuration>
               <shadedClassifierName>withAllDependencies</shadedClassifierName>
               <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                <transformer
+                  implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>org.onebusaway.siri.client.cli.SiriClientMain</mainClass>
                 </transformer>
               </transformers>

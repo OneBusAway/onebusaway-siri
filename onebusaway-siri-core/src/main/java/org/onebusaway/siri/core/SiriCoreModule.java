@@ -24,6 +24,7 @@ import org.onebusaway.guice.jsr250.JSR250Module;
 import org.onebusaway.siri.core.services.SiriServicesModule;
 import org.onebusaway.siri.core.subscriptions.client.SiriClientSubscriptionModule;
 import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionModule;
+import org.onebusaway.status_exporter.StatusServiceModule;
 
 import com.google.inject.Module;
 
@@ -33,6 +34,7 @@ public class SiriCoreModule {
     for (Module module : getModules()) {
       modules.add(module);
     }
+    StatusServiceModule.addModuleAndDependencies(modules);
   }
 
   public static List<Module> getModules() {

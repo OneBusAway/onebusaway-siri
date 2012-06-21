@@ -15,7 +15,6 @@
  */
 package org.onebusaway.siri.jetty;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Set;
@@ -25,12 +24,12 @@ import javax.servlet.Servlet;
 import org.onebusaway.guice.jetty_exporter.JettyExporterModule;
 import org.onebusaway.guice.jetty_exporter.ServletSource;
 import org.onebusaway.siri.core.SiriCommon;
+import org.onebusaway.status_exporter.StatusJettyExporterModule;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
-import com.google.inject.name.Names;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
@@ -40,6 +39,7 @@ public class SiriJettyModule extends AbstractModule {
   public static void addModuleAndDependencies(Set<Module> modules) {
     JettyExporterModule module = JettyExporterModule.addModuleAndDependencies(modules);
     modules.add(new SiriJettyModule(module.getSources()));
+    StatusJettyExporterModule.addModuleAndDependencies(modules);
   }
 
   final List<ServletSource> _sources;
@@ -50,18 +50,6 @@ public class SiriJettyModule extends AbstractModule {
 
   @Override
   protected void configure() {
-
-    bind(StatusServletSource.class);
-
-    try {
-      bind(URL.class).annotatedWith(Names.named(StatusServletSource.URL_NAME)).toInstance(
-          new URL("http://localhost/status"));
-    } catch (MalformedURLException e) {
-      throw new IllegalStateException(e);
-    }
-
-    bind(Servlet.class).annotatedWith(
-        Names.named(StatusServletSource.SERVLET_NAME)).to(StatusServlet.class);
 
     /**
      * The underlying {@link JettyExporterModule} will listen for

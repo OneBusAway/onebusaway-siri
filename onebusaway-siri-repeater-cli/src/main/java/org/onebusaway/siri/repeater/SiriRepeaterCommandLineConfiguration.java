@@ -47,7 +47,7 @@ import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilterMatcherFactoryIm
 import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.subscriptions.server.SiriServerSubscriptionManager;
 import org.onebusaway.siri.jetty.SiriJettyModule;
-import org.onebusaway.siri.jetty.StatusServletSource;
+import org.onebusaway.status_exporter.StatusServletSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

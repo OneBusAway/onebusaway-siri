@@ -15,16 +15,7 @@
  */
 package org.onebusaway.siri.core.services;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.google.inject.AbstractModule;
-import com.google.inject.TypeLiteral;
-import com.google.inject.matcher.Matchers;
-import com.google.inject.name.Names;
-import com.google.inject.spi.InjectionListener;
-import com.google.inject.spi.TypeEncounter;
-import com.google.inject.spi.TypeListener;
 
 /**
  * Guice module for wiring a number of base SIRI services.
@@ -38,29 +29,6 @@ public class SiriServicesModule extends AbstractModule {
   protected void configure() {
     bind(SchedulingService.class).to(SchedulingServiceImpl.class);
     bind(HttpClientService.class).to(HttpClientServiceImpl.class);
-
-    final Set<StatusProviderService> providers = new HashSet<StatusProviderService>();
-    bind(new TypeLiteral<Set<StatusProviderService>>() {
-    }).annotatedWith(Names.named(StatusService.PROVIDERS_NAME)).toInstance(
-        providers);
-
-    bind(StatusService.class);
-
-    /**
-     * Collect all the StatusProviderService instances as they are instantiated.
-     */
-    bindListener(Matchers.any(), new TypeListener() {
-      @Override
-      public <I> void hear(TypeLiteral<I> injectableType,
-          TypeEncounter<I> encounter) {
-
-        Class<? super I> type = injectableType.getRawType();
-
-        if (StatusProviderService.class.isAssignableFrom(type)) {
-          encounter.register(new InjectionListenerImpl<I>(providers));
-        }
-      }
-    });
   }
 
   @Override
@@ -75,21 +43,5 @@ public class SiriServicesModule extends AbstractModule {
     if (o == null)
       return false;
     return this.getClass().equals(o.getClass());
-  }
-
-  private static class InjectionListenerImpl<I> implements InjectionListener<I> {
-
-    private final Set<StatusProviderService> _providers;
-
-    public InjectionListenerImpl(Set<StatusProviderService> providers) {
-      _providers = providers;
-    }
-
-    @Override
-    public void afterInjection(I injectee) {
-      if (injectee instanceof StatusProviderService) {
-        _providers.add((StatusProviderService) injectee);
-      }
-    }
   }
 }
