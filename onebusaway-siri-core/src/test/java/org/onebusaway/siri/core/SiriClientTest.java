@@ -51,6 +51,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.onebusaway.siri.core.SiriCommon.AsynchronousClientRequest;
 import org.onebusaway.siri.core.services.HttpClientService;
+import org.onebusaway.siri.core.services.JAXBContextProvider;
 import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.subscriptions.client.SiriClientSubscriptionManager;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
@@ -92,6 +93,8 @@ public class SiriClientTest {
 
     _schedulingService = Mockito.mock(SchedulingService.class);
     _client.setSchedulingService(_schedulingService);
+    
+    _client.setJAXBContext(new JAXBContextProvider().get());
   }
 
   @Test

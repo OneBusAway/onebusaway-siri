@@ -146,15 +146,6 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
   private int _connectionTimeout = 0;
 
   public SiriCommon() {
-
-    try {
-      _log.info("Loading JAXB context.  This may take a few seconds...");
-      _jaxbContext = JAXBContext.newInstance("uk.org.siri:org.onebusaway.siri:uk.org.siri.siri");
-      _log.info("Loading JAXB context complete.");
-    } catch (JAXBException ex) {
-      throw new SiriSerializationException(ex);
-    }
-
     _identity = UUID.randomUUID().toString();
   }
 
@@ -166,6 +157,11 @@ public class SiriCommon implements SiriRawHandler, StatusProviderService {
   @Inject
   public void setHttpClientService(HttpClientService httpClientService) {
     _httpClientService = httpClientService;
+  }
+  
+  @Inject
+  public void setJAXBContext(JAXBContext jaxbContext) {
+    _jaxbContext = jaxbContext;
   }
 
   /**

@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2014 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,11 @@
  */
 package org.onebusaway.siri.core.services;
 
+import javax.xml.bind.JAXBContext;
+
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 
 /**
  * Guice module for wiring a number of base SIRI services.
@@ -29,8 +34,11 @@ public class SiriServicesModule extends AbstractModule {
   protected void configure() {
     bind(SchedulingService.class).to(SchedulingServiceImpl.class);
     bind(HttpClientService.class).to(HttpClientServiceImpl.class);
+    bind(JAXBContext.class).toProvider(JAXBContextProvider.class).in(
+        Singleton.class);
   }
 
+  @Provides
   @Override
   public int hashCode() {
     return this.getClass().hashCode();
