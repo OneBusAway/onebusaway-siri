@@ -216,21 +216,21 @@ public class SiriRepeaterCommandLineConfiguration {
      * Filters
      */
     if (cli.hasOption(ARG_FILTER)) {
+      for (String filterSpec : cli.getOptionValues(ARG_FILTER)) {
+        Map<String, String> filterArgs = SiriLibrary.getLineAsMap(filterSpec);
 
-      String filterSpec = cli.getOptionValue(ARG_FILTER);
-      Map<String, String> filterArgs = SiriLibrary.getLineAsMap(filterSpec);
+        SiriModuleDeliveryFilterMatcher matcher = createFilterMatcherForArgs(filterArgs);
+        SiriModuleDeliveryFilter filter = createFilterForArgs(filterArgs);
 
-      SiriModuleDeliveryFilterMatcher matcher = createFilterMatcherForArgs(filterArgs);
-      SiriModuleDeliveryFilter filter = createFilterForArgs(filterArgs);
+        if (!filterArgs.isEmpty()) {
+          List<String> keys = new ArrayList<String>(filterArgs.keySet());
+          Collections.sort(keys);
+          throw new SiriException(
+              "the following filter parameters were unknown: " + keys);
+        }
 
-      if (!filterArgs.isEmpty()) {
-        List<String> keys = new ArrayList<String>(filterArgs.keySet());
-        Collections.sort(keys);
-        throw new SiriException(
-            "the following filter parameters were unknown: " + keys);
+        subscriptionManager.addModuleDeliveryFilter(matcher, filter);
       }
-
-      subscriptionManager.addModuleDeliveryFilter(matcher, filter);
     }
 
     SiriClientRequestFactory factory = new SiriClientRequestFactory();
