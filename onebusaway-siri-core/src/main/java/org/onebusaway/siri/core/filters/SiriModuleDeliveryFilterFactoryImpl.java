@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2014 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +16,11 @@
  */
 package org.onebusaway.siri.core.filters;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -47,8 +53,9 @@ public class SiriModuleDeliveryFilterFactoryImpl {
     String filterClassName = filterArgs.remove(ARG_FILTER_CLASS);
 
     if (filterClassName != null) {
-
-      SiriModuleDeliveryFilter filter = (SiriModuleDeliveryFilter) createObjectForClassName(filterClassName);
+      Class<? extends SiriModuleDeliveryFilter> filterClass = resolveFilterClass(filterClassName);
+      SiriModuleDeliveryFilter filter = (SiriModuleDeliveryFilter) createObjectForClass(filterClass);
+      setFilterArguments(filter, filterArgs);
       return filter;
     }
 
@@ -79,13 +86,56 @@ public class SiriModuleDeliveryFilterFactoryImpl {
     return collection;
   }
 
-  private Object createObjectForClassName(String className) {
+  @SuppressWarnings("unchecked")
+  private Class<? extends SiriModuleDeliveryFilter> resolveFilterClass(
+      String filterClassName) {
     try {
-      Class<?> clazz = Class.forName(className);
-      return clazz.newInstance();
+      return (Class<? extends SiriModuleDeliveryFilter>) Class.forName(filterClassName);
+    } catch (ClassNotFoundException ex) {
+      String exapndedName = this.getClass().getPackage().getName() + "."
+          + filterClassName;
+      try {
+        return (Class<? extends SiriModuleDeliveryFilter>) Class.forName(exapndedName);
+      } catch (ClassNotFoundException ex2) {
+        throw new SiriException("error resolving filter class "
+            + filterClassName, ex);
+      }
     } catch (Throwable ex) {
-      throw new SiriException("error instantiating class " + className, ex);
+      throw new SiriException(
+          "error resolving filter class " + filterClassName, ex);
     }
   }
 
+  private Object createObjectForClass(
+      Class<? extends SiriModuleDeliveryFilter> filterClass) {
+    try {
+      return filterClass.newInstance();
+    } catch (Throwable ex) {
+      throw new SiriException("error instantiating class " + filterClass, ex);
+    }
+  }
+
+  private void setFilterArguments(SiriModuleDeliveryFilter filter,
+      Map<String, String> filterArgs) {
+    BeanInfo info = null;
+    try {
+      info = Introspector.getBeanInfo(filter.getClass());
+    } catch (IntrospectionException ex) {
+      throw new SiriException("Could not inspect class "
+          + filter.getClass().getName());
+    }
+    PropertyDescriptor[] properties = info.getPropertyDescriptors();
+    for (PropertyDescriptor property : properties) {
+      Method method = property.getWriteMethod();
+      String value = filterArgs.remove(property.getName());
+      if (method != null && value != null) {
+        try {
+          method.invoke(filter, value);
+        } catch (Exception ex) {
+          throw new SiriException("Error setting filter property "
+              + property.getName() + " on " + filter.getClass().getName(), ex);
+        }
+      }
+    }
+  }
 }
