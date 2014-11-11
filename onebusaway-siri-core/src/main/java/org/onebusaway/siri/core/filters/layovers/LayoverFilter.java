@@ -64,11 +64,11 @@ public class LayoverFilter implements SiriModuleDeliveryFilter {
       if (mvj.getVehicleRef() != null) {
         String vehicleRef = mvj.getVehicleRef().getValue();
         if (_layoverService.isVehiclePausedAtLayoverLocation(vehicleRef)) {
-          //OneBusAwayVehicleActivity vaExtension = new OneBusAwayVehicleActivity();
-          //vaExtension.setLayover(true);
-          //ExtensionsStructure extensions = new ExtensionsStructure();
-          //extensions.setAny(vaExtension);
-          //activity.setExtensions(extensions);
+          OneBusAwayVehicleActivity vaExtension = new OneBusAwayVehicleActivity();
+          vaExtension.setLayover(true);
+          ExtensionsStructure extensions = new ExtensionsStructure();
+          extensions.setAny(vaExtension);
+          activity.setExtensions(extensions);
         }
       }
     }
