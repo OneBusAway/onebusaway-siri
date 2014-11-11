@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import org.onebusaway.siri.OneBusAwayVehicleActivity;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,11 +64,11 @@ public class LayoverFilter implements SiriModuleDeliveryFilter {
       if (mvj.getVehicleRef() != null) {
         String vehicleRef = mvj.getVehicleRef().getValue();
         if (_layoverService.isVehiclePausedAtLayoverLocation(vehicleRef)) {
-          OneBusAwayVehicleActivity vaExtension = new OneBusAwayVehicleActivity();
-          vaExtension.setLayover(true);
-          ExtensionsStructure extensions = new ExtensionsStructure();
-          extensions.setAny(vaExtension);
-          activity.setExtensions(extensions);
+          //OneBusAwayVehicleActivity vaExtension = new OneBusAwayVehicleActivity();
+          //vaExtension.setLayover(true);
+          //ExtensionsStructure extensions = new ExtensionsStructure();
+          //extensions.setAny(vaExtension);
+          //activity.setExtensions(extensions);
         }
       }
     }

@@ -15,6 +15,8 @@
  */
 package org.onebusaway.siri.core.versioning;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 
 class VersionConverterImpl implements VersionConverter {
@@ -32,6 +34,11 @@ class VersionConverterImpl implements VersionConverter {
   @Override
   public Object convert(Object source) {
 
+    if (source.getClass().isEnum() && _targetType.isEnum()) {
+      Enum sourceEnum = (Enum) source;
+      Class<? extends Enum> targetClass = (Class<? extends Enum>) _targetType;
+      return Enum.valueOf(targetClass, sourceEnum.name());
+    }
     Object target = newInstance();
 
     for (PropertyConverter converter : _converters)
