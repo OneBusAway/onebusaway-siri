@@ -98,7 +98,7 @@ public class IntrospectionVersionConverter implements VersionConverter {
 
   private boolean isPrimitiveType(Class<? extends Object> sourceType) {
     String name = sourceType.getName();
-    return sourceType.isPrimitive() || sourceType.isEnum()
+    return sourceType.isPrimitive() || (sourceType.isEnum() && !name.startsWith("uk.org.siri"))
         || name.startsWith("java") || name.startsWith("com.sun");
   }
 

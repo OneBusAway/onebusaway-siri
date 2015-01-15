@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="yes"?>
+<Siri xmlns="http://www.siri.org.uk/" version="1.0">
+    <ServiceDelivery>
+        <ResponseTimestamp>2014-11-04T12:43:04.772+01:00</ResponseTimestamp>
+        <ProducerRef>produer</ProducerRef>
+        <ResponseMessageIdentifier>subscriber-2380</ResponseMessageIdentifier>
+        <RequestMessageRef>accept9292-2379</RequestMessageRef>
+        <Status>true</Status>
+        <MoreData>false</MoreData>
+        <EstimatedTimetableDelivery version="1.0">
+            <ResponseTimestamp>2014-11-04T12:43:04.772+01:00</ResponseTimestamp>
+            <SubscriberRef>subscriber</SubscriberRef>
+            <SubscriptionRef>ET</SubscriptionRef>
+            <Status>true</Status>
+            <EstimatedJourneyVersionFrame>
+                <RecordedAtTime>2014-11-04T12:43:04.772+01:00</RecordedAtTime>
+                <EstimatedVehicleJourney>
+                    <LineRef>3</LineRef>
+                    <DirectionRef>terug</DirectionRef>
+                    <DatedVehicleJourneyIndirectRef>
+                        <OriginRef>1818</OriginRef>
+                        <AimedDepartureTime>2014-11-04T12:08:00+01:00</AimedDepartureTime>
+                        <DestinationRef>8127</DestinationRef>
+                        <AimedArrivalTime>2014-11-04T13:15:45+01:00</AimedArrivalTime>
+                    </DatedVehicleJourneyIndirectRef>
+                    <DatedVehicleJourneyRef>59654</DatedVehicleJourneyRef>
+                    <EstimatedCalls>
+                        <EstimatedCall>
+                            <StopPointRef>7611</StopPointRef>
+                            <VisitNumber>24</VisitNumber>
+                            <ExpectedArrivalTime>2014-11-04T12:43:31+01:00</ExpectedArrivalTime>
+                            <ArrivalStatus>onTime</ArrivalStatus>
+                            <AimedDepartureTime>2014-11-04T12:42:45+01:00</AimedDepartureTime>
+                            <ExpectedDepartureTime>2014-11-04T12:43:31+01:00</ExpectedDepartureTime>
+                            <DepartureStatus>onTime</DepartureStatus>
+                        </EstimatedCall>
+                    </EstimatedCalls>
+                    <IsCompleteStopSequence>false</IsCompleteStopSequence>
+                </EstimatedVehicleJourney>
+            </EstimatedJourneyVersionFrame>
+        </EstimatedTimetableDelivery>
+    </ServiceDelivery>
+</Siri>

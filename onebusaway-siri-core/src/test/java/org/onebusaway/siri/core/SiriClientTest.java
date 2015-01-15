@@ -21,14 +21,13 @@ import static org.custommonkey.xmlunit.XMLAssert.assertXpathExists;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import junit.framework.Assert;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -55,9 +54,11 @@ import org.onebusaway.siri.core.services.JAXBContextProvider;
 import org.onebusaway.siri.core.services.SchedulingService;
 import org.onebusaway.siri.core.subscriptions.client.SiriClientSubscriptionManager;
 import org.onebusaway.siri.core.versioning.ESiriVersion;
+import org.onebusaway.siri.core.versioning.SiriVersioning;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import uk.org.siri.ProgressStatusEnumeration;
 import uk.org.siri.siri.CheckStatusRequestStructure;
 import uk.org.siri.siri.CheckStatusResponseStructure;
 import uk.org.siri.siri.Siri;
@@ -95,6 +96,30 @@ public class SiriClientTest {
     _client.setSchedulingService(_schedulingService);
     
     _client.setJAXBContext(new JAXBContextProvider().get());
+  }
+
+  @Test
+  public void testVersioningVM() throws FileNotFoundException {
+    File xml = new File(this.getClass().getResource("sirivm10.xml").getFile());
+    BufferedReader reader = new BufferedReader(new FileReader(xml));
+    Object data = _client.unmarshall(reader);
+    SiriVersioning instance = SiriVersioning.getInstance();
+    data = instance.getPayloadAsVersion(data, instance.getDefaultVersion());
+    Assert.assertEquals(data.getClass(),Siri.class);
+    Siri siri = (Siri) data;
+    Assert.assertEquals(1,siri.getServiceDelivery().getVehicleMonitoringDelivery().size());
+  }
+
+  @Test
+  public void testVersioningET() throws FileNotFoundException {
+    File xml = new File(this.getClass().getResource("siriet10.xml").getFile());
+    BufferedReader reader = new BufferedReader(new FileReader(xml));
+    Object data = _client.unmarshall(reader);
+    SiriVersioning instance = SiriVersioning.getInstance();
+    data = instance.getPayloadAsVersion(data, instance.getDefaultVersion());
+    Siri siri  = (Siri) data;
+    ProgressStatusEnumeration v10;
+    uk.org.siri.siri.ProgressStatusEnumeration v13;
   }
 
   @Test

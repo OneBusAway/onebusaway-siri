@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import org.onebusaway.siri.OneBusAwayVehicleActivity;
 import org.onebusaway.siri.core.filters.SiriModuleDeliveryFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
