@@ -6,7 +6,7 @@
     <version>1.1.8</version>
   </parent>
   <artifactId>onebusaway-siri</artifactId>
-  <version>1.0.7-SNAPSHOT</version>
+  <version>1.0.7</version>
   <packaging>pom</packaging>
 
   <name>onebusaway-siri</name>
@@ -15,7 +15,7 @@
 
   <properties>
     <onebusaway_siri_api_v10_version>1.0.1</onebusaway_siri_api_v10_version>
-    <onebusaway_siri_api_v13_version>1.0.2-SNAPSHOT</onebusaway_siri_api_v13_version>
+    <onebusaway_siri_api_v13_version>1.0.2</onebusaway_siri_api_v13_version>
     <!-- We don't want to release these to the main Maven repo, so we deploy to the OBA repo by default -->
     <distribution_id>nexus.onebusaway.org-releases</distribution_id>
     <distribution_url>http://nexus.onebusaway.org/content/repositories/releases/</distribution_url>
@@ -85,18 +85,18 @@
       <dependency>
         <groupId>org.onebusaway</groupId>
         <artifactId>onebusaway-status-service</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.onebusaway</groupId>
         <artifactId>onebusaway-status-jetty-exporter</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
       </dependency>
 
       <dependency>
         <groupId>org.onebusaway</groupId>
         <artifactId>onebusaway-cli</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.2</version>
       </dependency>
 
       <dependency>
@@ -138,7 +138,7 @@
       <dependency>
         <groupId>org.onebusaway</groupId>
         <artifactId>onebusaway-guice-jsr250</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>1.0.3</version>
       </dependency>
 
       <dependency>
