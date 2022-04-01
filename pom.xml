@@ -3,7 +3,7 @@
   <parent>
     <artifactId>onebusaway</artifactId>
     <groupId>org.onebusaway</groupId>
-    <version>1.1.8</version>
+    <version>1.2.9</version>
   </parent>
   <artifactId>onebusaway-siri</artifactId>
   <version>1.0.7-SNAPSHOT</version>
@@ -105,7 +105,7 @@
       <dependency>
         <groupId>org.onebusaway</groupId>
         <artifactId>onebusaway-status-service</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.onebusaway</groupId>
@@ -158,7 +158,7 @@
       <dependency>
         <groupId>org.onebusaway</groupId>
         <artifactId>onebusaway-guice-jsr250</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>1.0.3</version>
       </dependency>
 
       <dependency>
